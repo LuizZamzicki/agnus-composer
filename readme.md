@@ -7,9 +7,9 @@ As pastas do front e back devem ficar exatamente assim:
 
 Se precisar regerar certificados, use a sequencia de comandos abaixo
 
-choco install mkcert
-mkcert agnus
-mkcert -install
+- choco install mkcert
+- mkcert agnus
+- mkcert -install
 
 coloque os arquivos agnus-key.pem e agnus.pem dentro de uma pasta chamada "Certs"
 
