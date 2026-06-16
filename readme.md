@@ -11,7 +11,7 @@ Se precisar regerar certificados, use a sequencia de comandos abaixo
 - mkcert agnus
 - mkcert -install
 
-coloque os arquivos agnus-key.pem e agnus.pem dentro de uma pasta chamada "Certs"
+coloque os arquivos agnus-key.pem e agnus.pem dentro de uma pasta chamada "certs"
 
 ## Docker
 
