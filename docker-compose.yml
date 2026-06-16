@@ -1,0 +1,80 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: agnus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.13
+    container_name: agnus-meili
+    restart: unless-stopped
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - data
+
+  backend:
+    build:
+      context: ./agnus-back
+    container_name: agnus-backend
+    restart: unless-stopped
+    env_file:
+      - ./agnus-back/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    volumes:
+      - produto_fotos:/app/produto_fotos
+      - avaliacao_fotos:/app/avaliacao_fotos
+    networks:
+      - app
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./agnus-front
+    container_name: agnus-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app
+
+volumes:
+  mysql_data:
+  meili_data:
+  produto_fotos:
+  avaliacao_fotos:
+
+networks:
+  app:
+  data:
+    internal: true
