@@ -11,9 +11,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "start": "react-scripts start",
-    "test": "react-scripts test",
-    "lint": "cd agnus-front && eslint .",
+    "start": "npm --prefix agnus-front start",
+    "test": "npm --prefix agnus-front test",
+    "lint": "npm --prefix agnus-back run lint && npm --prefix agnus-front run lint",
     "test:e2e": "npm --prefix agnus-front exec -- cypress run --project agnus-front"
   }
 }

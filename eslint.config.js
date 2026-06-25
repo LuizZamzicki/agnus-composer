@@ -11,19 +11,64 @@ module.exports = [
     {
         ignores: [
             "node_modules/**",
-            "agnus-back/**",
             "agnus-front/node_modules/**",
             "agnus-front/build/**",
             "agnus-front/coverage/**",
+            "agnus-back/node_modules/**",
+            "agnus-back/coverage/**",
+            "agnus-back/dist/**",
         ],
     },
     js.configs.recommended,
     {
-        files: ["*.js", "*.cjs", "*.mjs", "**/.eslintrc.js"],
+        files: [
+            "*.js",
+            "agnus-front/*.js",
+            "agnus-back/*.js",
+            "agnus-back/scripts/**/*.js",
+            "agnus-back/src/**/*.js",
+        ],
+        languageOptions: {
+            ecmaVersion: "latest",
+            sourceType: "commonjs",
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
+    {
+        files: ["agnus-back/**/*.ts"],
+        languageOptions: {
+            parser: tsParser,
+            ecmaVersion: "latest",
+            sourceType: "module",
+            globals: {
+                ...globals.node,
+            },
+        },
+        rules: {
+            "no-undef": "off",
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-require-imports": "off",
+        },
+    },
+    {
+        files: ["agnus-front/cypress.config.js", "cypress.config.js"],
         languageOptions: {
             ecmaVersion: "latest",
             sourceType: "module",
-            globals: globals.node,
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
+    {
+        files: ["agnus-back/tests/**/*.{js,ts}"],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+                ...globals.jest,
+            },
         },
     },
     {
@@ -63,6 +108,7 @@ module.exports = [
     {
         files: ["agnus-front/cypress/**/*.{js,jsx,ts,tsx}"],
         languageOptions: {
+            parser: tsParser,
             ecmaVersion: "latest",
             sourceType: "module",
             globals: {
