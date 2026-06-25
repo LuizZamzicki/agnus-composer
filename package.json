@@ -14,6 +14,6 @@
     "start": "react-scripts start",
     "test": "react-scripts test",
     "lint": "cd agnus-front && eslint .",
-    "test:e2e": "cypress run"
+    "test:e2e": "npm --prefix agnus-front exec -- cypress run --project agnus-front"
   }
 }

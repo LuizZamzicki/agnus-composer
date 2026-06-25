@@ -8,3 +8,10 @@ agnus-back
 agnus-front
 
 certs/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+
+# dependencies
+node_modules/
