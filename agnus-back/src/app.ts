@@ -91,7 +91,7 @@ router.get('/product-review-photos/:id_review', AvaliacaoFotosController.getById
 router.put('/product-review-photos/:id', uploadAny, AvaliacaoFotosController.update);
 router.delete('/product-review-photos/:id', AvaliacaoFotosController.remove);
 
-router.get('/carts', CarrinhosController.findAll);
+router.get('/carts', CarrinhosController.findAll);;
 router.post('/carts', CarrinhosController.create);
 router.get('/carts/:id', CarrinhosController.getById);
 router.put('/carts/:id', CarrinhosController.update);
