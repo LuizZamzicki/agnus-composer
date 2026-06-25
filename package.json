@@ -1,0 +1,19 @@
+{
+  "devDependencies": {
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.57.1",
+    "eslint-config-react-app": "^7.0.1",
+    "husky": "^9.1.7",
+    "typescript": "^4.9.5"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "lint": "cd agnus-front && eslint .",
+    "test:e2e": "cypress run"
+  }
+}
