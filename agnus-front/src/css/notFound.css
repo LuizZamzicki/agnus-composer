@@ -1,0 +1,90 @@
+.nf-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    font-family: Arial, sans-serif;
+}
+
+.nf-content {
+    text-align: center;
+}
+
+.nf-content h1 {
+    font-size: 120px;
+    margin: 0;
+    font-weight: 900;
+    color: #111;
+}
+
+.nf-line {
+    width: 40px;
+    height: 3px;
+    background: #f1c40f;
+    margin: 15px auto;
+}
+
+.nf-content h2 {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: #111;
+    margin-bottom: 10px;
+}
+
+.nf-content p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.nf-content span {
+    color: #c39b00;
+}
+
+.nf-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-primary404 {
+    background: #111;
+    color: #fff;
+    padding: 10px 18px;
+    font-size: 12px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: 0.3s;
+}
+
+.btn-primary404:hover {
+    background: #000;
+}
+
+.btn-outline404 {
+    border: 1px solid #111;
+    color: #111;
+    background-color: #f1c40f;
+    padding: 10px 18px;
+    font-size: 12px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: 0.3s;
+}
+
+.btn-outline404:hover {
+    background: #dbaf00;
+    color: #fff;
+}
+
+.nf-back {
+    font-size: 11px;
+    color: #888;
+    cursor: pointer;
+}
+
+.nf-back:hover {
+    color: #111;
+}

@@ -1,0 +1,114 @@
+.produto-page {
+    padding: 40px 80px;
+    background: #f8f8f8;
+}
+
+.produto-container {
+    display: flex;
+    gap: 60px;
+    align-items: center;
+}
+
+.produto-img img {
+    width: 450px;
+    object-fit: contain;
+}
+
+.produto-info {
+    max-width: 500px;
+}
+
+.badge {
+    background: #d4a017;
+    color: #000;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.produto-info h1 {
+    font-size: 22px;
+    margin: 15px 0;
+}
+
+.produto-info h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.produto-info p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.produto-opcao {
+    margin-bottom: 20px;
+}
+
+.produto-opcao span {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.opcoes {
+    display: flex;
+    gap: 10px;
+}
+
+.opcoes button {
+    padding: 8px 14px;
+    border: 1px solid #ccc;
+    background: transparent;
+    cursor: pointer;
+}
+
+.opcoes button.active {
+    border: 1px solid #000;
+    font-weight: bold;
+}
+
+.btn-comprar {
+    width: 100%;
+    background: #d4a017;
+    border: none;
+    padding: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.produto-extra {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    color: #777;
+}
+
+.relacionados {
+    margin-top: 60px;
+}
+
+.relacionados h3 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.grid-relacionados {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    text-align: center;
+    width: 200px;
+}
+
+.card img {
+    width: 100%;
+}

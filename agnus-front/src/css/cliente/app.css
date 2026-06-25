@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+}
+
+.app--with-header {
+    padding-top: 80px;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header svg {
+    pointer-events: none;
+}

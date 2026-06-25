@@ -4,8 +4,8 @@ docker-compose.override.yml
 db_data/
 storage/
 
-agnus-back
-agnus-front
+# agnus-back
+# agnus-front
 
 certs/
 
