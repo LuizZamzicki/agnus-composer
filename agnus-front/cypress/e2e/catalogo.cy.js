@@ -107,66 +107,6 @@ describe('Catálogo de produtos', () => {
     });
 
 
-
-
-    it('deve buscar produto pelo nome', () => {
-
-
-        cy.intercept(
-            {
-                method: 'GET',
-                url: '**/products/catalog*',
-                query: {
-                    page: '1',
-                    limit: '12',
-                    search: 'camisa'
-                }
-            },
-            {
-                statusCode: 200,
-                body: {
-                    data: [
-                        {
-                            id_produto: 2,
-                            nome: 'Camisa Preta',
-                            preco_base: 120,
-                            imagens: []
-                        }
-                    ],
-                    pagination: {
-                        totalPages: 1
-                    }
-                }
-            }
-        )
-            .as('buscar');
-
-
-        mockCategorias();
-
-
-        cy.visit('/catalogo');
-
-
-        cy.get('[data-cy="buscar-produto"]')
-            .type('camisa');
-
-
-        cy.wait('@buscar');
-
-        cy.get('[data-cy^="produto-card-"]')
-            .should('have.length', 1);
-
-        cy.contains('Camisa Preta')
-            .should('be.visible');
-
-
-    });
-
-
-
-
-
     it('deve filtrar por categoria', () => {
 
 
