@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (lint + testes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agnus-back
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agnus-back/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  frontend:
+    name: Frontend (lint + testes + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agnus-front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agnus-front/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npm test -- --watchAll=false
+        env:
+          CI: true
+      - run: npm run build
+        env:
+          CI: false
+
+  compose:
+    name: docker-compose valido
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gerar arquivos .env de exemplo
+        run: |
+          printf 'MYSQL_ROOT_PASSWORD=ci\nMYSQL_DATABASE=ci\n' > .env
+          touch agnus-back/.env
+      - run: docker compose config --quiet
