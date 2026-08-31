@@ -10,11 +10,11 @@ COPY . .
 
 RUN npm run build
 
-FROM nginx:alpine
+# Imagem final apenas publica os estaticos no volume compartilhado com o nginx
+FROM alpine:3.20
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/build /usr/share/nginx/html
+WORKDIR /app
 
-EXPOSE 80 443
+COPY --from=builder /app/build ./build
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["sh", "-c", "rm -rf /output/* && cp -a /app/build/. /output/ && echo 'Frontend build publicado em /output'"]
