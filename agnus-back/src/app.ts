@@ -117,6 +117,7 @@ router.post('/auth/login', AuthController.login);
 router.get('/auth/me', authenticateToken, AuthController.me);
 router.get('/auth/google', AuthController.googleStart);
 router.get('/auth/google/callback', AuthController.googleCallback);
+router.post('/auth/google/token', AuthController.googleIdToken);
 
 app.use(router);
 

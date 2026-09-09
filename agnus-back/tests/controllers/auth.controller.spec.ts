@@ -12,6 +12,7 @@ jest.mock("../../src/services/auth.service", () => ({
     sanitizeUser: jest.fn(),
     buildGoogleAuthorizationUrl: jest.fn(),
     authenticateWithGoogle: jest.fn(),
+    authenticateWithGoogleIdToken: jest.fn(),
   },
 }));
 jest.mock("../../src/models/Usuarios", () => ({
@@ -24,6 +25,7 @@ type AuthServiceMock = {
   sanitizeUser: jest.Mock;
   buildGoogleAuthorizationUrl: jest.Mock;
   authenticateWithGoogle: jest.Mock;
+  authenticateWithGoogleIdToken: jest.Mock;
 };
 type UsuariosModelMock = { findByPk: jest.Mock };
 
@@ -214,5 +216,40 @@ describe("AuthController", () => {
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=invalid");
+  });
+
+  it("googleIdToken retorna 400 sem id_token", async () => {
+    const response = mockResponse();
+    await AuthController.googleIdToken(mockRequest({ body: {} }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "id_token e obrigatorio." });
+  });
+
+  it("googleIdToken retorna 200 com token e usuario", async () => {
+    const response = mockResponse();
+    const user = buildPublicUser();
+
+    authService.authenticateWithGoogleIdToken.mockResolvedValueOnce({ token: "jwt", user });
+
+    await AuthController.googleIdToken(mockRequest({ body: { id_token: "abc" } }), response);
+
+    expect(authService.authenticateWithGoogleIdToken).toHaveBeenCalledWith("abc");
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({ token: "jwt", user });
+  });
+
+  it("googleIdToken retorna 401 quando a verificacao falha", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogleIdToken.mockRejectedValueOnce(
+      new Error("Token Google emitido para outro aplicativo."),
+    );
+
+    await AuthController.googleIdToken(mockRequest({ body: { id_token: "abc" } }), response);
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(response.json).toHaveBeenCalledWith({
+      message: "Token Google emitido para outro aplicativo.",
+    });
   });
 });
