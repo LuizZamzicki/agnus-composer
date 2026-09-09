@@ -13,17 +13,3 @@ export type GoogleUserInfo = {
   email_verified: boolean;
   picture?: string;
 };
-
-/**
- * Resposta do endpoint `tokeninfo` do Google ao validar um `id_token`
- * (login mobile). Campos booleanos/numericos chegam como string.
- */
-export type GoogleIdTokenInfo = {
-  iss: string;
-  aud: string;
-  sub: string;
-  email: string;
-  email_verified: boolean | string;
-  name?: string;
-  exp: string;
-};

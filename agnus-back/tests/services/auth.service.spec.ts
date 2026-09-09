@@ -63,7 +63,6 @@ describe("AuthService", () => {
     process.env.GOOGLE_REDIRECT_URI = "http://localhost/callback";
     process.env.GOOGLE_OAUTH_SCOPES = "openid email profile";
     process.env.GOOGLE_STATE_SECRET = "state-secret";
-    process.env.GOOGLE_MOBILE_CLIENT_IDS = "";
     global.fetch = fetchMock;
     jest.clearAllMocks();
   });
@@ -194,76 +193,5 @@ describe("AuthService", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "ga" }), { status: 200 }))
       .mockResolvedValueOnce(new Response("profile error", { status: 500 }));
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Falha ao obter perfil Google");
-  });
-
-  it("authenticateWithGoogleIdToken falha quando o tokeninfo rejeita", async () => {
-    fetchMock.mockResolvedValueOnce(new Response("bad token", { status: 400 }));
-    await expect(AuthService.authenticateWithGoogleIdToken("bad")).rejects.toThrow("Falha ao validar token Google");
-  });
-
-  it("authenticateWithGoogleIdToken recusa emissor que nao e do Google", async () => {
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ iss: "evil.example", aud: "client", sub: "s", email: "a@a.com", email_verified: "true" }),
-        { status: 200 },
-      ),
-    );
-    await expect(AuthService.authenticateWithGoogleIdToken("t")).rejects.toThrow("emissor invalido");
-  });
-
-  it("authenticateWithGoogleIdToken recusa audience desconhecida", async () => {
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ iss: "https://accounts.google.com", aud: "outro-app", sub: "s", email: "a@a.com", email_verified: "true" }),
-        { status: 200 },
-      ),
-    );
-    await expect(AuthService.authenticateWithGoogleIdToken("t")).rejects.toThrow("outro aplicativo");
-  });
-
-  it("authenticateWithGoogleIdToken recusa email nao verificado", async () => {
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ iss: "accounts.google.com", aud: "client", sub: "s", email: "a@a.com", email_verified: "false" }),
-        { status: 200 },
-      ),
-    );
-    await expect(AuthService.authenticateWithGoogleIdToken("t")).rejects.toThrow("Conta Google sem email verificado.");
-  });
-
-  it("authenticateWithGoogleIdToken autentica usuario existente por google_id", async () => {
-    const user = buildModelInstance({ ...buildPublicUser("a@a.com"), google_id: "sub-1", senha: "hash" });
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ iss: "accounts.google.com", aud: "client", sub: "sub-1", name: "A", email: "a@a.com", email_verified: true }),
-        { status: 200 },
-      ),
-    );
-    usuariosModel.findOne.mockResolvedValueOnce(user as never as Usuarios);
-    jwtMock.sign.mockReturnValueOnce("jwt-idtoken");
-    await expect(AuthService.authenticateWithGoogleIdToken("t")).resolves.toEqual({
-      user: buildPublicUser("a@a.com", "cliente", "sub-1"),
-      token: "jwt-idtoken",
-    });
-  });
-
-  it("authenticateWithGoogleIdToken aceita audience de GOOGLE_MOBILE_CLIENT_IDS e cria usuario", async () => {
-    process.env.GOOGLE_MOBILE_CLIENT_IDS = "ios-app, android-app";
-    const user = buildModelInstance({ ...buildPublicUser("n@n.com"), id_usuario: 9, google_id: "sub-n", senha: "hash" });
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ iss: "https://accounts.google.com", aud: "android-app", sub: "sub-n", name: "N", email: "n@n.com", email_verified: "true" }),
-        { status: 200 },
-      ),
-    );
-    usuariosModel.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-    argon2Mock.hash.mockResolvedValueOnce("hashed-random" as never);
-    usuariosModel.create.mockResolvedValueOnce(user as never as Usuarios);
-    jwtMock.sign.mockReturnValueOnce("jwt-new");
-    await expect(AuthService.authenticateWithGoogleIdToken("t")).resolves.toEqual({
-      user: { ...buildPublicUser("n@n.com", "cliente", "sub-n"), id_usuario: 9 },
-      token: "jwt-new",
-    });
-    expect(usuariosModel.create).toHaveBeenCalledWith({ nome: "N", email: "n@n.com", senha: "hashed-random", tipo: "cliente", google_id: "sub-n" });
   });
 });

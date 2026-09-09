@@ -135,26 +135,6 @@ class AuthController {
     });
   }
 
-  static async googleIdToken(req: Request, res: Response) {
-    const { id_token: idToken } = req.body;
-
-    if (!idToken || typeof idToken !== "string") {
-      return res.status(400).json({ message: "id_token e obrigatorio." });
-    }
-
-    try {
-      const authResult = await AuthService.authenticateWithGoogleIdToken(idToken);
-      return res.status(200).json(authResult);
-    } catch (error) {
-      return res.status(401).json({
-        message: AuthController.getErrorMessage(
-          error as ErrorLike,
-          "Falha ao autenticar com Google.",
-        ),
-      });
-    }
-  }
-
   static async me(req: Request, res: AuthResponse) {
     const authUser = res.locals.authUser;
 

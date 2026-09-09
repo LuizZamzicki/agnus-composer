@@ -21,7 +21,6 @@ const controllerMock = {
   bestSellers: handler,
   googleStart: handler,
   googleCallback: handler,
-  googleIdToken: handler,
 };
 
 jest.mock("../src/controllers/avaliacaoFotos.controller", () => ({ __esModule: true, default: controllerMock }));

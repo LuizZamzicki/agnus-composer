@@ -3,7 +3,7 @@ import crypto from "crypto";
 import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import Usuarios from "../models/Usuarios";
 import type { AuthResult, AuthUserPayload } from "../types/auth.types";
-import type { GoogleIdTokenInfo, GoogleTokenResponse, GoogleUserInfo } from "../types/google-oauth.types";
+import type { GoogleTokenResponse, GoogleUserInfo } from "../types/google-oauth.types";
 import type { UsuarioPublicData } from "../types/user.types";
 
 class AuthService {
@@ -33,17 +33,6 @@ class AuthService {
 
   private static getGoogleScopes() {
     return process.env.GOOGLE_OAUTH_SCOPES!;
-  }
-
-  /**
-   * Client IDs dos apps mobile (iOS/Android/Web do Expo), separados por virgula.
-   * Sao aceitos como `aud` valido no `id_token` recebido do app.
-   */
-  private static getGoogleMobileAudiences(): string[] {
-    return (process.env.GOOGLE_MOBILE_CLIENT_IDS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
   }
 
   private static ensureGoogleOAuthConfig() {
@@ -255,54 +244,6 @@ class AuthService {
     AuthService.ensureGoogleOAuthConfig();
     AuthService.ensureValidGoogleState(state);
     const googleUser = await AuthService.fetchVerifiedGoogleUser(code);
-    const user = await AuthService.findOrCreateGoogleUser(googleUser);
-    return AuthService.buildAuthResponse(user);
-  }
-
-  private static isTrustedGoogleIssuer(iss: string) {
-    return iss === "accounts.google.com" || iss === "https://accounts.google.com";
-  }
-
-  private static ensureTrustedGoogleAudience(aud: string) {
-    const allowed = [
-      AuthService.getGoogleClientId(),
-      ...AuthService.getGoogleMobileAudiences(),
-    ].filter(Boolean);
-
-    if (!allowed.includes(aud)) {
-      throw new Error("Token Google emitido para outro aplicativo.");
-    }
-  }
-
-  /** Valida um `id_token` do Google no endpoint `tokeninfo` e devolve o perfil. */
-  private static async verifyGoogleIdToken(idToken: string): Promise<GoogleUserInfo> {
-    const info = await AuthService.fetchJson<GoogleIdTokenInfo>(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
-      { method: "GET" },
-      "Falha ao validar token Google",
-    );
-
-    if (!AuthService.isTrustedGoogleIssuer(info.iss)) {
-      throw new Error("Token Google com emissor invalido.");
-    }
-
-    AuthService.ensureTrustedGoogleAudience(info.aud);
-
-    const googleUser: GoogleUserInfo = {
-      sub: info.sub,
-      name: info.name || info.email,
-      email: info.email,
-      email_verified: info.email_verified === true || info.email_verified === "true",
-    };
-
-    AuthService.ensureVerifiedGoogleEmail(googleUser);
-    return googleUser;
-  }
-
-  /** Login mobile: recebe o `id_token` do app, valida e resolve o usuario. */
-  static async authenticateWithGoogleIdToken(idToken: string) {
-    AuthService.ensureGoogleOAuthConfig();
-    const googleUser = await AuthService.verifyGoogleIdToken(idToken);
     const user = await AuthService.findOrCreateGoogleUser(googleUser);
     return AuthService.buildAuthResponse(user);
   }
