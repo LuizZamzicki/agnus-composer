@@ -50,6 +50,7 @@ Nessa etapa, porém, o site ainda funcionava apenas como uma "Landing Page", par
 Mesmo com essa limitação, a primeira versão foi importante para dar visibilidade à AGNUS e apresentar seus produtos ao público. Ao mesmo tempo, mostrou a necessidade de desenvolver uma plataforma mais completa, capaz de reunir a divulgação e o processo de compra em um único ambiente.
 
 Segunda versão — Implementação do e-commerce
+
 Com o crescimento da proposta da AGNUS e o interesse em tornar a experiência de compra mais prática, surgiu a necessidade de evoluir o catálogo inicial para uma plataforma de e-commerce. A ideia era permitir que o cliente não apenas visualizasse as roupas esportivas, mas também pudesse selecionar os produtos, informar seus dados e realizar um pedido diretamente pelo site.
 
 Nessa nova etapa, também foi incorporado o conceito de Print on Demand, modelo no qual as peças são produzidas de acordo com a demanda dos pedidos, evitando a necessidade de manter um grande estoque de produtos prontos. Esse formato combina com a proposta da AGNUS, pois permite trabalhar com diferentes estampas e modelos de inspiração católica, produzindo as peças conforme o interesse dos clientes.
@@ -93,6 +94,7 @@ Diagrama Entidade Relacionamento:
 <img width="1201" height="881" alt="image" src="https://github.com/user-attachments/assets/deb27ce2-020d-4a7e-afa4-34cc931bd0f7" />
 
 Requisitos funcionais:
+
 1) Autenticação e Usuários
 
 RF01: O sistema deve permitir o cadastro de novos usuários com nome, e-mail, CPF, telefone e senha, garantindo que o e-mail seja único.
