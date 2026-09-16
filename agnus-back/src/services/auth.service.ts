@@ -109,18 +109,23 @@ class AuthService {
     return AuthService.buildAuthResponse(user);
   }
 
-  private static buildGoogleState() {
+  private static buildGoogleState(redirect?: string) {
     return jwt.sign(
       {
         nonce: crypto.randomBytes(16).toString("hex"),
         provider: "google",
+        ...(redirect ? { redirect } : {}),
       },
       AuthService.getOAuthStateSecret(),
       { expiresIn: "10m" },
     );
   }
 
-  static buildGoogleAuthorizationUrl() {
+  /**
+   * @param redirect URL de retorno do app (mobile). Vai embutida no `state` e o
+   *   callback redireciona pra ela com `?token=`. Sem isso, fluxo web normal.
+   */
+  static buildGoogleAuthorizationUrl(redirect?: string) {
     AuthService.ensureGoogleOAuthConfig();
     const params = new URLSearchParams({
       client_id: AuthService.getGoogleClientId(),
@@ -129,7 +134,7 @@ class AuthService {
       scope: AuthService.getGoogleScopes(),
       access_type: "offline",
       prompt: "consent",
-      state: AuthService.buildGoogleState(),
+      state: AuthService.buildGoogleState(redirect),
     });
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -141,6 +146,16 @@ class AuthService {
       return decoded.provider === "google";
     } catch {
       return false;
+    }
+  }
+
+  /** Redirect do app embutido no `state`, se o token for válido. Não lança. */
+  static peekGoogleStateRedirect(state: string): string | undefined {
+    try {
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      return typeof decoded.redirect === "string" ? decoded.redirect : undefined;
+    } catch {
+      return undefined;
     }
   }
 
@@ -245,7 +260,10 @@ class AuthService {
     AuthService.ensureValidGoogleState(state);
     const googleUser = await AuthService.fetchVerifiedGoogleUser(code);
     const user = await AuthService.findOrCreateGoogleUser(googleUser);
-    return AuthService.buildAuthResponse(user);
+    return {
+      ...AuthService.buildAuthResponse(user),
+      redirect: AuthService.peekGoogleStateRedirect(state),
+    };
   }
 }
 

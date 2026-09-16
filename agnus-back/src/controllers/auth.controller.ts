@@ -13,13 +13,41 @@ class AuthController {
     return process.env.FRONTEND_URL || "http://localhost:3001";
   }
 
-  private static buildLoginSuccessRedirect(token: string, tipo: string) {
-    const params = new URLSearchParams({ token, tipo, success: "1" });
-    return `${AuthController.getFrontendUrl()}/login?${params.toString()}`;
+  /**
+   * Esquemas de retorno aceitos pro app mobile. O `state` carrega um JWT
+   * assinado, mas o token de sessão vai na query da URL de retorno — sem
+   * allowlist isso seria open redirect com vazamento de token.
+   */
+  private static readonly APP_REDIRECT_ALLOWLIST = [
+    "exp://",
+    "exp+",
+    "agnusapp://",
+    "http://localhost",
+    "http://127.0.0.1",
+  ];
+
+  private static sanitizeAppRedirect(raw: unknown): string | undefined {
+    if (typeof raw !== "string" || !raw) {
+      return undefined;
+    }
+
+    return AuthController.APP_REDIRECT_ALLOWLIST.some((prefix) => raw.startsWith(prefix))
+      ? raw
+      : undefined;
   }
 
-  private static buildLoginErrorRedirect(message: string) {
-    return `${AuthController.getFrontendUrl()}/login?error=${encodeURIComponent(message)}`;
+  private static redirectBase(appRedirect?: string) {
+    const base = appRedirect ?? `${AuthController.getFrontendUrl()}/login`;
+    return `${base}${base.includes("?") ? "&" : "?"}`;
+  }
+
+  private static buildLoginSuccessRedirect(token: string, tipo: string, appRedirect?: string) {
+    const params = new URLSearchParams({ token, tipo, success: "1" });
+    return `${AuthController.redirectBase(appRedirect)}${params.toString()}`;
+  }
+
+  private static buildLoginErrorRedirect(message: string, appRedirect?: string) {
+    return `${AuthController.redirectBase(appRedirect)}error=${encodeURIComponent(message)}`;
   }
 
   private static formatElapsedTime(date: Date) {
@@ -72,7 +100,14 @@ class AuthController {
       return null;
     }
 
-    return AuthController.buildLoginErrorRedirect(`Google OAuth retornou erro: ${String(query.error)}`);
+    const appRedirect = AuthController.sanitizeAppRedirect(
+      AuthService.peekGoogleStateRedirect(String(query.state ?? "")),
+    );
+
+    return AuthController.buildLoginErrorRedirect(
+      `Google OAuth retornou erro: ${String(query.error)}`,
+      appRedirect,
+    );
   }
 
   private static getGoogleCallbackParams(query: Request["query"]) {
@@ -110,6 +145,7 @@ class AuthController {
     return AuthController.buildLoginSuccessRedirect(
       authResult.token,
       authResult.user.tipo,
+      AuthController.sanitizeAppRedirect(authResult.redirect),
     );
   }
 
@@ -153,7 +189,8 @@ class AuthController {
 
   static async googleStart(req: Request, res: Response) {
     try {
-      return res.redirect(AuthService.buildGoogleAuthorizationUrl());
+      const appRedirect = AuthController.sanitizeAppRedirect(req.query.redirect);
+      return res.redirect(AuthService.buildGoogleAuthorizationUrl(appRedirect));
     } catch (error) {
       return res.status(500).json({
         message: AuthController.getErrorMessage(
@@ -187,6 +224,7 @@ class AuthController {
             error as ErrorLike,
             "Falha no callback do Google OAuth.",
           ),
+          AuthController.sanitizeAppRedirect(AuthService.peekGoogleStateRedirect(params.state)),
         ),
       );
     }
