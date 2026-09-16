@@ -12,6 +12,7 @@ jest.mock("../../src/services/auth.service", () => ({
     sanitizeUser: jest.fn(),
     buildGoogleAuthorizationUrl: jest.fn(),
     authenticateWithGoogle: jest.fn(),
+    peekGoogleStateRedirect: jest.fn(),
   },
 }));
 jest.mock("../../src/models/Usuarios", () => ({
@@ -24,6 +25,7 @@ type AuthServiceMock = {
   sanitizeUser: jest.Mock;
   buildGoogleAuthorizationUrl: jest.Mock;
   authenticateWithGoogle: jest.Mock;
+  peekGoogleStateRedirect: jest.Mock;
 };
 type UsuariosModelMock = { findByPk: jest.Mock };
 
@@ -150,6 +152,28 @@ describe("AuthController", () => {
     expect(response.redirect).toHaveBeenCalledWith("https://google/auth");
   });
 
+  it("googleStart repassa um redirect de app permitido", async () => {
+    const response = mockResponse();
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+    await AuthController.googleStart(
+      mockRequest({ query: { redirect: "exp://192.168.0.5:8081/--/auth" } }),
+      response,
+    );
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(
+      "exp://192.168.0.5:8081/--/auth",
+    );
+  });
+
+  it("googleStart ignora um redirect de app fora do allowlist", async () => {
+    const response = mockResponse();
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+    await AuthController.googleStart(
+      mockRequest({ query: { redirect: "https://evil.example/steal" } }),
+      response,
+    );
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined);
+  });
+
   it("googleStart retorna 500 quando falha", async () => {
     const response = mockResponse();
 
@@ -214,5 +238,32 @@ describe("AuthController", () => {
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=invalid");
+  });
+
+  it("googleCallback manda o token pro app quando o state tem redirect", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogle.mockResolvedValueOnce({
+      token: "jwt",
+      user: buildPublicUser(),
+      redirect: "exp://192.168.0.5:8081/--/auth",
+    });
+
+    await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
+
+    expect(response.redirect).toHaveBeenCalledWith(
+      "exp://192.168.0.5:8081/--/auth?token=jwt&tipo=cliente&success=1",
+    );
+  });
+
+  it("googleCallback manda o erro pro app quando o state tem redirect", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogle.mockRejectedValueOnce(new Error("invalid"));
+    authService.peekGoogleStateRedirect.mockReturnValueOnce("agnusapp://auth");
+
+    await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
+
+    expect(response.redirect).toHaveBeenCalledWith("agnusapp://auth?error=invalid");
   });
 });

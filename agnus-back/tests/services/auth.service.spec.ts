@@ -131,6 +131,26 @@ describe("AuthService", () => {
     expect(() => AuthService.buildGoogleAuthorizationUrl()).toThrow("Google OAuth");
   });
 
+  it("buildGoogleAuthorizationUrl embute o redirect do app no state", () => {
+    jwtMock.sign.mockReturnValueOnce("state-token");
+    AuthService.buildGoogleAuthorizationUrl("exp://host/--/auth");
+    expect(jwtMock.sign).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "google", redirect: "exp://host/--/auth" }),
+      "state-secret",
+      { expiresIn: "10m" },
+    );
+  });
+
+  it("peekGoogleStateRedirect devolve o redirect de um state valido", () => {
+    jwtMock.verify.mockReturnValueOnce({ provider: "google", redirect: "agnusapp://auth" } as never);
+    expect(AuthService.peekGoogleStateRedirect("state")).toBe("agnusapp://auth");
+  });
+
+  it("peekGoogleStateRedirect devolve undefined para state invalido", () => {
+    jwtMock.verify.mockImplementationOnce(() => { throw new Error("bad"); });
+    expect(AuthService.peekGoogleStateRedirect("state")).toBeUndefined();
+  });
+
   it("authenticateWithGoogle falha com estado invalido", async () => {
     jwtMock.verify.mockImplementationOnce(() => { throw new Error("state invalid"); });
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Estado OAuth");
