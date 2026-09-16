@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "postman:generate": "node scripts/generate-postman-collection.js",
+    "seed:produtos": "ts-node --transpile-only scripts/seed-produtos.ts",
     "lint": "eslint .",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",

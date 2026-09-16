@@ -35,6 +35,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./agnus-back/.env
+    ports:
+      - "3000:3000"
     depends_on:
       mysql:
         condition: service_healthy
