@@ -30,6 +30,8 @@ export type ProdutoRouteParams = {
   id?: string;
 };
 
+export type ProdutoSort = "preco_asc" | "preco_desc";
+
 export type ProdutoQuery = {
   page?: string;
   limit?: string;
@@ -39,6 +41,7 @@ export type ProdutoQuery = {
   search?: string;
   busca?: string;
   descricao?: string;
+  sort?: string;
 };
 
 export type ProdutoControllerError = {
@@ -55,6 +58,7 @@ export type CatalogFilters = {
     offset: number;
   };
   whereSql: string;
+  orderBySql: string;
   replacements: Record<string, SqlReplacement>;
 };
 

@@ -10,6 +10,7 @@ import type {
   ProdutoIndexSearchResult,
   ProdutoQuery,
   ProdutoSalesStatus,
+  ProdutoSort,
   SearchCatalogRow,
   SqlReplacement,
 } from "../types/produto.types";
@@ -57,8 +58,25 @@ class ProdutoCatalogService {
     return {
       pagination,
       whereSql: whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "",
+      orderBySql: ProdutoCatalogService.sortToOrderBySql(ProdutoCatalogService.parseSort(query.sort)),
       replacements,
     };
+  }
+
+  static parseSort(sort: string | undefined): ProdutoSort | undefined {
+    return sort === "preco_asc" || sort === "preco_desc" ? sort : undefined;
+  }
+
+  static sortToOrderBySql(sort: ProdutoSort | undefined): string {
+    if (sort === "preco_asc") return "p.preco_base ASC, p.id_produto ASC";
+    if (sort === "preco_desc") return "p.preco_base DESC, p.id_produto ASC";
+    return "p.id_produto ASC";
+  }
+
+  static sortToMeiliSort(sort: ProdutoSort | undefined): string[] | undefined {
+    if (sort === "preco_asc") return ["preco_base:asc", "id_produto:asc"];
+    if (sort === "preco_desc") return ["preco_base:desc", "id_produto:asc"];
+    return undefined;
   }
 
   static applyCategoryFilter(
@@ -245,7 +263,9 @@ class ProdutoCatalogService {
         idCategoria: query.id_categoria,
         ativo: query.ativo,
         onlyWithSales: options.onlyWithSales,
-        sort: options.preferSales ? ["quantidade_vendida:desc", "id_produto:asc"] : undefined,
+        sort: options.preferSales
+          ? ["quantidade_vendida:desc", "id_produto:asc"]
+          : ProdutoCatalogService.sortToMeiliSort(ProdutoCatalogService.parseSort(query.sort)),
       },
       options.preferSales,
     );
@@ -310,7 +330,7 @@ class ProdutoCatalogService {
 
   static async queryCatalogRows(filters: CatalogFilters) {
     return sequelize.query(
-      ProdutoCatalogService.buildCatalogSql(filters.whereSql),
+      ProdutoCatalogService.buildCatalogSql(filters.whereSql, filters.orderBySql),
       {
         replacements: ProdutoCatalogService.withPagination(filters),
         type: QueryTypes.SELECT,
@@ -369,12 +389,12 @@ class ProdutoCatalogService {
     }
   }
 
-  static buildCatalogSql(whereSql: string) {
+  static buildCatalogSql(whereSql: string, orderBySql: string) {
     return `
       SELECT p.id_produto, p.nome, p.preco_base, p.ativo, p.id_categoria, c.nome AS categoria_nome,
       IFNULL(CONCAT('[',(SELECT GROUP_CONCAT(JSON_QUOTE(pf.caminho_url) ORDER BY pf.id_produto_foto ASC SEPARATOR ',') FROM produto_fotos pf WHERE pf.id_produto = p.id_produto),']'),'[]') AS imagens_json
       FROM produtos p LEFT JOIN categorias c ON c.id_categoria = p.id_categoria ${whereSql}
-      ORDER BY p.id_produto ASC LIMIT :limit OFFSET :offset
+      ORDER BY ${orderBySql} LIMIT :limit OFFSET :offset
     `;
   }
 
