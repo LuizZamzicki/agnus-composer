@@ -17,7 +17,7 @@ import UsuarioEnderecosController from './controllers/usuarioEnderecos.controlle
 import UsersController from './controllers/usuarios.controller';
 import authenticateToken, { authorizeSelfOrAdmin } from './middlewares/auth.middleware';
 import { errorHandler } from './middlewares/error.middleware';
-import { authorizeOrderOwnerOrAdmin, authorizeOwnOrderBody } from './middlewares/pedidoAuthorization.middleware';
+import { restrictOrderListToOwner, authorizeOrderOwnerOrAdmin, authorizeOwnOrderBody } from './middlewares/pedidoAuthorization.middleware';
 import { checarPermissao } from './middlewares/permission.middleware';
 import { PERMISSIONS } from './config/permissions';
 import { uploadAny } from './middlewares/upload.middleware';
@@ -106,7 +106,7 @@ router.get('/cart-items/:id_cart', CarrinhoItensController.getByIdCart);
 router.put('/cart-items/:id', CarrinhoItensController.update);
 router.delete('/cart-items/:id', CarrinhoItensController.remove);
 
-router.get('/orders', authenticateToken, checarPermissao(PERMISSIONS.PEDIDO_LISTAR), PedidosController.findAll);
+router.get('/orders', authenticateToken, restrictOrderListToOwner(), PedidosController.findAll);
 router.post('/orders', authenticateToken, authorizeOwnOrderBody('id_usuario'), PedidosController.create);
 router.get('/orders/:id', authenticateToken, authorizeOrderOwnerOrAdmin('id'), PedidosController.getById);
 router.put('/orders/:id', authenticateToken, checarPermissao(PERMISSIONS.PEDIDO_ATUALIZAR), PedidosController.update);

@@ -6,6 +6,17 @@ import { assetUrl } from "../../utils/api";
 import { fetchJsonPaginado } from "../../utils/pagination";
 import { apiFetch, getAuthHeaders } from "./admin-api";
 
+const TIPOS_IMAGEM_PERMITIDOS = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+];
+
+const ACCEPT_IMAGEM = ".jpg,.jpeg,.png,.webp,.gif,.bmp,image/jpeg,image/png,image/webp,image/gif,image/bmp";
+
 function normalizarCategoria(item, index = 0) {
   return {
     id: item?.id ?? item?.id_categoria ?? item?.categoria_id ?? `categoria-${index}`,
@@ -203,12 +214,26 @@ function AdminProdutoCadastro() {
 
   function handleCorFotosChange(corId, e) {
     if (e.target.files) {
-      const novasFotos = Array.from(e.target.files);
-      setCores((prev) =>
-        prev.map((cor) =>
-          cor.id === corId ? { ...cor, fotos: [...(cor.fotos || []), ...novasFotos] } : cor
-        )
+      const arquivos = Array.from(e.target.files);
+      const novasFotos = arquivos.filter((arquivo) =>
+        TIPOS_IMAGEM_PERMITIDOS.includes(arquivo.type)
       );
+
+      if (novasFotos.length < arquivos.length) {
+        notify.warning(
+          "Apenas arquivos de imagem (JPEG, PNG, GIF, WEBP, BMP) sao permitidos."
+        );
+      }
+
+      if (novasFotos.length > 0) {
+        setCores((prev) =>
+          prev.map((cor) =>
+            cor.id === corId ? { ...cor, fotos: [...(cor.fotos || []), ...novasFotos] } : cor
+          )
+        );
+      }
+
+      e.target.value = "";
     }
   }
 
@@ -923,7 +948,7 @@ function AdminProdutoCadastro() {
                     multiple
                     className="admin-form-color-file-input"
                     onChange={(e) => handleCorFotosChange(cor.id, e)}
-                    accept="image/*"
+                    accept={ACCEPT_IMAGEM}
                   />
                 </div>
               </div>

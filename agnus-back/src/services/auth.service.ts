@@ -35,6 +35,58 @@ class AuthService {
     return process.env.GOOGLE_OAUTH_SCOPES!;
   }
 
+  private static getTrustedFrontendOrigins() {
+    return (process.env.TRUSTED_FRONTEND_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
+  private static readonly PRIVATE_IPV4_PATTERNS = [
+    /^127\./,
+    /^10\./,
+    /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+  ];
+
+  /**
+   * IP/localhost privado e sempre confiavel (LAN de dev, sem exposicao publica).
+   * Fora disso, so aceitamos origens explicitamente listadas em
+   * TRUSTED_FRONTEND_ORIGINS, pra nao virar open redirect com token na URL.
+   */
+  private static isPrivateOrLocalHost(hostname: string) {
+    return (
+      hostname === "localhost" ||
+      hostname === "::1" ||
+      AuthService.PRIVATE_IPV4_PATTERNS.some((pattern) => pattern.test(hostname))
+    );
+  }
+
+  /** Valida e normaliza uma origem candidata (Referer/Origin) pro redirect final do OAuth. */
+  static resolveTrustedOrigin(rawOrigin: string | undefined): string | undefined {
+    if (!rawOrigin) {
+      return undefined;
+    }
+
+    let parsed: URL;
+
+    try {
+      parsed = new URL(rawOrigin);
+    } catch {
+      return undefined;
+    }
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+
+    const isTrusted =
+      AuthService.isPrivateOrLocalHost(parsed.hostname) ||
+      AuthService.getTrustedFrontendOrigins().includes(parsed.origin);
+
+    return isTrusted ? parsed.origin : undefined;
+  }
+
   private static ensureGoogleOAuthConfig() {
     if (!AuthService.getGoogleClientId() || !AuthService.getGoogleClientSecret()) {
       throw new Error("Google OAuth nao configurado. Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.");
@@ -109,12 +161,13 @@ class AuthService {
     return AuthService.buildAuthResponse(user);
   }
 
-  private static buildGoogleState(redirect?: string) {
+  private static buildGoogleState(redirect?: string, origin?: string) {
     return jwt.sign(
       {
         nonce: crypto.randomBytes(16).toString("hex"),
         provider: "google",
         ...(redirect ? { redirect } : {}),
+        ...(origin ? { origin } : {}),
       },
       AuthService.getOAuthStateSecret(),
       { expiresIn: "10m" },
@@ -124,8 +177,11 @@ class AuthService {
   /**
    * @param redirect URL de retorno do app (mobile). Vai embutida no `state` e o
    *   callback redireciona pra ela com `?token=`. Sem isso, fluxo web normal.
+   * @param origin Origem (protocolo+host) de quem iniciou o login web, ja validada
+   *   por resolveTrustedOrigin. Usada como fallback do redirect final quando nao
+   *   ha `redirect` de app, pra nao depender de um FRONTEND_URL fixo no .env.
    */
-  static buildGoogleAuthorizationUrl(redirect?: string) {
+  static buildGoogleAuthorizationUrl(redirect?: string, origin?: string) {
     AuthService.ensureGoogleOAuthConfig();
     const params = new URLSearchParams({
       client_id: AuthService.getGoogleClientId(),
@@ -134,7 +190,7 @@ class AuthService {
       scope: AuthService.getGoogleScopes(),
       access_type: "offline",
       prompt: "consent",
-      state: AuthService.buildGoogleState(redirect),
+      state: AuthService.buildGoogleState(redirect, origin),
     });
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -154,6 +210,16 @@ class AuthService {
     try {
       const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
       return typeof decoded.redirect === "string" ? decoded.redirect : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Origem web embutida no `state`, se o token for válido. Não lança. */
+  static peekGoogleStateOrigin(state: string): string | undefined {
+    try {
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      return typeof decoded.origin === "string" ? decoded.origin : undefined;
     } catch {
       return undefined;
     }

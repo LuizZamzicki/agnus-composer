@@ -13,6 +13,8 @@ jest.mock("../../src/services/auth.service", () => ({
     buildGoogleAuthorizationUrl: jest.fn(),
     authenticateWithGoogle: jest.fn(),
     peekGoogleStateRedirect: jest.fn(),
+    peekGoogleStateOrigin: jest.fn(),
+    resolveTrustedOrigin: jest.fn(),
   },
 }));
 jest.mock("../../src/models/Usuarios", () => ({
@@ -26,6 +28,8 @@ type AuthServiceMock = {
   buildGoogleAuthorizationUrl: jest.Mock;
   authenticateWithGoogle: jest.Mock;
   peekGoogleStateRedirect: jest.Mock;
+  peekGoogleStateOrigin: jest.Mock;
+  resolveTrustedOrigin: jest.Mock;
 };
 type UsuariosModelMock = { findByPk: jest.Mock };
 
@@ -161,6 +165,7 @@ describe("AuthController", () => {
     );
     expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(
       "exp://192.168.0.5:8081/--/auth",
+      undefined,
     );
   });
 
@@ -171,7 +176,45 @@ describe("AuthController", () => {
       mockRequest({ query: { redirect: "https://evil.example/steal" } }),
       response,
     );
-    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined);
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it("googleStart repassa a origem do Referer, ja validada", async () => {
+    const response = mockResponse();
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+    authService.resolveTrustedOrigin.mockReturnValueOnce("https://192.168.101.13");
+
+    await AuthController.googleStart(
+      mockRequest({ headers: { referer: "https://192.168.101.13/login" } }),
+      response,
+    );
+
+    expect(authService.resolveTrustedOrigin).toHaveBeenCalledWith("https://192.168.101.13");
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined, "https://192.168.101.13");
+  });
+
+  it("googleStart usa o Origin quando nao ha Referer", async () => {
+    const response = mockResponse();
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+
+    await AuthController.googleStart(
+      mockRequest({ headers: { origin: "https://192.168.101.13" } }),
+      response,
+    );
+
+    expect(authService.resolveTrustedOrigin).toHaveBeenCalledWith("https://192.168.101.13");
+  });
+
+  it("googleStart nao repassa origem quando o Referer nao e uma URL valida", async () => {
+    const response = mockResponse();
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+
+    await AuthController.googleStart(
+      mockRequest({ headers: { referer: "nao-e-uma-url" } }),
+      response,
+    );
+
+    expect(authService.resolveTrustedOrigin).toHaveBeenCalledWith(undefined);
   });
 
   it("googleStart retorna 500 quando falha", async () => {
@@ -265,5 +308,44 @@ describe("AuthController", () => {
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith("agnusapp://auth?error=invalid");
+  });
+
+  it("googleCallback usa a origem do state no sucesso quando nao ha redirect de app", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogle.mockResolvedValueOnce({ token: "jwt", user: buildPublicUser() });
+    authService.peekGoogleStateOrigin.mockReturnValueOnce("https://192.168.101.13");
+
+    await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
+
+    expect(response.redirect).toHaveBeenCalledWith(
+      "https://192.168.101.13/login?token=jwt&tipo=cliente&success=1",
+    );
+  });
+
+  it("googleCallback usa a origem do state no erro do provider", async () => {
+    const response = mockResponse();
+
+    authService.peekGoogleStateOrigin.mockReturnValueOnce("https://192.168.101.13");
+
+    await AuthController.googleCallback(
+      mockRequest({ query: { error: "access_denied", state: "s" } }),
+      response,
+    );
+
+    expect(response.redirect).toHaveBeenCalledWith(
+      "https://192.168.101.13/login?error=Google%20OAuth%20retornou%20erro%3A%20access_denied",
+    );
+  });
+
+  it("googleCallback usa a origem do state quando o service falha", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogle.mockRejectedValueOnce(new Error("invalid"));
+    authService.peekGoogleStateOrigin.mockReturnValueOnce("https://192.168.101.13");
+
+    await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
+
+    expect(response.redirect).toHaveBeenCalledWith("https://192.168.101.13/login?error=invalid");
   });
 });

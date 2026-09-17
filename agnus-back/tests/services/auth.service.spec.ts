@@ -151,6 +151,74 @@ describe("AuthService", () => {
     expect(AuthService.peekGoogleStateRedirect("state")).toBeUndefined();
   });
 
+  it("buildGoogleAuthorizationUrl embute a origem no state", () => {
+    jwtMock.sign.mockReturnValueOnce("state-token");
+    AuthService.buildGoogleAuthorizationUrl(undefined, "https://192.168.101.13");
+    expect(jwtMock.sign).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "google", origin: "https://192.168.101.13" }),
+      "state-secret",
+      { expiresIn: "10m" },
+    );
+  });
+
+  it("peekGoogleStateOrigin devolve a origem de um state valido", () => {
+    jwtMock.verify.mockReturnValueOnce({ provider: "google", origin: "https://192.168.101.13" } as never);
+    expect(AuthService.peekGoogleStateOrigin("state")).toBe("https://192.168.101.13");
+  });
+
+  it("peekGoogleStateOrigin devolve undefined para state invalido", () => {
+    jwtMock.verify.mockImplementationOnce(() => { throw new Error("bad"); });
+    expect(AuthService.peekGoogleStateOrigin("state")).toBeUndefined();
+  });
+
+  describe("resolveTrustedOrigin", () => {
+    it("devolve undefined quando nao ha origem", () => {
+      expect(AuthService.resolveTrustedOrigin(undefined)).toBeUndefined();
+    });
+
+    it("devolve undefined para uma URL invalida", () => {
+      expect(AuthService.resolveTrustedOrigin("nao-e-uma-url")).toBeUndefined();
+    });
+
+    it("rejeita esquemas diferentes de http/https", () => {
+      expect(AuthService.resolveTrustedOrigin("ftp://192.168.0.1")).toBeUndefined();
+    });
+
+    it("confia em localhost", () => {
+      expect(AuthService.resolveTrustedOrigin("http://localhost:3001/login")).toBe("http://localhost:3001");
+    });
+
+    it.each([
+      "http://127.0.0.1:3000",
+      "http://10.0.0.5",
+      "https://192.168.101.13",
+      "http://172.16.0.4",
+      "http://172.31.255.254",
+    ])("confia em IP de rede privada: %s", (origin) => {
+      expect(AuthService.resolveTrustedOrigin(origin)).toBe(new URL(origin).origin);
+    });
+
+    it("nao confia em um IP publico fora da allowlist", () => {
+      expect(AuthService.resolveTrustedOrigin("http://8.8.8.8")).toBeUndefined();
+    });
+
+    it("nao confia em 172.32.x.x (fora da faixa privada 172.16-31.x.x)", () => {
+      expect(AuthService.resolveTrustedOrigin("http://172.32.0.1")).toBeUndefined();
+    });
+
+    it("confia em uma origem publica explicitamente configurada via TRUSTED_FRONTEND_ORIGINS", () => {
+      process.env.TRUSTED_FRONTEND_ORIGINS = "https://agnus.com.br, https://outro.dominio.com";
+      expect(AuthService.resolveTrustedOrigin("https://agnus.com.br")).toBe("https://agnus.com.br");
+      delete process.env.TRUSTED_FRONTEND_ORIGINS;
+    });
+
+    it("nao confia em uma origem publica fora da allowlist configurada", () => {
+      process.env.TRUSTED_FRONTEND_ORIGINS = "https://agnus.com.br";
+      expect(AuthService.resolveTrustedOrigin("https://evil.example")).toBeUndefined();
+      delete process.env.TRUSTED_FRONTEND_ORIGINS;
+    });
+  });
+
   it("authenticateWithGoogle falha com estado invalido", async () => {
     jwtMock.verify.mockImplementationOnce(() => { throw new Error("state invalid"); });
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Estado OAuth");
