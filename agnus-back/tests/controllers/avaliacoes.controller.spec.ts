@@ -257,7 +257,7 @@ describe("AvaliacaoFotosController", () => {
     const res = mockResponse();
     await AvaliacaoFotosController.create(mockRequest({ body: { id_avaliacao_produto: 1, fotos_upload: [] } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "fotos_upload deve conter pelo menos uma foto." });
+    expect(res.json).toHaveBeenCalledWith({ message: "fotos_upload (ou arquivos enviados) deve conter pelo menos uma foto." });
   });
 
   it("create retorna 404 quando a avaliacao de produto nao existe", async () => {
@@ -294,6 +294,32 @@ describe("AvaliacaoFotosController", () => {
     );
     expect(res.status).toHaveBeenCalledWith(201);
     expect(avaliacaoFotosModel.create).toHaveBeenCalledTimes(2);
+  });
+
+  it("create retorna 201 usando arquivos enviados via multer (req.files)", async () => {
+    const res = mockResponse();
+    const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/a.png" });
+    avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
+    avaliacaoFotosModel.create.mockResolvedValueOnce(foto);
+    const file = { buffer: Buffer.from("fake-bytes"), mimetype: "image/png", originalname: "a.png", size: 10 } as Express.Multer.File;
+    await AvaliacaoFotosController.create(
+      { ...mockRequest({ body: { id_avaliacao_produto: 1 } }), files: [file] } as unknown as Parameters<typeof AvaliacaoFotosController.create>[0],
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(avaliacaoFotosModel.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("create retorna 400 quando o arquivo do multer nao e uma imagem valida", async () => {
+    const res = mockResponse();
+    avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
+    const file = { buffer: Buffer.from("fake-bytes"), mimetype: "application/pdf", originalname: "a.pdf", size: 10 } as Express.Multer.File;
+    await AvaliacaoFotosController.create(
+      { ...mockRequest({ body: { id_avaliacao_produto: 1 } }), files: [file] } as unknown as Parameters<typeof AvaliacaoFotosController.create>[0],
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "fotos_upload contem arquivo invalido." });
   });
 
   it("update retorna 400 para id invalido", async () => {
@@ -340,6 +366,19 @@ describe("AvaliacaoFotosController", () => {
     );
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "caminho_url invalido." });
+  });
+
+  it("update retorna 200 com a foto atualizada via arquivo enviado por multer", async () => {
+    const res = mockResponse();
+    const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "a.jpg" });
+    avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
+    const file = { buffer: Buffer.from("fake-bytes"), mimetype: "image/png", originalname: "b.png", size: 10 } as Express.Multer.File;
+    await AvaliacaoFotosController.update(
+      { ...mockRequest({ params: { id: "1" }, body: {} }), files: [file] } as unknown as Parameters<typeof AvaliacaoFotosController.update>[0],
+      res,
+    );
+    expect(foto.update).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it("update retorna 200 com a foto atualizada", async () => {
