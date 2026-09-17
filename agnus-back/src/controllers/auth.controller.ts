@@ -36,18 +36,42 @@ class AuthController {
       : undefined;
   }
 
-  private static redirectBase(appRedirect?: string) {
-    const base = appRedirect ?? `${AuthController.getFrontendUrl()}/login`;
+  /**
+   * Origem (protocolo+host) de quem chamou /auth/google, extraida do Referer
+   * (navegacao normal de pagina) ou do Origin (chamadas cross-origin). So
+   * usada depois de validada por AuthService.resolveTrustedOrigin.
+   */
+  private static getRequestOrigin(req: Request): string | undefined {
+    const candidate = req.headers.referer ?? req.headers.origin;
+
+    if (typeof candidate !== "string" || !candidate) {
+      return undefined;
+    }
+
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static redirectBase(appRedirect?: string, origin?: string) {
+    const base = appRedirect ?? (origin ? `${origin}/login` : `${AuthController.getFrontendUrl()}/login`);
     return `${base}${base.includes("?") ? "&" : "?"}`;
   }
 
-  private static buildLoginSuccessRedirect(token: string, tipo: string, appRedirect?: string) {
+  private static buildLoginSuccessRedirect(
+    token: string,
+    tipo: string,
+    appRedirect?: string,
+    origin?: string,
+  ) {
     const params = new URLSearchParams({ token, tipo, success: "1" });
-    return `${AuthController.redirectBase(appRedirect)}${params.toString()}`;
+    return `${AuthController.redirectBase(appRedirect, origin)}${params.toString()}`;
   }
 
-  private static buildLoginErrorRedirect(message: string, appRedirect?: string) {
-    return `${AuthController.redirectBase(appRedirect)}error=${encodeURIComponent(message)}`;
+  private static buildLoginErrorRedirect(message: string, appRedirect?: string, origin?: string) {
+    return `${AuthController.redirectBase(appRedirect, origin)}error=${encodeURIComponent(message)}`;
   }
 
   private static formatElapsedTime(date: Date) {
@@ -100,13 +124,15 @@ class AuthController {
       return null;
     }
 
+    const state = String(query.state ?? "");
     const appRedirect = AuthController.sanitizeAppRedirect(
-      AuthService.peekGoogleStateRedirect(String(query.state ?? "")),
+      AuthService.peekGoogleStateRedirect(state),
     );
 
     return AuthController.buildLoginErrorRedirect(
       `Google OAuth retornou erro: ${String(query.error)}`,
       appRedirect,
+      AuthService.peekGoogleStateOrigin(state),
     );
   }
 
@@ -146,6 +172,7 @@ class AuthController {
       authResult.token,
       authResult.user.tipo,
       AuthController.sanitizeAppRedirect(authResult.redirect),
+      AuthService.peekGoogleStateOrigin(state),
     );
   }
 
@@ -190,7 +217,8 @@ class AuthController {
   static async googleStart(req: Request, res: Response) {
     try {
       const appRedirect = AuthController.sanitizeAppRedirect(req.query.redirect);
-      return res.redirect(AuthService.buildGoogleAuthorizationUrl(appRedirect));
+      const origin = AuthService.resolveTrustedOrigin(AuthController.getRequestOrigin(req));
+      return res.redirect(AuthService.buildGoogleAuthorizationUrl(appRedirect, origin));
     } catch (error) {
       return res.status(500).json({
         message: AuthController.getErrorMessage(
@@ -225,6 +253,7 @@ class AuthController {
             "Falha no callback do Google OAuth.",
           ),
           AuthController.sanitizeAppRedirect(AuthService.peekGoogleStateRedirect(params.state)),
+          AuthService.peekGoogleStateOrigin(params.state),
         ),
       );
     }

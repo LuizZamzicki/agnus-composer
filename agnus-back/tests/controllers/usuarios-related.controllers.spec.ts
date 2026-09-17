@@ -1,10 +1,12 @@
 import argon2 from "argon2";
+import { Op } from "sequelize";
 import UsuarioContatosController from "../../src/controllers/usuarioContatos.controller";
 import UsuarioEnderecosController from "../../src/controllers/usuarioEnderecos.controller";
 import UsuarioSenhasHistoricoController from "../../src/controllers/usuarioSenhasHistorico.controller";
 import UsuariosController from "../../src/controllers/usuarios.controller";
 import UsuarioContatos from "../../src/models/UsuarioContatos";
 import UsuarioEnderecos from "../../src/models/UsuarioEnderecos";
+import Pedidos from "../../src/models/Pedidos";
 import UsuarioSenhasHistorico from "../../src/models/UsuarioSenhasHistorico";
 import Usuarios from "../../src/models/Usuarios";
 import { evaluatePasswordStrength } from "../../src/utils/passwordStrength";
@@ -25,7 +27,11 @@ jest.mock("../../src/models/UsuarioContatos", () => ({
 }));
 jest.mock("../../src/models/UsuarioEnderecos", () => ({
   __esModule: true,
-  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
+  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn(), update: jest.fn() },
+}));
+jest.mock("../../src/models/Pedidos", () => ({
+  __esModule: true,
+  default: { count: jest.fn() },
 }));
 jest.mock("../../src/models/UsuarioSenhasHistorico", () => ({
   __esModule: true,
@@ -38,13 +44,15 @@ jest.mock("../../src/models/Usuarios", () => ({
 
 type UsuariosModelMock = { findAndCountAll: jest.Mock; findByPk: jest.Mock; findOne: jest.Mock; create: jest.Mock };
 type UsuarioContatosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock };
-type UsuarioEnderecosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock };
+type UsuarioEnderecosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock; update: jest.Mock };
+type PedidosModelMock = { count: jest.Mock };
 type UsuarioSenhasHistoricoModelMock = { findAll: jest.Mock; create: jest.Mock };
 type Argon2Mock = { hash: jest.Mock; verify: jest.Mock };
 
 const usuariosModel = Usuarios as typeof Usuarios & UsuariosModelMock;
 const contatosModel = UsuarioContatos as typeof UsuarioContatos & UsuarioContatosModelMock;
 const enderecosModel = UsuarioEnderecos as typeof UsuarioEnderecos & UsuarioEnderecosModelMock;
+const pedidosModel = Pedidos as typeof Pedidos & PedidosModelMock;
 const historicoModel = UsuarioSenhasHistorico as typeof UsuarioSenhasHistorico & UsuarioSenhasHistoricoModelMock;
 const argon2Mock = argon2 as typeof argon2 & Argon2Mock;
 
@@ -426,6 +434,18 @@ describe("UsuarioEnderecosController", () => {
     expect(response.send).toHaveBeenCalledWith(endereco);
   });
 
+  it("create desmarca os demais enderecos principais do usuario quando principal e true", async () => {
+    const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 2, id_usuario: 1, cep: "1", logradouro: "Rua" });
+    usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
+    enderecosModel.create.mockResolvedValueOnce(endereco);
+    await UsuarioEnderecosController.create(mockRequest({ body: { id_usuario: 1, cep: "1", logradouro: "Rua", principal: true } }), response);
+    expect(enderecosModel.update).toHaveBeenCalledWith(
+      { principal: false },
+      { where: { id_usuario: 1, principal: true } },
+    );
+    expect(response.status).toHaveBeenCalledWith(201);
+  });
+
   it("update retorna 400 para id invalido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "x" }, body: {} }), response);
@@ -458,11 +478,15 @@ describe("UsuarioEnderecosController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "cep invalido." });
   });
 
-  it("update retorna 200 com o endereco atualizado", async () => {
+  it("update retorna 200 com o endereco atualizado e desmarca os demais como principal", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua", numero: null, complemento: null, bairro: null, cidade: null, estado: null, pais: "Brasil", principal: false, ativo: true });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "1" }, body: { id_usuario: 1, principal: true } }), response);
+    expect(enderecosModel.update).toHaveBeenCalledWith(
+      { principal: false },
+      { where: { id_usuario: 1, principal: true, id_usuario_endereco: { [Op.ne]: 1 } } },
+    );
     expect(endereco.update).toHaveBeenCalledWith({
       id_usuario: 1,
       cep: "1",
@@ -480,6 +504,13 @@ describe("UsuarioEnderecosController", () => {
     expect(response.send).toHaveBeenCalledWith(endereco);
   });
 
+  it("update nao desmarca outros principais quando principal nao muda para true", async () => {
+    const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua", numero: null, complemento: null, bairro: null, cidade: null, estado: null, pais: "Brasil", principal: false, ativo: true });
+    enderecosModel.findByPk.mockResolvedValueOnce(endereco);
+    await UsuarioEnderecosController.update(mockRequest({ params: { id: "1" }, body: { cep: "2" } }), response);
+    expect(enderecosModel.update).not.toHaveBeenCalled();
+  });
+
   it("remove retorna 400 para id invalido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.remove(mockRequest({ params: { id: "x" } }), response);
@@ -495,9 +526,20 @@ describe("UsuarioEnderecosController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Endereco nao encontrado." });
   });
 
+  it("remove retorna 400 quando o endereco esta vinculado a pedidos", async () => {
+    const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1 });
+    enderecosModel.findByPk.mockResolvedValueOnce(endereco);
+    pedidosModel.count.mockResolvedValueOnce(1);
+    await UsuarioEnderecosController.remove(mockRequest({ params: { id: "1" } }), response);
+    expect(endereco.destroy).not.toHaveBeenCalled();
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Endereco vinculado a pedidos nao pode ser removido." });
+  });
+
   it("remove retorna 204 quando exclui o endereco", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1 });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
+    pedidosModel.count.mockResolvedValueOnce(0);
     await UsuarioEnderecosController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(endereco.destroy).toHaveBeenCalled();
     expect(response.status).toHaveBeenCalledWith(204);

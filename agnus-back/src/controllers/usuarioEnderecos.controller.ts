@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
+import Pedidos from "../models/Pedidos";
 import UsuarioEnderecos from "../models/UsuarioEnderecos";
 import Usuarios from "../models/Usuarios";
 import type {
@@ -67,6 +69,19 @@ class UsuarioEnderecosController {
     return userId && !(await Usuarios.findByPk(userId)) ? "Usuario nao encontrado." : null;
   }
 
+  private static async unsetOtherPrincipals(userId: number, exceptAddressId?: number) {
+    await UsuarioEnderecos.update(
+      { principal: false },
+      {
+        where: {
+          id_usuario: userId,
+          principal: true,
+          ...(exceptAddressId ? { id_usuario_endereco: { [Op.ne]: exceptAddressId } } : {}),
+        },
+      },
+    );
+  }
+
   private static buildUpdateData(endereco: UsuarioEnderecos, payload: UsuarioEnderecoPayload): UsuarioEnderecoUpdateData {
     return { 
             id_usuario: payload.userId ?? endereco.id_usuario, 
@@ -104,11 +119,14 @@ class UsuarioEnderecosController {
       return res.status(400).json({ message });
     
     const userMessage = await UsuarioEnderecosController.findUserError(payload.userId);
-    
-    if (userMessage) 
+
+    if (userMessage)
       return res.status(404).json({ message: userMessage });
-    
-    return res.status(201).send(await UsuarioEnderecos.create({ 
+
+    if (payload.principal)
+      await UsuarioEnderecosController.unsetOtherPrincipals(payload.userId!);
+
+    return res.status(201).send(await UsuarioEnderecos.create({
       id_usuario: payload.userId!, 
       cep: payload.cep!, 
       logradouro: payload.logradouro!, 
@@ -141,10 +159,13 @@ class UsuarioEnderecosController {
       return res.status(400).json({ message });
     
     const userMessage = await UsuarioEnderecosController.findUserError(payload.userId);
-    
-    if (userMessage) 
+
+    if (userMessage)
       return res.status(404).json({ message: userMessage });
-    
+
+    if (payload.hasPrincipalField() && payload.principal)
+      await UsuarioEnderecosController.unsetOtherPrincipals(payload.userId ?? endereco.id_usuario, addressId);
+
     await endereco.update(UsuarioEnderecosController.buildUpdateData(endereco, payload));
     return res.status(200).send(endereco);
   }
@@ -157,9 +178,17 @@ class UsuarioEnderecosController {
     
     const endereco = await UsuarioEnderecos.findByPk(addressId);
     
-    if (!endereco) 
+    if (!endereco)
       return res.status(404).json({ message: "Endereco nao encontrado." });
-    
+
+    const emUso = await Pedidos.count({ where: { id_usuario_endereco: addressId } });
+
+    if (emUso) {
+      return res.status(400).json({
+        message: "Endereco vinculado a pedidos nao pode ser removido.",
+      });
+    }
+
     await endereco.destroy();
     return res.status(204).send();
   }

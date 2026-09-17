@@ -35,6 +35,23 @@ export const authorizeOrderOwnerOrAdmin = (paramName = "id") =>
     return next();
   };
 
+export const restrictOrderListToOwner = () =>
+  (req: Request, res: AuthResponse, next: NextFunction) => {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      return res.status(401).json({ message: "Nao autenticado." });
+    }
+
+    if (authUser.tipo === "administrador") {
+      return next();
+    }
+
+    (req.query as Record<string, unknown>).id_usuario = String(authUser.id_usuario);
+
+    return next();
+  };
+
 export const authorizeOwnOrderBody = (bodyField = "id_usuario") =>
   (req: Request, res: AuthResponse, next: NextFunction) => {
     const authUser = res.locals.authUser;

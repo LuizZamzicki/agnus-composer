@@ -4,6 +4,10 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Cypress so e usado pra testes e2e (fora dessa imagem); pular o download do
+# binario (~250MB) evita minutos de build sem nenhum ganho pro build de producao.
+ENV CYPRESS_INSTALL_BINARY=0
+
 RUN npm ci --legacy-peer-deps
 
 COPY . .

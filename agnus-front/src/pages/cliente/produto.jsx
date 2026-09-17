@@ -2,7 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../components/notification";
 import "../../css/cliente/produto.css";
+
+const TIPOS_IMAGEM_PERMITIDOS = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/bmp",
+];
 
 function Produto() {
     const { id_produto } = useParams();
@@ -19,6 +29,7 @@ function Produto() {
     );
 
     const navigate = useNavigate();
+    const notify = useNotification();
 
     const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -136,11 +147,22 @@ function Produto() {
 
     const handleFotosChange = (e) => {
         const files = Array.from(e.target.files || []);
+        const validos = files.filter((file) => TIPOS_IMAGEM_PERMITIDOS.includes(file.type));
 
-        setFotosAvaliacao((prev) => {
-            const novas = [...prev, ...files];
-            return novas.slice(0, 4);
-        });
+        if (validos.length < files.length) {
+            notify.warning(
+                "Apenas arquivos de imagem (JPEG, PNG, GIF, WEBP, BMP) sao permitidos."
+            );
+        }
+
+        if (validos.length > 0) {
+            setFotosAvaliacao((prev) => {
+                const novas = [...prev, ...validos];
+                return novas.slice(0, 4);
+            });
+        }
+
+        e.target.value = "";
     };
 
     useEffect(() => {
