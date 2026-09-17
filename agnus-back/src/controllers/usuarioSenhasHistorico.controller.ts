@@ -24,9 +24,9 @@ class UsuarioSenhasHistoricoController {
     const historyList = await UsuarioSenhasHistoricoController.findHistoryList(id_usuario);
 
     for (const history of historyList) {
-      if (await argon2.verify(history.senha, senha)) 
+      if (await argon2.verify(history.senha, senha))
         return history.data_criacao;
-    } 
+    }
 
     return null;
   }

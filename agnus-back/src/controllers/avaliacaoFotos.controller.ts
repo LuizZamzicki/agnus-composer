@@ -6,9 +6,11 @@ import type {
   AvaliacaoFotoRouteParams,
   AvaliacaoFotoUpload,
 } from "../types/avaliacao-foto.types";
-import { normalizeFotoPath, saveAvaliacaoFotoUpload } from "../utils/avaliacaoFotoStorage";
+import { normalizeFotoPath, saveAvaliacaoFotoFile, saveAvaliacaoFotoUpload } from "../utils/avaliacaoFotoStorage";
 
 type AvaliacaoFotoRequest = Request<AvaliacaoFotoRouteParams, object, AvaliacaoFotoBody>;
+type AvaliacaoFotoFiles = Express.Multer.File[] | Record<string, Express.Multer.File[]>;
+type AvaliacaoFotoRequestWithFiles = AvaliacaoFotoRequest & { files?: AvaliacaoFotoFiles };
 
 class AvaliacaoFotosController {
   private static parsePositiveId(value: number | string | undefined) {
@@ -16,24 +18,34 @@ class AvaliacaoFotosController {
     return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null;
   }
 
+  private static getUploadedFiles(req: AvaliacaoFotoRequestWithFiles) {
+    if (!req.files) {
+      return [];
+    }
+
+    return Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+  }
+
   private static getCreateUploads(body: AvaliacaoFotoBody) {
     return Array.isArray(body.fotos_upload) ? body.fotos_upload : [];
   }
 
-  private static getCreateErrorMessage(reviewId: number | null, uploads: AvaliacaoFotoUpload[]) {
+  private static getCreateErrorMessage(reviewId: number | null, uploads: AvaliacaoFotoUpload[], filesCount: number) {
     if (!reviewId) {
       return "id_avaliacao_produto invalido.";
     }
 
-    if (!uploads.length) {
-      return "fotos_upload deve conter pelo menos uma foto.";
+    if (!uploads.length && !filesCount) {
+      return "fotos_upload (ou arquivos enviados) deve conter pelo menos uma foto.";
     }
 
     return null;
   }
 
-  private static async buildPhotoPaths(uploads: AvaliacaoFotoUpload[]) {
-    const photoPaths = await Promise.all(uploads.map(saveAvaliacaoFotoUpload));
+  private static async buildPhotoPaths(files: Express.Multer.File[], uploads: AvaliacaoFotoUpload[]) {
+    const photoPaths = await Promise.all(
+      files.length ? files.map(saveAvaliacaoFotoFile) : uploads.map(saveAvaliacaoFotoUpload),
+    );
 
     return photoPaths.every((item) => item)
       ? photoPaths as string[]
@@ -51,7 +63,11 @@ class AvaliacaoFotosController {
     );
   }
 
-  private static async resolveUpdatePath(body: AvaliacaoFotoBody) {
+  private static async resolveUpdatePath(body: AvaliacaoFotoBody, file?: Express.Multer.File) {
+    if (file) {
+      return saveAvaliacaoFotoFile(file);
+    }
+
     if (body.foto_upload) {
       return saveAvaliacaoFotoUpload(body.foto_upload);
     }
@@ -67,12 +83,13 @@ class AvaliacaoFotosController {
     body: AvaliacaoFotoBody,
     reviewId: number | null,
     photoPath: string | null | undefined,
+    hasFile: boolean,
   ) {
     if (body.id_avaliacao_produto !== undefined && !reviewId) {
       return "id_avaliacao_produto invalido.";
     }
 
-    if ((body.foto_upload || body.caminho_url !== undefined) && !photoPath) {
+    if ((hasFile || body.foto_upload || body.caminho_url !== undefined) && !photoPath) {
       return "caminho_url invalido.";
     }
 
@@ -106,10 +123,11 @@ class AvaliacaoFotosController {
     return res.status(200).send(fotos);
   }
 
-  static async create(req: AvaliacaoFotoRequest, res: Response) {
+  static async create(req: AvaliacaoFotoRequestWithFiles, res: Response) {
     const reviewId = AvaliacaoFotosController.parsePositiveId(req.body.id_avaliacao_produto);
     const uploads = AvaliacaoFotosController.getCreateUploads(req.body);
-    const message = AvaliacaoFotosController.getCreateErrorMessage(reviewId, uploads);
+    const files = AvaliacaoFotosController.getUploadedFiles(req);
+    const message = AvaliacaoFotosController.getCreateErrorMessage(reviewId, uploads, files.length);
 
     if (message) {
       return res.status(400).json({ message });
@@ -121,7 +139,7 @@ class AvaliacaoFotosController {
       return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
     }
 
-    const photoPaths = await AvaliacaoFotosController.buildPhotoPaths(uploads);
+    const photoPaths = await AvaliacaoFotosController.buildPhotoPaths(files, uploads);
 
     if (!photoPaths) {
       return res.status(400).json({ message: "fotos_upload contem arquivo invalido." });
@@ -132,20 +150,22 @@ class AvaliacaoFotosController {
       .send(await AvaliacaoFotosController.createPhotos(reviewId!, photoPaths));
   }
 
-  static async update(req: AvaliacaoFotoRequest, res: Response) {
+  static async update(req: AvaliacaoFotoRequestWithFiles, res: Response) {
     const photoId = AvaliacaoFotosController.parsePositiveId(req.params.id);
     const reviewId = AvaliacaoFotosController.parsePositiveId(req.body.id_avaliacao_produto);
+    const uploadedFile = AvaliacaoFotosController.getUploadedFiles(req)[0];
 
     if (!photoId) {
       return res.status(400).json({ message: "ID da foto invalido." });
     }
 
     const foto = await AvaliacaoFotos.findByPk(photoId);
-    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(req.body);
+    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(req.body, uploadedFile);
     const message = AvaliacaoFotosController.getUpdateErrorMessage(
       req.body,
       reviewId,
       photoPath,
+      Boolean(uploadedFile),
     );
 
     if (!foto) {

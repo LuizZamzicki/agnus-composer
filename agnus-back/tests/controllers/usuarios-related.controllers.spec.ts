@@ -94,10 +94,16 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para tipo invalido", async () => {
-    const response = mockResponse();
-    await UsuariosController.create(mockRequest({ body: { nome: "A", cpf: "529.982.247-25", email: "a@a.com", senha: "123", tipo: "x" } }), response);
-    expect(response.status).toHaveBeenCalledWith(400);
+  it("create ignora o tipo informado e sempre cria como cliente", async () => {
+    const response = mockResponse(), created = buildModelInstance({ id_usuario: 3, nome: "A", email: "a@a.com", senha: "hash", tipo: "cliente" });
+    usuariosModel.findOne.mockResolvedValueOnce(null);
+    argon2Mock.hash.mockResolvedValueOnce("hashed");
+    usuariosModel.create.mockResolvedValueOnce(created);
+    const historicoSpy = jest.spyOn(UsuarioSenhasHistoricoController, "create").mockResolvedValueOnce(true);
+    await UsuariosController.create(mockRequest({ body: { nome: "A", cpf: "529.982.247-25", email: "a@a.com", senha: "Senha123!", tipo: "administrador" } }), response);
+    expect(usuariosModel.create).toHaveBeenCalledWith(expect.objectContaining({ tipo: "cliente" }));
+    expect(response.status).toHaveBeenCalledWith(201);
+    historicoSpy.mockRestore();
   });
 
   it("create retorna 400 para cpf invalido", async () => {
@@ -204,11 +210,30 @@ describe("UsuariosController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "email nao pode ser alterado." });
   });
 
-  it("update retorna 400 para tipo invalido", async () => {
+  it("update retorna 403 quando um usuario nao administrador tenta alterar o tipo", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
+    usuariosModel.findByPk.mockResolvedValueOnce(user);
+    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { tipo: "administrador" } }), response);
+    expect(response.status).toHaveBeenCalledWith(403);
+    expect(response.json).toHaveBeenCalledWith({ message: "Apenas administradores podem alterar o tipo de usuario." });
+    expect(user.update).not.toHaveBeenCalled();
+  });
+
+  it("update retorna 400 para tipo invalido quando um administrador faz a chamada", async () => {
+    const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
+    response.locals.authUser = { id_usuario: 1, email: "admin@a.com", tipo: "administrador" };
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { tipo: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
+  });
+
+  it("update permite que um administrador altere o tipo de outro usuario", async () => {
+    const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
+    response.locals.authUser = { id_usuario: 1, email: "admin@a.com", tipo: "administrador" };
+    usuariosModel.findByPk.mockResolvedValueOnce(user);
+    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { tipo: "administrador" } }), response);
+    expect(user.update).toHaveBeenCalledWith(expect.objectContaining({ tipo: "administrador" }));
+    expect(response.status).toHaveBeenCalledWith(200);
   });
 
   it("update retorna 400 para senha fraca", async () => {
@@ -223,7 +248,7 @@ describe("UsuariosController", () => {
     const historicoSpy = jest.spyOn(UsuarioSenhasHistoricoController, "create").mockResolvedValueOnce(true);
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     argon2Mock.hash.mockResolvedValueOnce("hash3");
-    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { cpf: "529.982.247-25", senha: "NovaSenha123!", tipo: "administrador" } }), response);
+    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { cpf: "529.982.247-25", senha: "NovaSenha123!" } }), response);
     expect(user.update).toHaveBeenCalled();
     expect(historicoSpy).toHaveBeenCalled();
     expect(response.status).toHaveBeenCalledWith(200);

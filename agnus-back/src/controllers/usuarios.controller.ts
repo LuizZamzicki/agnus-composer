@@ -9,6 +9,7 @@ import type {
   UsuarioRouteParams,
   UsuarioUpdateData,
 } from "../types/user.types";
+import type { AuthenticatedResponseLocals } from "../middlewares/auth.middleware";
 
 import { buildPaginationMeta, parsePagination } from "../utils/pagination";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
@@ -16,6 +17,7 @@ import { isValidCpf, isValidEmail } from "../utils/userValidation";
 import UsuarioSenhasHistoricoController from "./usuarioSenhasHistorico.controller";
 
 type UsuarioRequest = Request<UsuarioRouteParams, object, UsuarioBody>;
+type UsuarioUpdateRequestResponse = Response<object, AuthenticatedResponseLocals>;
 type UsuarioPasswordRequest = Request<UsuarioRouteParams, object, UsuarioPasswordBody>;
 type PasswordValidationError = { message: string; passwordStrength: ReturnType<typeof evaluatePasswordStrength> };
 
@@ -51,14 +53,14 @@ class UsuarioPasswordPayload {
   }
 
   get senhaAtual() {
-    return this.parseText(this.body.senhaAtual);
+    return this.parseText(this.body.senhaAtual ?? this.body.senha_atual);
   }
 
   get confirmacaoSenhaAtual() {
-    return this.parseText(this.body.confirmacaoSenhaAtual);
+    return this.parseText(this.body.confirmacaoSenhaAtual ?? this.body.confirmacao_senha_atual);
   }
 
-  get novaSenha() { return this.parseText(this.body.novaSenha); }
+  get novaSenha() { return this.parseText(this.body.novaSenha ?? this.body.nova_senha); }
 }
 
 class UsuariosController {
@@ -133,9 +135,6 @@ class UsuariosController {
 
     if (UsuariosController.getEmailMessage(payload.email))
       return UsuariosController.getEmailMessage(payload.email);
-
-    if (!payload.hasValidTipo())
-      return "Tipo deve ser cliente ou administrador.";
 
     return null;
   }
@@ -271,7 +270,7 @@ class UsuariosController {
       cpf: payload.cpf,
       email: payload.email!,
       senha: passwordHash,
-      tipo: payload.tipo
+      tipo: "cliente"
     });
     await UsuarioSenhasHistoricoController.create(user.id_usuario, passwordHash);
 
@@ -294,7 +293,7 @@ class UsuariosController {
     return res.status(204).send();
   }
 
-  static async update(req: UsuarioRequest, res: Response) {
+  static async update(req: UsuarioRequest, res: UsuarioUpdateRequestResponse) {
     const userId = UsuariosController.parsePositiveId(req.params.id);
     const payload = new UsuarioPayload(req.body);
 
@@ -305,6 +304,9 @@ class UsuariosController {
 
     if (!user)
       return res.status(404).json({ message: "Usuario nao encontrado." });
+
+    if (payload.hasTipoField() && res.locals.authUser?.tipo !== "administrador")
+      return res.status(403).json({ message: "Apenas administradores podem alterar o tipo de usuario." });
 
     const message = UsuariosController.getUpdateErrorMessage(payload, user.email);
     const passwordError = payload.senha ? UsuariosController.getPasswordError(payload.senha) : null;
