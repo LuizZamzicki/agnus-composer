@@ -15,7 +15,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
-    "react-router-dom": "^7.13.1",
+    "react-router-dom": "^6.30.6",
     "react-scripts": "5.0.1",
     "swiper": "^12.1.2",
     "web-vitals": "^2.1.4"
@@ -32,6 +32,17 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(swiper)/)"
+    ],
+    "moduleNameMapper": {
+      "^swiper/react$": "<rootDir>/node_modules/swiper/swiper-react.mjs",
+      "^swiper/modules$": "<rootDir>/node_modules/swiper/modules/index.mjs",
+      "^swiper$": "<rootDir>/node_modules/swiper/swiper.mjs",
+      "^swiper/css.*$": "identity-obj-proxy"
+    }
   },
   "browserslist": {
     "production": [

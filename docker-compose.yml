@@ -54,6 +54,24 @@ services:
       timeout: 5s
       retries: 10
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: agnus-ngrok
+    restart: unless-stopped
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "--url=${NGROK_DOMAIN}"
+      - "backend:3000"
+    ports:
+      - "4040:4040"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app
+
   frontend:
     build:
       context: ./agnus-front
