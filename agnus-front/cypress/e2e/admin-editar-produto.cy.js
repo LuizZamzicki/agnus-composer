@@ -1,23 +1,83 @@
 describe("Admin Produtos", () => {
 
-    const token = "fake-admin-token";
+    const produto = {
+        id_produto: 1,
+        nome: "Produto Teste Cypress",
+        descricao: "Produto criado para edição",
+        preco_custo: 50,
+        preco_base: 100,
+        ativo: true,
+        id_categoria: 1
+    };
 
-    function headers() {
-        return {
-            Authorization: `Bearer ${token}`
-        };
+    function mockApi() {
+
+        cy.intercept("GET", "**/categories*", {
+            body: {
+                data: [{ id_categoria: 1, nome: "Vestidos" }],
+                pagination: { page: 1, limit: 100, total: 1, totalPages: 1 }
+            }
+        });
+
+        cy.intercept("POST", "**/categories", {
+            statusCode: 201,
+            body: { id: 2, nome: "Nova" }
+        });
+
+        cy.intercept("GET", /\/products(\?.*)?$/, {
+            body: {
+                data: [produto],
+                pagination: { page: 1, limit: 10, total: 1, totalPages: 1 }
+            }
+        });
+
+        cy.intercept("GET", "**/products/1", { body: produto }).as("produto");
+
+        cy.intercept("GET", "**/product-grades/1", {
+            body: [
+                { id_produto_grade: 1, nome: "M", acrescimo: 0 },
+                { id_produto_grade: 2, nome: "G", acrescimo: 5 }
+            ]
+        });
+
+        cy.intercept("GET", "**/product-colors/1", {
+            body: [
+                {
+                    id_produto_cor: 1,
+                    nome: "Azul",
+                    tonalidade: "#0000ff",
+                    acrescimo: 0,
+                    fotos: ["/produto_fotos/azul.png"]
+                },
+                {
+                    id_produto_cor: 2,
+                    nome: "Preto",
+                    tonalidade: "#000000",
+                    acrescimo: 0,
+                    fotos: ["/produto_fotos/preto.png"]
+                }
+            ]
+        });
+
+        cy.intercept("GET", "**/product-photos/1", { body: [] });
+
+        cy.intercept("POST", "**/products", {
+            statusCode: 201,
+            body: { id_produto: 2 }
+        }).as("criarProduto");
+
+        cy.intercept("PUT", "**/products/1", {
+            statusCode: 200,
+            body: produto
+        }).as("atualizarProduto");
     }
 
-    beforeEach(() => {
+    function visitar(caminho) {
 
-        cy.clearLocalStorage();
-        cy.visit("/admin/produtos", {
+        cy.visit(caminho, {
 
             onBeforeLoad(win) {
-                win.localStorage.setItem(
-                    "auth_token",
-                    token
-                );
+                win.localStorage.setItem("auth_token", "fake-admin-token");
 
                 win.localStorage.setItem(
                     "auth",
@@ -32,6 +92,11 @@ describe("Admin Produtos", () => {
                 );
             }
         });
+    }
+
+    beforeEach(() => {
+        cy.clearLocalStorage();
+        mockApi();
     });
 
     function campo(selector) {
@@ -47,410 +112,261 @@ describe("Admin Produtos", () => {
             .should("be.visible");
     }
 
-    it("deve cadastrar produto completo somente se não existir", () => {
+    it("deve cadastrar produto completo", () => {
 
-        cy.request({
+        visitar("/admin/produtos/cadastrar");
 
-            method: "GET",
-            url: `${Cypress.env("apiUrl")}/products`,
-            headers: headers()
-        }).then(res => {
+        campo('[data-cy="produto-nome"]')
+            .type("Vestido Aurora");
 
-            const produtos =
-                res.body.data ?? res.body ?? [];
+        campo('[data-cy="produto-descricao"]')
+            .type("Vestido elegante para teste");
 
-            const existe =
-                produtos.find(
-                    p => p.nome === "Vestido Aurora"
-                );
+        campo('[data-cy="produto-custo"]')
+            .type("50");
 
-            if (existe) {
-                return;
-            }
+        campo('[data-cy="produto-preco-venda"]')
+            .type("120");
 
-            cy.visit("/admin/produtos/cadastrar");
+        cy.get('[data-cy="abrir-modal-categoria"]')
+            .click({ force: true });
 
-            campo('[data-cy="produto-nome"]')
-                .type("Vestido Aurora");
+        campo('[data-cy="nova-categoria-nome"]')
+            .type("Vestidos");
 
-            campo('[data-cy="produto-descricao"]')
-                .type("Vestido elegante para teste");
+        cy.get('[data-cy="salvar-categoria"]')
+            .click({ force: true });
 
-            campo('[data-cy="produto-custo"]')
-                .type("50");
+        campo('[data-cy="nova-grade-nome"]')
+            .type("M");
 
-            campo('[data-cy="produto-preco-venda"]')
-                .type("120");
+        cy.get('[data-cy="nova-grade-nome"]')
+            .closest(".admin-grade-new-form")
+            .find('input[type="number"]')
+            .type("0");
 
-            cy.get('[data-cy="abrir-modal-categoria"]')
-                .click({ force: true });
+        cy.get('[data-cy="adicionar-grade"]')
+            .click({ force: true });
 
-            campo('[data-cy="nova-categoria-nome"]')
-                .type("Vestidos");
+        campo('[data-cy="nova-cor-nome"]')
+            .type("Azul");
 
-            cy.get('[data-cy="salvar-categoria"]')
-                .click({ force: true });
+        campo('[data-cy="nova-cor-acrescimo"]')
+            .type("10");
 
-            campo('[data-cy="nova-grade-nome"]')
-                .type("M");
+        cy.get('[data-cy="adicionar-cor"]')
+            .click({ force: true });
 
-            cy.get('[data-cy="nova-grade-nome"]')
-                .closest(".admin-grade-new-form")
-                .find('input[type="number"]')
-                .type("0");
+        cy.get('.admin-form-color-card')
+            .should("exist");
 
-            cy.get('[data-cy="adicionar-grade"]')
-                .click({ force: true });
-
-            campo('[data-cy="nova-cor-nome"]')
-                .type("Azul");
-
-            campo('[data-cy="nova-cor-acrescimo"]')
-                .type("10");
-
-            cy.get('[data-cy="adicionar-cor"]')
-                .click({ force: true });
-
-            cy.get('.admin-form-color-card')
-                .should("exist");
-
-            cy.get('[data-cy^="upload-foto-cor-"]')
-                .should("exist")
-                .last()
-                .selectFile(
-                    "cypress/fixtures/imagem-teste.png",
-                    {
-                        force: true
-                    }
-                );
-
-            cy.get('[data-cy="salvar-produto"]')
-                .click({ force: true });
-
-            cy.url()
-                .should(
-                    "include",
-                    "/admin/produtos"
-                );
-        });
-    });
-
-    function buscarOuCriarProduto() {
-
-        return cy.request({
-            method: "GET",
-            url: `${Cypress.env("apiUrl")}/products`,
-            headers: headers()
-        }).then(res => {
-
-            const produtos =
-                res.body.data ?? res.body ?? [];
-
-            let produto =
-                produtos.find(
-                    p => p.nome === "Produto Teste Cypress"
-                );
-
-            if (produto) {
-                return produto.id_produto;
-            }
-
-            return cy.request({
-
-                method: "POST",
-                url: `${Cypress.env("apiUrl")}/products`,
-                headers: headers(),
-
-                body: {
-                    nome: "Produto Teste Cypress",
-                    descricao: "Produto criado para edição",
-                    preco_custo: 50,
-                    preco_base: 100,
-                    ativo: true,
-                    grades: [
-                        {
-                            nome: "M",
-                            acrescimo: 0
-                        }
-                    ],
-
-                    cores: [
-                        {
-                            nome: "Azul",
-                            tonalidade: "#0000ff",
-                            acrescimo: 0,
-                            fotos: [
-                                "/fixtures/imagem-teste.png"
-                            ]
-                        }
-                    ]
+        cy.get('[data-cy^="upload-foto-cor-"]')
+            .should("exist")
+            .last()
+            .selectFile(
+                "cypress/fixtures/imagem-teste.png",
+                {
+                    force: true
                 }
-            }).then(res => {
+            );
 
-                const produtoCriado =
-                    res.body.data ??
-                    res.body.produto ??
-                    res.body;
+        cy.get('[data-cy="salvar-produto"]')
+            .click({ force: true });
 
-                return (
-                    produtoCriado.id_produto ??
-                    produtoCriado.id
-                );
+        cy.wait("@criarProduto")
+            .its("request.body")
+            .should((body) => {
+                expect(body.nome).to.eq("Vestido Aurora");
+                expect(body.grades).to.have.length(1);
+                expect(body.cores[0].fotos_upload).to.have.length(1);
             });
-        });
-    }
+
+        cy.location("pathname")
+            .should("eq", "/admin/produtos");
+    });
 
     it("deve abrir edição pelo botão da lista", () => {
 
-        cy.visit("/admin/produtos");
-        cy.contains("Produto Teste Cypress").should("exist");
+        visitar("/admin/produtos");
+
         cy.contains("td", "Produto Teste Cypress")
-            .parents("tr").find('[data-cy^="produto-editar-"]').click();
+            .parents("tr")
+            .find('[data-cy^="produto-editar-"]')
+            .click();
 
         cy.url()
             .should(
                 "include",
-                "/editar/"
+                "/editar/1"
             );
     });
 
     it("deve carregar dados do produto ao abrir edição", () => {
 
-        buscarOuCriarProduto()
-            .then(id => {
-                cy.log(`ID: ${JSON.stringify(id)}`);
-                expect(
-                    typeof id,
-                    "id deve ser string ou number"
-                ).to.be.oneOf(["string", "number"]);
+        visitar("/admin/produtos/editar/1");
 
-                cy.intercept(
-                    "GET",
-                    "**/products/**"
-                ).as("produto");
+        cy.wait("@produto");
 
-                cy.intercept(
-                    "GET",
-                    "**/product-grades/**"
-                ).as("grades");
+        cy.get('[data-cy="produto-nome"]')
+            .should("have.value", "Produto Teste Cypress");
 
-                cy.intercept(
-                    "GET",
-                    "**/product-colors/**"
-                ).as("colors");
-
-                cy.intercept(
-                    "GET",
-                    "**/product-photos/**"
-                ).as("photos");
-
-                cy.visit(
-                    `/admin/produtos/editar/${id}`
-                );
-
-                cy.wait(
-                    "@produto",
-                    { timeout: 10000 }
-                );
-
-                cy.get(
-                    '[data-cy="produto-nome"]',
-                    { timeout: 10000 }
-                )
-                    .invoke("val")
-                    .should("not.be.empty");
-
-                cy.get(
-                    '[data-cy="produto-descricao"]',
-                    { timeout: 10000 }
-                )
-                    .invoke("val")
-                    .should("not.be.empty");
-            });
+        cy.get('[data-cy="produto-descricao"]')
+            .should("have.value", "Produto criado para edição");
     });
 
     it("deve remover grade do produto", () => {
 
-        buscarOuCriarProduto()
-            .then(id => {
+        visitar("/admin/produtos/editar/1");
 
-                cy.visit(`/admin/produtos/editar/${id}`);
+        cy.get('[data-cy="grade-item"]')
+            .should("have.length", 2);
 
-                cy.get('[data-cy="grade-item"]', { timeout: 10000 })
-                    .should("have.length.greaterThan", 0)
-                    .then(($gradesAntes) => {
+        cy.get('[data-cy="remover-grade"]')
+            .first()
+            .click({ force: true });
 
-                        const quantidadeAntes = $gradesAntes.length;
-
-                        cy.wrap($gradesAntes)
-                            .first()
-                            .find('[data-cy="remover-grade"]')
-                            .click({ force: true });
-
-                        cy.get('[data-cy="grade-item"]')
-                            .should(
-                                "have.length",
-                                quantidadeAntes - 1
-                            );
-                    });
-            });
+        cy.get('[data-cy="grade-item"]')
+            .should("have.length", 1);
     });
 
     it("deve remover cor do produto", () => {
 
-        buscarOuCriarProduto()
-            .then(id => {
+        visitar("/admin/produtos/editar/1");
 
-                cy.visit(`/admin/produtos/editar/${id}`);
+        cy.get('.admin-form-color-card')
+            .should("have.length", 2);
 
-                cy.get('.admin-form-color-card')
-                    .should("have.length.greaterThan", 0)
-                    .then(($coresAntes) => {
+        cy.get('[data-cy="remover-cor"]')
+            .first()
+            .click({ force: true });
 
-                        const quantidadeAntes = $coresAntes.length;
-
-                        cy.wrap($coresAntes)
-                            .first()
-                            .find('[data-cy="remover-cor"]')
-                            .click({ force: true });
-
-                        cy.get('.admin-form-color-card')
-                            .should(
-                                "have.length",
-                                quantidadeAntes - 1
-                            );
-                    });
-            });
+        cy.get('.admin-form-color-card')
+            .should("have.length", 1);
     });
 
     it("não deve salvar produto sem grade", () => {
 
-        buscarOuCriarProduto()
-            .then(id => {
+        visitar("/admin/produtos/editar/1");
 
-                cy.visit(
-                    `/admin/produtos/editar/${id}`
-                );
+        cy.get('[data-cy="grade-item"]')
+            .should("have.length", 2);
 
-                cy.get('[data-cy="grade-item"]')
-                    .should("have.length.greaterThan", 0)
-                    .then(($grades) => {
+        cy.get('[data-cy="remover-grade"]')
+            .first()
+            .click({ force: true });
 
-                        const quantidade =
-                            $grades.length;
+        cy.get('[data-cy="grade-item"]')
+            .should("have.length", 1);
 
-                        for (let i = 0; i < quantidade; i++) {
-                            cy.get('[data-cy="remover-grade"]')
-                                .first()
-                                .click({
-                                    force: true
-                                });
-                        }
-                    });
+        cy.get('[data-cy="remover-grade"]')
+            .click({ force: true });
 
-                cy.get('[data-cy="grade-item"]')
-                    .should("not.exist");
+        cy.get('[data-cy="grade-item"]')
+            .should("not.exist");
 
+        cy.get('[data-cy="salvar-produto"]')
+            .click({ force: true });
 
-                cy.get('[data-cy="salvar-produto"]')
-                    .click({
-                        force: true
-                    });
-
-                cy.contains("Adicione pelo menos uma grade").should("exist");
-            });
+        cy.contains("Adicione pelo menos uma grade")
+            .should("exist");
     });
 
     it("não deve salvar cor sem foto", () => {
 
-        cy.visit(
-            "/admin/produtos/cadastrar"
-        );
+        visitar("/admin/produtos/cadastrar");
+
+        campo('[data-cy="produto-nome"]')
+            .type("Sem foto");
+
+        campo('[data-cy="produto-custo"]')
+            .type("50");
+
+        campo('[data-cy="produto-preco-venda"]')
+            .type("120");
+
+        campo('[data-cy="nova-grade-nome"]')
+            .type("M");
+
+        cy.get('[data-cy="adicionar-grade"]')
+            .click({ force: true });
+
+        campo('[data-cy="nova-cor-nome"]')
+            .type("Azul");
+
+        cy.get('[data-cy="adicionar-cor"]')
+            .click({ force: true });
+
+        cy.get('[data-cy="salvar-produto"]')
+            .click({ force: true });
+
+        cy.contains("Adicione pelo menos uma cor com pelo menos uma foto")
+            .should("exist");
     });
 
     it("deve editar produto existente e alterar grade/cor", () => {
 
-        buscarOuCriarProduto()
-            .then(id => {
+        visitar("/admin/produtos/editar/1");
 
-                cy.intercept(
-                    "GET",
-                    "**/products/**"
-                )
-                    .as("produto");
+        cy.wait("@produto");
 
-                cy.visit(
-                    `/admin/produtos/editar/${id}`
-                );
+        cy.get('[data-cy="produto-nome"]')
+            .should("have.value", "Produto Teste Cypress");
 
-                cy.wait("@produto");
+        cy.get('[data-cy="produto-descricao"]')
+            .clear()
+            .type("Descrição alterada Cypress");
 
-                cy.get(
-                    '[data-cy="produto-nome"]'
-                )
-                    .should("be.visible")
-                    .clear()
-                    .type(
-                        "Produto Teste Cypress"
-                    );
+        cy.get('[data-cy="nova-grade-nome"]')
+            .type("GG");
 
-                cy.get(
-                    '[data-cy="produto-descricao"]'
-                )
-                    .clear()
-                    .type(
-                        "Descrição alterada Cypress"
-                    );
+        cy.get('[data-cy="nova-grade-nome"]')
+            .closest(".admin-grade-new-form")
+            .find('input[type="number"]')
+            .type("5");
 
-                cy.get('[data-cy="nova-grade-nome"]')
-                    .type("G");
+        cy.get('[data-cy="adicionar-grade"]')
+            .click({ force: true });
 
-                cy.get('[data-cy="nova-grade-nome"]')
-                    .closest(".admin-grade-new-form")
-                    .find('input[type="number"]')
-                    .type("5");
-
-                cy.get('[data-cy="adicionar-grade"]')
-                    .click({ force: true });
-
-                cy.get('[data-cy="nova-cor-nome"]')
-                    .scrollIntoView({
-                        offset: {
-                            top: -150,
-                            left: 0
-                        }
-                    })
-                    .type("Vermelho", {
-                        force: true
-                    });
-
-                cy.get('[data-cy="nova-cor-acrescimo"]')
-                    .scrollIntoView({
-                        offset: {
-                            top: -150,
-                            left: 0
-                        }
-                    })
-                    .type("5", {
-                        force: true
-                    });
-
-                cy.get('[data-cy="adicionar-cor"]')
-                    .click({ force: true });
-
-                cy.contains("Vermelho")
-                    .should("exist");
-
-                cy.get(
-                    '[data-cy="salvar-produto"]'
-                )
-                    .click({ force: true });
-
-                cy.url()
-                    .should(
-                        "include",
-                        "/admin/produtos"
-                    );
+        cy.get('[data-cy="nova-cor-nome"]')
+            .scrollIntoView({
+                offset: {
+                    top: -150,
+                    left: 0
+                }
+            })
+            .type("Vermelho", {
+                force: true
             });
+
+        cy.get('[data-cy="nova-cor-acrescimo"]')
+            .scrollIntoView({
+                offset: {
+                    top: -150,
+                    left: 0
+                }
+            })
+            .type("5", {
+                force: true
+            });
+
+        cy.get('[data-cy="adicionar-cor"]')
+            .click({ force: true });
+
+        cy.contains("Vermelho")
+            .should("exist");
+
+        cy.get('[data-cy="salvar-produto"]')
+            .click({ force: true });
+
+        cy.wait("@atualizarProduto")
+            .its("request.body")
+            .should((body) => {
+                expect(body.descricao).to.eq("Descrição alterada Cypress");
+                expect(body.grades.map((grade) => grade.nome)).to.include("GG");
+                expect(body.cores.map((cor) => cor.nome)).to.include("Vermelho");
+            });
+
+        cy.location("pathname")
+            .should("eq", "/admin/produtos");
     });
 });

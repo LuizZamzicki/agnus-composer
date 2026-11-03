@@ -4,23 +4,6 @@ describe("Dashboard Admin", () => {
 
         cy.clearLocalStorage();
 
-        // 🔐 AUTH consistente com seu sistema (igual ao teste de usuários)
-        cy.visit("/admin/dashboard", {
-            onBeforeLoad(win) {
-
-                win.localStorage.setItem("auth_token", "fake-admin");
-
-                win.localStorage.setItem("auth", JSON.stringify({
-                    user: {
-                        id_usuario: 1,
-                        nome: "Administrador",
-                        email: "admin@email.com",
-                        tipo: "administrador"
-                    }
-                }));
-            }
-        });
-
         cy.intercept("GET", "**/users*", {
             statusCode: 200,
             body: {
@@ -73,6 +56,23 @@ describe("Dashboard Admin", () => {
             statusCode: 200,
             body: []
         }).as("orders");
+
+        // 🔐 AUTH consistente com seu sistema (igual ao teste de usuários)
+        cy.visit("/admin/dashboard", {
+            onBeforeLoad(win) {
+
+                win.localStorage.setItem("auth_token", "fake-admin");
+
+                win.localStorage.setItem("auth", JSON.stringify({
+                    user: {
+                        id_usuario: 1,
+                        nome: "Administrador",
+                        email: "admin@email.com",
+                        tipo: "administrador"
+                    }
+                }));
+            }
+        });
     });
 
     it("deve carregar dashboard", () => {

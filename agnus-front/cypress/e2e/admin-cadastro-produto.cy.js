@@ -2,15 +2,35 @@ describe("Cadastro de Produto Admin", () => {
 
     const token = "fake-admin-token";
 
-    // function headers() {
-    //     return {
-    //         Authorization: `Bearer ${token}`
-    //     };
-    // }
-
     beforeEach(() => {
 
         cy.clearLocalStorage();
+
+        const categorias = [{ id_categoria: 1, nome: "Vestidos" }];
+
+        cy.intercept("GET", "**/categories*", (req) => {
+            req.reply({
+                data: categorias,
+                pagination: { page: 1, limit: 100, total: categorias.length, totalPages: 1 }
+            });
+        });
+
+        cy.intercept("POST", "**/categories", (req) => {
+            const nova = { id_categoria: categorias.length + 1, nome: req.body.nome };
+
+            categorias.push(nova);
+            req.reply({ statusCode: 201, body: { ...nova, id: nova.id_categoria } });
+        });
+
+        cy.intercept("GET", /\/products(\?.*)?$/, {
+            data: [],
+            pagination: { page: 1, limit: 10, total: 0, totalPages: 1 }
+        });
+
+        cy.intercept("POST", "**/products", {
+            statusCode: 201,
+            body: { id_produto: 1 }
+        }).as("criarProduto");
 
         cy.visit("/admin/produtos", {
 
@@ -415,13 +435,16 @@ describe("Cadastro de Produto Admin", () => {
 
 
 
-        cy.url({
-            timeout: 15000
-        })
-            .should(
-                "include",
-                "/admin/produtos"
-            );
+        cy.wait("@criarProduto")
+            .its("request.body")
+            .should((body) => {
+                expect(body.nome).to.eq("Produto Cadastro Cypress");
+                expect(body.grades[0].nome).to.eq("M");
+                expect(body.cores[0].fotos_upload).to.have.length(1);
+            });
+
+        cy.location("pathname")
+            .should("eq", "/admin/produtos");
 
 
     });
