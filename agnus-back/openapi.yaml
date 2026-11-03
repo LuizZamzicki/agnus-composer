@@ -1,0 +1,806 @@
+openapi: 3.0.3
+info:
+  title: Agnus API
+  version: 3.3.0
+  description: |
+    API REST do e-commerce Agnus (roupas esportivas com estampas catolicas, modelo print on demand).
+
+    - Em producao a API e exposta pelo Nginx sob o prefixo `/api` (ex.: `https://localhost/api/products`).
+    - Rotas administrativas exigem `Authorization: Bearer <token>` e a permissao do cargo (RBAC).
+    - Toda resposta traz o cabecalho `X-Request-Id`, que tambem aparece nos logs estruturados.
+    - Leituras de produtos e categorias usam cache Redis (cache-aside com TTL), invalidado nas escritas.
+servers:
+  - url: /api
+    description: Via Nginx (docker compose)
+  - url: http://localhost:3000
+    description: Backend direto (desenvolvimento)
+tags:
+  - name: Observabilidade
+  - name: Autenticacao
+  - name: Usuarios
+  - name: Enderecos
+  - name: Categorias
+  - name: Produtos
+  - name: Fotos de produto
+  - name: Carrinho
+  - name: Pedidos
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [ Observabilidade ]
+      summary: Liveness do backend (usado pelo healthcheck do Docker)
+      responses:
+        "200":
+          description: Servico no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+      security: []
+  /metrics:
+    get:
+      operationId: getMetrics
+      tags: [ Observabilidade ]
+      summary: Metricas em memoria (somente administradores)
+      responses:
+        "200":
+          description: Snapshot das metricas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Metrics" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+
+  /auth/login:
+    post:
+      operationId: postAuthLogin
+      tags: [ Autenticacao ]
+      summary: Login com e-mail e senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ email, senha ]
+              properties:
+                email: { type: string, format: email, example: cliente@agnus.com }
+                senha: { type: string, format: password, example: "Senha@123" }
+      responses:
+        "200":
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, description: JWT }
+                  user: { $ref: "#/components/schemas/Usuario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+      security: []
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      tags: [ Autenticacao ]
+      summary: Dados do usuario autenticado
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "200":
+          description: Usuario logado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/Usuario" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/google:
+    get:
+      operationId: getAuthGoogle
+      tags: [ Autenticacao ]
+      summary: Inicia o fluxo OAuth 2.0 com o Google
+      parameters:
+        - in: query
+          name: redirect
+          schema: { type: string }
+          description: URL de retorno do app mobile (precisa estar na allowlist)
+      responses:
+        "302": { description: Redireciona para accounts.google.com }
+      security: []
+  /auth/google/callback:
+    get:
+      operationId: getAuthGoogleCallback
+      tags: [ Autenticacao ]
+      summary: Callback do Google; cria/vincula o usuario e redireciona ao frontend com o token
+      parameters:
+        - { in: query, name: code, required: true, schema: { type: string } }
+        - { in: query, name: state, required: true, schema: { type: string } }
+      responses:
+        "302": { description: Redireciona ao frontend com `token` na query }
+      security: []
+
+  /users:
+    post:
+      operationId: postUsers
+      tags: [ Usuarios ]
+      summary: Cadastro de cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UsuarioInput" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+      security: []
+    get:
+      operationId: getUsers
+      tags: [ Usuarios ]
+      summary: Lista usuarios (permissao USUARIO_LISTAR)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Pagina de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Usuario" } }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /users/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    get:
+      operationId: getUsersPorId
+      tags: [ Usuarios ]
+      summary: Detalhe do usuario (proprio usuario ou admin)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "200":
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: putUsersPorId
+      tags: [ Usuarios ]
+      summary: Atualiza dados do usuario (proprio usuario ou admin)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UsuarioInput" }
+      responses:
+        "200": { description: Atualizado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    delete:
+      operationId: deleteUsersPorId
+      tags: [ Usuarios ]
+      summary: Remove usuario (permissao USUARIO_EXCLUIR)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{id}/password:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    patch:
+      operationId: patchUsersPorIdPassword
+      tags: [ Usuarios ]
+      summary: Troca de senha com validacao de forca e historico
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ senha_atual, nova_senha ]
+              properties:
+                senha_atual: { type: string, format: password }
+                confirmacao_senha_atual: { type: string, format: password }
+                nova_senha: { type: string, format: password }
+      responses:
+        "200": { description: Senha alterada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /user-addresses:
+    post:
+      operationId: postUserAddresses
+      tags: [ Enderecos ]
+      summary: Cadastra endereco de entrega
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EnderecoInput" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Endereco" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+  /user-addresses/{id_user}:
+    get:
+      operationId: getUserAddressesPorIdUser
+      tags: [ Enderecos ]
+      summary: Enderecos de um usuario
+      parameters:
+        - { in: path, name: id_user, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Lista de enderecos
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Endereco" } }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+
+  /categories:
+    get:
+      operationId: getCategories
+      tags: [ Categorias ]
+      summary: Lista categorias (cache Redis, TTL 600s)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Pagina de categorias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Categoria" } }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+      security: []
+    post:
+      operationId: postCategories
+      tags: [ Categorias ]
+      summary: Cria categoria (invalida cache e publica `categoria.criada`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoriaInput" }
+      responses:
+        "201":
+          description: Criada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Categoria" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /categories/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    get:
+      operationId: getCategoriesPorId
+      tags: [ Categorias ]
+      summary: Detalhe da categoria (cache Redis)
+      responses:
+        "200":
+          description: Categoria
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Categoria" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      security: []
+    put:
+      operationId: putCategoriesPorId
+      tags: [ Categorias ]
+      summary: Atualiza categoria (invalida cache e publica `categoria.atualizada`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoriaInput" }
+      responses:
+        "200": { description: Atualizada }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteCategoriesPorId
+      tags: [ Categorias ]
+      summary: Remove categoria (invalida cache e publica `categoria.removida`)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removida }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /products:
+    get:
+      operationId: getProducts
+      tags: [ Produtos ]
+      summary: Lista produtos com filtros (cache Redis, TTL 120s)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - { in: query, name: id_categoria, schema: { type: string }, description: "ID ou `null` para sem categoria" }
+        - { in: query, name: ativo, schema: { type: string, enum: [ "true", "false" ] } }
+        - { in: query, name: q, schema: { type: string }, description: Busca textual (Meilisearch com fallback SQL) }
+      responses:
+        "200":
+          description: Pagina de produtos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProdutoPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+      security: []
+    post:
+      operationId: postProducts
+      tags: [ Produtos ]
+      summary: Cria produto com grades, cores e fotos (transacao; invalida cache e publica `produto.criado`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProdutoInput" }
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /products/catalog:
+    get:
+      operationId: getProductsCatalog
+      tags: [ Produtos ]
+      summary: Catalogo publico com imagens e categoria (cache Redis, TTL 120s)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - { in: query, name: id_categoria, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: sort, schema: { type: string, enum: [ preco_asc, preco_desc ] } }
+      responses:
+        "200":
+          description: Pagina do catalogo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProdutoPage" }
+      security: []
+  /products/best-sellers:
+    get:
+      operationId: getProductsBestSellers
+      tags: [ Produtos ]
+      summary: Mais vendidos (cache Redis, TTL 60s)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Pagina de mais vendidos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProdutoPage" }
+      security: []
+  /products/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    get:
+      operationId: getProductsPorId
+      tags: [ Produtos ]
+      summary: Detalhe do produto (cache Redis, TTL 300s)
+      responses:
+        "200":
+          description: Produto
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      security: []
+    put:
+      operationId: putProductsPorId
+      tags: [ Produtos ]
+      summary: Atualiza produto (invalida cache e publica `produto.atualizado`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProdutoInput" }
+      responses:
+        "200": { description: Atualizado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteProductsPorId
+      tags: [ Produtos ]
+      summary: Remove produto sem pedidos (invalida cache e publica `produto.removido`)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /product-photos:
+    post:
+      operationId: postProductPhotos
+      tags: [ Fotos de produto ]
+      summary: "Envia foto (multipart; formato validado pelo conteudo/magic bytes: JPEG, PNG, GIF, WebP, BMP ate 20MB)"
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ id_produto, id_produto_cor, foto ]
+              properties:
+                id_produto: { type: integer }
+                id_produto_cor: { type: integer }
+                foto: { type: string, format: binary }
+      responses:
+        "201": { description: Foto criada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /product-photos/{id_produto}:
+    get:
+      operationId: getProductPhotosPorIdProduto
+      tags: [ Fotos de produto ]
+      summary: Fotos de um produto
+      parameters:
+        - { in: path, name: id_produto, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Lista de fotos }
+      security: []
+
+  /carts:
+    post:
+      operationId: postCarts
+      tags: [ Carrinho ]
+      summary: Cria carrinho do usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_usuario ]
+              properties:
+                id_usuario: { type: integer }
+      responses:
+        "201": { description: Carrinho criado }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+  /cart-items:
+    post:
+      operationId: postCartItems
+      tags: [ Carrinho ]
+      summary: Adiciona item (cor + grade) ao carrinho, validando estoque
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_carrinho, id_produto_cor, id_produto_grade, quantidade ]
+              properties:
+                id_carrinho: { type: integer }
+                id_produto_cor: { type: integer }
+                id_produto_grade: { type: integer }
+                quantidade: { type: integer, minimum: 1 }
+      responses:
+        "201": { description: Item adicionado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+  /cart-items/{id_cart}:
+    get:
+      operationId: getCartItemsPorIdCart
+      tags: [ Carrinho ]
+      summary: Itens do carrinho
+      parameters:
+        - { in: path, name: id_cart, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Itens }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [ Pedidos ]
+      summary: Lista pedidos (permissao PEDIDO_LISTAR)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: query, name: id_usuario, schema: { type: integer } }
+        - { in: query, name: status, schema: { $ref: "#/components/schemas/PedidoStatus" } }
+      responses:
+        "200":
+          description: Pedidos
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Pedido" } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: postOrders
+      tags: [ Pedidos ]
+      summary: Cria pedido do proprio usuario (publica `pedido.criado`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoInput" }
+      responses:
+        "201":
+          description: Pedido criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pedido" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /orders/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    get:
+      operationId: getOrdersPorId
+      tags: [ Pedidos ]
+      summary: Detalhe do pedido (dono ou admin)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "200":
+          description: Pedido
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pedido" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: putOrdersPorId
+      tags: [ Pedidos ]
+      summary: Atualiza pedido/status (permissao PEDIDO_ATUALIZAR; publica `pedido.atualizado`)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoInput" }
+      responses:
+        "200": { description: Atualizado }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteOrdersPorId
+      tags: [ Pedidos ]
+      summary: Remove pedido (permissao PEDIDO_EXCLUIR; publica `pedido.removido`)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, default: 10 }
+  responses:
+    BadRequest:
+      description: Dados invalidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Token ausente, invalido ou credenciais incorretas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Cargo sem permissao para a operacao
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Recurso nao encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflito com o estado atual (duplicidade ou vinculo)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string, example: Produto nao encontrado }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+        hasNextPage: { type: boolean }
+        hasPreviousPage: { type: boolean }
+    Metrics:
+      type: object
+      properties:
+        uptimeSeconds: { type: integer }
+        counters: { type: object, additionalProperties: { type: number } }
+        latencyMs:
+          type: object
+          properties:
+            window: { type: integer }
+            p50: { type: number }
+            p95: { type: number }
+            p99: { type: number }
+        sli:
+          type: object
+          properties:
+            availability: { type: number, nullable: true }
+            cacheHitRatio: { type: number, nullable: true }
+    Usuario:
+      type: object
+      properties:
+        id_usuario: { type: integer }
+        nome: { type: string }
+        cpf: { type: string, nullable: true }
+        email: { type: string, format: email }
+        tipo: { type: string, enum: [ cliente, administrador ] }
+        data_criacao: { type: string, format: date-time }
+    UsuarioInput:
+      type: object
+      required: [ nome, email, senha ]
+      properties:
+        nome: { type: string }
+        cpf: { type: string }
+        email: { type: string, format: email }
+        senha: { type: string, format: password }
+    Endereco:
+      allOf:
+        - $ref: "#/components/schemas/EnderecoInput"
+        - type: object
+          properties:
+            id_usuario_endereco: { type: integer }
+    EnderecoInput:
+      type: object
+      required: [ id_usuario, cep, logradouro ]
+      properties:
+        id_usuario: { type: integer }
+        cep: { type: string, example: "80000-000" }
+        logradouro: { type: string }
+        numero: { type: string }
+        complemento: { type: string }
+        bairro: { type: string }
+        cidade: { type: string }
+        estado: { type: string, example: PR }
+        pais: { type: string, example: Brasil }
+        principal: { type: boolean }
+    Categoria:
+      type: object
+      properties:
+        id_categoria: { type: integer }
+        nome: { type: string, example: Camisetas }
+    CategoriaInput:
+      type: object
+      required: [ nome ]
+      properties:
+        nome: { type: string }
+    Produto:
+      type: object
+      properties:
+        id_produto: { type: integer }
+        id_categoria: { type: integer, nullable: true }
+        nome: { type: string, example: Camiseta Dry Fit Agnus Dei }
+        descricao: { type: string, nullable: true }
+        preco_custo: { type: number, nullable: true }
+        preco_base: { type: number, example: 89.9 }
+        margem_lucro: { type: number, nullable: true }
+        ativo: { type: boolean }
+    ProdutoPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Produto" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    ProdutoInput:
+      type: object
+      required: [ nome, preco_base ]
+      properties:
+        id_categoria: { type: integer, nullable: true }
+        nome: { type: string }
+        descricao: { type: string }
+        preco_custo: { type: number }
+        preco_base: { type: number }
+        ativo: { type: boolean }
+        grades:
+          type: array
+          items:
+            type: object
+            properties:
+              nome: { type: string, example: M }
+              acrescimo: { type: number, example: 0 }
+        cores:
+          type: array
+          items:
+            type: object
+            properties:
+              nome: { type: string, example: Preto }
+              codigo_rgb: { type: string, example: "#000000" }
+              acrescimo: { type: number }
+              fotos: { type: array, items: { type: string } }
+    PedidoStatus:
+      type: string
+      enum: [ aguardando_calculo_frete, aguardando_pagamento, pago, enviado, entregue, cancelado ]
+    Pedido:
+      type: object
+      properties:
+        id_pedido: { type: integer }
+        id_usuario: { type: integer }
+        id_usuario_endereco: { type: integer }
+        status: { $ref: "#/components/schemas/PedidoStatus" }
+        valor_total: { type: number, nullable: true }
+        valor_frete: { type: number, nullable: true }
+        data_criacao: { type: string, format: date-time }
+    PedidoInput:
+      type: object
+      required: [ id_usuario, id_usuario_endereco ]
+      properties:
+        id_usuario: { type: integer }
+        id_usuario_endereco: { type: integer }
+        status: { $ref: "#/components/schemas/PedidoStatus" }
+        valor_total: { type: number }
+        valor_frete: { type: number }

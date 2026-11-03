@@ -1,5 +1,8 @@
 import express, { Request, Response, Router } from 'express';
+import fs from 'fs';
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import { parse as parseYaml } from 'yaml';
 import AvaliacaoFotosController from './controllers/avaliacaoFotos.controller';
 import AvaliacaoProdutosController from './controllers/avaliacaoProdutos.controller';
 import AuthController from './controllers/auth.controller';
@@ -43,6 +46,17 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/metrics', authenticateToken, authorizeRoles('administrador'), (_req: Request, res: Response) => {
   res.status(200).json(getMetricsSnapshot());
 });
+
+const openApiPath = path.resolve(process.cwd(), 'openapi.yaml');
+
+if (fs.existsSync(openApiPath)) {
+  const openApiDocument = parseYaml(fs.readFileSync(openApiPath, 'utf8'));
+
+  app.get('/openapi.json', (_req: Request, res: Response) => {
+    res.status(200).json(openApiDocument);
+  });
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: 'Agnus API' }));
+}
 
 const router: Router = Router();
 
