@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import emblema from "../img/marca/emblema.png";
 import "../css/notFound.css";
 
 function NotFound() {
@@ -8,6 +9,7 @@ function NotFound() {
     return (
         <main className="nf-container">
             <div className="nf-content">
+                <img className="nf-lamb" src={emblema} alt="" />
                 <p className="nf-code">404</p>
 
                 <h1>Esta página se perdeu</h1>

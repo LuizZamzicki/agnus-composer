@@ -2,6 +2,7 @@ import "../css/cliente/app.css"
 import "../css/cliente/footer.css"
 import { Instagram, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import logoCompleto from "../img/marca/logo-completo.png";
 
 function Footer() {
     return (
@@ -9,7 +10,7 @@ function Footer() {
             <div className="footer-container">
                 <div className="footer-baixo">
                     <div className="footer-desc">
-                        <p className="footer-mark">AGNUS</p>
+                        <img className="footer-mark" src={logoCompleto} alt="Agnus" />
                         <p>
                             Roupas de treino com identidade católica,
                             feitas sob encomenda.

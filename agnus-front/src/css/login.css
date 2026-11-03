@@ -84,9 +84,13 @@
 .login-brand { margin-bottom: 28px; }
 
 .login-brand h1 {
-  margin: 0 0 8px;
-  font: 400 34px/1 var(--f-display);
-  letter-spacing: 0.5em;
+  margin: 0 0 16px;
+}
+
+.login-brand h1 img {
+  display: block;
+  height: 150px;
+  width: auto;
 }
 
 .login-brand p {

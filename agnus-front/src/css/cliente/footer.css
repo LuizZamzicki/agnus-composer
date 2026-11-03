@@ -18,9 +18,10 @@
 }
 
 .footer-mark {
-    margin: 0 0 14px;
-    font: 28px/1 var(--f-display);
-    letter-spacing: 0.5em;
+    display: block;
+    height: 168px;
+    width: auto;
+    margin: 0 0 20px;
 }
 
 .footer-desc p {

@@ -73,3 +73,10 @@
 }
 
 .nf-back:hover { color: var(--ink); }
+
+.nf-lamb {
+    display: block;
+    height: 150px;
+    width: auto;
+    margin: 0 auto 20px;
+}

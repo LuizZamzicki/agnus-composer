@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import "../css/login.css";
 import hero from "../img/hero.png";
+import logoCompleto from "../img/marca/logo-completo.png";
 import { apiUrl } from "../utils/api";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
 
@@ -285,7 +286,7 @@ function Login() {
 
       <section className="login-panel">
         <div className="login-brand">
-          <h1>AGNUS</h1>
+          <h1><img src={logoCompleto} alt="Agnus" /></h1>
           <p>{modoCadastro ? "Crie a sua conta" : "Entre na sua conta"}</p>
         </div>
 
