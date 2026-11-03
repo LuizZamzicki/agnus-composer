@@ -1,21 +1,22 @@
 :root {
-  --admin-bg: #f0f0f1;
-  --admin-surface: #f6f6f5;
-  --admin-surface-strong: #efefee;
-  --admin-input-bg: #f1f1ef;
-  --admin-border: #cdc8c0;
-  --admin-border-soft: #d9d4cc;
-  --admin-ink: #0f1f37;
-  --admin-muted: #4f5b6c;
-  --admin-brand: #b37a1d;
-  --admin-brand-soft: rgba(179, 122, 29, 0.12);
-  --admin-danger: #c24e3b;
-  --admin-danger-soft: rgba(194, 78, 59, 0.12);
-  --admin-radius-lg: 22px;
-  --admin-radius-md: 14px;
-  --admin-radius-sm: 12px;
-  --admin-control-h: 48px;
-  --admin-shadow: 0 6px 24px rgba(15, 31, 55, 0.06);
+  /* Painel admin: mesmos tokens da loja (index.css), em tom de trabalho. */
+  --admin-bg: var(--stone);
+  --admin-surface: var(--paper);
+  --admin-surface-strong: var(--stone-2);
+  --admin-input-bg: var(--paper);
+  --admin-border: var(--line);
+  --admin-border-soft: var(--line-soft);
+  --admin-ink: var(--ink);
+  --admin-muted: var(--muted);
+  --admin-brand: var(--lit);
+  --admin-brand-soft: color-mix(in oklab, var(--lit) 12%, transparent);
+  --admin-danger: var(--danger);
+  --admin-danger-soft: var(--danger-soft);
+  --admin-radius-lg: 4px;
+  --admin-radius-md: var(--radius);
+  --admin-radius-sm: var(--radius);
+  --admin-control-h: 46px;
+  --admin-shadow: 0 6px 24px rgba(29, 28, 26, 0.06);
 }
 
 .admin-dashboard {
@@ -24,13 +25,13 @@
   overflow: hidden;
   background: var(--admin-bg);
   color: var(--admin-ink);
-  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  font-family: var(--f-ui);
 }
 
 .admin-sidebar {
   width: 250px;
-  background: #2f323a;
-  color: #f7f7f7;
+  background: var(--ink);
+  color: var(--line-soft);
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -47,9 +48,9 @@
 .admin-sidebar__logo {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--admin-brand);
-  color: #fff;
+  color: var(--stone);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,7 +59,7 @@
 
 .retorna-Home {
   text-decoration: none;
-  color: white;
+  color: var(--stone);
   font-size: larger;
   padding: 0;
   margin: 0;
@@ -91,7 +92,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   transition: background 0.18s ease, color 0.18s ease;
 }
 
@@ -103,13 +104,13 @@
 .admin-nav-item:hover,
 .admin-nav-subitem:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--stone);
 }
 
 .admin-nav-item.active,
 .admin-nav-subitem.active {
   background: var(--admin-brand);
-  color: #fff;
+  color: var(--stone);
 }
 
 .admin-nav-icon,
@@ -162,7 +163,7 @@
 }
 
 .admin-nav-item.logout {
-  color: #ff8f86;
+  color: #f0a99c;
 }
 
 .admin-main {
@@ -201,9 +202,9 @@
 .admin-header__notification {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--admin-border-soft);
-  background: #fff;
+  background: var(--paper);
   color: var(--admin-ink);
   cursor: pointer;
   position: relative;
@@ -220,7 +221,7 @@
   height: 18px;
   border-radius: 999px;
   background: var(--admin-danger);
-  color: #fff;
+  color: var(--stone);
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -401,7 +402,7 @@
 .admin-activity-icon-wrap {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--admin-brand-soft);
   color: var(--admin-brand);
   display: flex;

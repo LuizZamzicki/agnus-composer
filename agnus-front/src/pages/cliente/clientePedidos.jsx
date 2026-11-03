@@ -28,7 +28,7 @@ function ClientePedidos() {
             }
 
             try {
-                const resPedidos = await fetch(apiUrl("orders"), {
+                const resPedidos = await fetch(apiUrl("orders/me"), {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -43,9 +43,8 @@ function ClientePedidos() {
                     throw new Error("Erro ao carregar pedidos.");
                 }
 
-                const meusPedidos = pedidosData.filter(
-                    (p) => p.id_usuario === userId
-                );
+                // A API ja devolve apenas os pedidos do usuario do token.
+                const meusPedidos = Array.isArray(pedidosData) ? pedidosData : [];
 
                 const pedidosComItens = await Promise.all(
                     meusPedidos.map(async (pedido) => {
