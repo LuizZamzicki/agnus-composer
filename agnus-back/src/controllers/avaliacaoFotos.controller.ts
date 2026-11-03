@@ -7,6 +7,7 @@ import type {
   AvaliacaoFotoUpload,
 } from "../types/avaliacao-foto.types";
 import { normalizeFotoPath, saveAvaliacaoFotoFile, saveAvaliacaoFotoUpload } from "../utils/avaliacaoFotoStorage";
+import { INVALID_IMAGE_MESSAGE } from "../utils/imageSignature";
 
 type AvaliacaoFotoRequest = Request<AvaliacaoFotoRouteParams, object, AvaliacaoFotoBody>;
 type AvaliacaoFotoFiles = Express.Multer.File[] | Record<string, Express.Multer.File[]>;
@@ -89,7 +90,11 @@ class AvaliacaoFotosController {
       return "id_avaliacao_produto invalido.";
     }
 
-    if ((hasFile || body.foto_upload || body.caminho_url !== undefined) && !photoPath) {
+    if ((hasFile || body.foto_upload) && !photoPath) {
+      return INVALID_IMAGE_MESSAGE;
+    }
+
+    if (body.caminho_url !== undefined && !photoPath) {
       return "caminho_url invalido.";
     }
 
@@ -142,7 +147,7 @@ class AvaliacaoFotosController {
     const photoPaths = await AvaliacaoFotosController.buildPhotoPaths(files, uploads);
 
     if (!photoPaths) {
-      return res.status(400).json({ message: "fotos_upload contem arquivo invalido." });
+      return res.status(400).json({ message: INVALID_IMAGE_MESSAGE });
     }
 
     return res

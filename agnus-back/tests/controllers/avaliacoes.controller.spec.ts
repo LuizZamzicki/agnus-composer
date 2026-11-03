@@ -5,6 +5,8 @@ import AvaliacaoProdutos from "../../src/models/AvaliacaoProdutos";
 import Produtos from "../../src/models/Produtos";
 import Usuarios from "../../src/models/Usuarios";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
+import { JPEG_BYTES, PNG_BYTES } from "../helpers/images";
+import { INVALID_IMAGE_MESSAGE } from "../../src/utils/imageSignature";
 
 jest.mock("../../src/models/AvaliacaoFotos", () => ({
   __esModule: true,
@@ -285,8 +287,8 @@ describe("AvaliacaoFotosController", () => {
         body: {
           id_avaliacao_produto: 1,
           fotos_upload: [
-            { upload_index: 0, nome_original: "a.jpg", tipo_arquivo: "image/jpeg", tamanho_bytes: 10, arquivo_base64: Buffer.from("abc").toString("base64") },
-            { upload_index: 1, nome_original: "b.png", tipo_arquivo: "image/png", tamanho_bytes: 10, arquivo_base64: Buffer.from("def").toString("base64") },
+            { upload_index: 0, nome_original: "a.jpg", tipo_arquivo: "image/jpeg", tamanho_bytes: 10, arquivo_base64: JPEG_BYTES.toString("base64") },
+            { upload_index: 1, nome_original: "b.png", tipo_arquivo: "image/png", tamanho_bytes: 10, arquivo_base64: PNG_BYTES.toString("base64") },
           ],
         },
       }),
@@ -301,7 +303,7 @@ describe("AvaliacaoFotosController", () => {
     const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/a.png" });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
     avaliacaoFotosModel.create.mockResolvedValueOnce(foto);
-    const file = { buffer: Buffer.from("fake-bytes"), mimetype: "image/png", originalname: "a.png", size: 10 } as Express.Multer.File;
+    const file = { buffer: PNG_BYTES, mimetype: "image/png", originalname: "a.png", size: 10 } as Express.Multer.File;
     await AvaliacaoFotosController.create(
       { ...mockRequest({ body: { id_avaliacao_produto: 1 } }), files: [file] } as unknown as Parameters<typeof AvaliacaoFotosController.create>[0],
       res,
@@ -319,7 +321,7 @@ describe("AvaliacaoFotosController", () => {
       res,
     );
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "fotos_upload contem arquivo invalido." });
+    expect(res.json).toHaveBeenCalledWith({ message: INVALID_IMAGE_MESSAGE });
   });
 
   it("update retorna 400 para id invalido", async () => {
@@ -356,7 +358,7 @@ describe("AvaliacaoFotosController", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Avaliacao de produto nao encontrada." });
   });
 
-  it("update retorna 400 para caminho_url invalido", async () => {
+  it("update retorna 400 quando o upload enviado nao e imagem valida", async () => {
     const res = mockResponse();
     const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "a.jpg" });
     avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
@@ -365,6 +367,14 @@ describe("AvaliacaoFotosController", () => {
       res,
     );
     expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: INVALID_IMAGE_MESSAGE });
+  });
+
+  it("update retorna 400 para caminho_url vazio", async () => {
+    const res = mockResponse();
+    avaliacaoFotosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "a.jpg" }));
+    await AvaliacaoFotosController.update(mockRequest({ params: { id: "1" }, body: { caminho_url: " " } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "caminho_url invalido." });
   });
 
@@ -372,7 +382,7 @@ describe("AvaliacaoFotosController", () => {
     const res = mockResponse();
     const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "a.jpg" });
     avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
-    const file = { buffer: Buffer.from("fake-bytes"), mimetype: "image/png", originalname: "b.png", size: 10 } as Express.Multer.File;
+    const file = { buffer: PNG_BYTES, mimetype: "image/png", originalname: "b.png", size: 10 } as Express.Multer.File;
     await AvaliacaoFotosController.update(
       { ...mockRequest({ params: { id: "1" }, body: {} }), files: [file] } as unknown as Parameters<typeof AvaliacaoFotosController.update>[0],
       res,

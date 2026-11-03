@@ -12,6 +12,7 @@ import type {
   ProdutoFotoUpdateData,
 } from "../types/produto-foto.types";
 import CacheService from "../services/cache.service";
+import { INVALID_IMAGE_MESSAGE } from "../utils/imageSignature";
 import { saveProdutoFotoBits } from "../utils/produtoFotoStorage";
 
 type ProdutoFotoRequest = Request<ProdutoFotoRouteParams, object, ProdutoFotoBody>;
@@ -118,7 +119,11 @@ class ProdutoFotosController {
     return (await saveProdutoFotoBits(foto)) ?? ProdutoFotosController.parseFotoUrl(foto);
   }
 
-  private static getCreateErrorMessage(payload: ProdutoFotoPayload, photoPath: string) {
+  private static getCreateErrorMessage(payload: ProdutoFotoPayload, photoPath: string, hasFile = false) {
+    if (hasFile && !photoPath) {
+      return INVALID_IMAGE_MESSAGE;
+    }
+
     if (!payload.hasProductField() || !payload.hasColorField() || !photoPath) {
       return "id_produto, id_produto_cor e caminho_url (ou bits) sao obrigatorios.";
     }
@@ -134,7 +139,11 @@ class ProdutoFotosController {
     return null;
   }
 
-  private static getUpdateErrorMessage(payload: ProdutoFotoPayload, photoPath?: string) {
+  private static getUpdateErrorMessage(payload: ProdutoFotoPayload, photoPath?: string, hasFile = false) {
+    if (hasFile && !photoPath) {
+      return INVALID_IMAGE_MESSAGE;
+    }
+
     if (payload.hasProductField() && !payload.productId) {
       return "id_produto invalido.";
     }
@@ -207,7 +216,11 @@ class ProdutoFotosController {
         ProdutoFotosController.getFileKey(payload),
       ) ?? payload.fotoInput,
     );
-    const message = ProdutoFotosController.getCreateErrorMessage(payload, photoPath);
+    const message = ProdutoFotosController.getCreateErrorMessage(
+      payload,
+      photoPath,
+      ProdutoFotosController.getUploadedFiles(req).length > 0,
+    );
 
     if (message) {
       return res.status(400).json({ message });
@@ -257,7 +270,11 @@ class ProdutoFotosController {
           ) ?? payload.fotoInput,
         )
       : undefined;
-    const message = ProdutoFotosController.getUpdateErrorMessage(payload, photoPath);
+    const message = ProdutoFotosController.getUpdateErrorMessage(
+      payload,
+      photoPath,
+      ProdutoFotosController.getUploadedFiles(req).length > 0,
+    );
 
     if (!foto) {
       return res.status(404).json({ message: "Foto do produto nao encontrada." });
