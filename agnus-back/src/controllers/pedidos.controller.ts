@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Pedidos from "../models/Pedidos";
 import UsuarioEnderecos from "../models/UsuarioEnderecos";
 import Usuarios from "../models/Usuarios";
+import EventBusService from "../services/eventBus.service";
 import type {
   PedidoBody,
   PedidoQuery,
@@ -234,15 +235,21 @@ class PedidosController {
       });
     }
 
-    return res.status(201).send(
-      await Pedidos.create({
-        id_usuario: payload.userId!,
-        id_usuario_endereco: payload.addressId!,
-        status: payload.status ?? "aguardando_pagamento",
-        valor_total: payload.valorTotal,
-        valor_frete: payload.valorFrete,
-      }),
-    );
+    const pedido = await Pedidos.create({
+      id_usuario: payload.userId!,
+      id_usuario_endereco: payload.addressId!,
+      status: payload.status ?? "aguardando_pagamento",
+      valor_total: payload.valorTotal,
+      valor_frete: payload.valorFrete,
+    });
+
+    await EventBusService.publish("pedido.criado", {
+      id_pedido: pedido.id_pedido,
+      id_usuario: pedido.id_usuario,
+      status: pedido.status,
+      valor_total: pedido.valor_total,
+    });
+    return res.status(201).send(pedido);
   }
 
   static async update(req: PedidoRequest, res: Response) {
@@ -283,6 +290,8 @@ class PedidosController {
       });
     }
 
+    const previousStatus = pedido.status;
+
     await pedido.update(
       PedidosController.buildUpdateData(
         pedido,
@@ -292,6 +301,12 @@ class PedidosController {
       ),
     );
 
+    await EventBusService.publish("pedido.atualizado", {
+      id_pedido: pedido.id_pedido,
+      id_usuario: pedido.id_usuario,
+      status_anterior: previousStatus,
+      status: pedido.status,
+    });
     return res.status(200).send(pedido);
   }
 
@@ -309,6 +324,7 @@ class PedidosController {
     }
 
     await pedido.destroy();
+    await EventBusService.publish("pedido.removido", { id_pedido: orderId });
     return res.status(204).send();
   }
 }

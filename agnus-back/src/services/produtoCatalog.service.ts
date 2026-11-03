@@ -15,7 +15,11 @@ import type {
   SqlReplacement,
 } from "../types/produto.types";
 import { buildPaginationMeta, parsePagination } from "../utils/pagination";
+import { CACHE_NAMESPACES, CACHE_TTL } from "../config/cache";
+import CacheService from "./cache.service";
 import { searchProdutosInIndex } from "./produtoSearchIndex.service";
+
+const isCacheableResult = (result: object) => !("message" in result);
 
 class ProdutoCatalogService {
   static readonly SALES_ORDER_STATUSES: ProdutoSalesStatus[] = ["pago", "enviado", "entregue"];
@@ -163,6 +167,15 @@ class ProdutoCatalogService {
   }
 
   static async findAll(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
+    return CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, "lista", query),
+      CACHE_TTL.produtosLista,
+      () => ProdutoCatalogService.loadFindAll(query),
+      isCacheableResult,
+    );
+  }
+
+  static async loadFindAll(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
     if (ProdutoCatalogService.parseSearchTerms(query).length) {
       return ProdutoCatalogService.searchFindAll(query);
     }
@@ -189,6 +202,15 @@ class ProdutoCatalogService {
   }
 
   static async catalog(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
+    return CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, "catalogo", query),
+      CACHE_TTL.produtosCatalogo,
+      () => ProdutoCatalogService.loadCatalog(query),
+      isCacheableResult,
+    );
+  }
+
+  static async loadCatalog(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
     if (ProdutoCatalogService.parseSearchTerms(query).length) {
       return ProdutoCatalogService.searchCatalog(query);
     }
@@ -203,6 +225,15 @@ class ProdutoCatalogService {
   }
 
   static async bestSellers(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
+    return CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, "mais-vendidos", query),
+      CACHE_TTL.produtosMaisVendidos,
+      () => ProdutoCatalogService.loadBestSellers(query),
+      isCacheableResult,
+    );
+  }
+
+  static async loadBestSellers(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
     if (ProdutoCatalogService.parseSearchTerms(query).length) {
       return ProdutoCatalogService.searchCatalog(query, {
         onlyWithSales: true,
@@ -220,6 +251,15 @@ class ProdutoCatalogService {
   }
 
   static async findById(productId: number) {
+    return CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, "detalhe", { id: productId }),
+      CACHE_TTL.produtoDetalhe,
+      () => ProdutoCatalogService.loadById(productId),
+      isCacheableResult,
+    );
+  }
+
+  static async loadById(productId: number) {
     const produto = await Produtos.findByPk(productId);
 
     return produto

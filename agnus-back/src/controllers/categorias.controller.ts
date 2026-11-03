@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
+import { CACHE_NAMESPACES, CACHE_TTL } from "../config/cache";
 import Categorias from "../models/Categorias";
+import CacheService from "../services/cache.service";
+import EventBusService from "../services/eventBus.service";
 import type {
   CategoriaBody,
   CategoriaQuery,
   CategoriaRouteParams,
 } from "../types/categoria.types";
+import type { AgnusEventType } from "../types/event.types";
 import { buildPaginationMeta, parsePagination } from "../utils/pagination";
 
 type CategoriaRequest = Request<CategoriaRouteParams, object, CategoriaBody, CategoriaQuery>;
@@ -52,6 +56,15 @@ class CategoriasController {
       : "Ja existe categoria com esse nome.";
   }
 
+  // O catalogo de produtos exibe o nome da categoria, entao os dois namespaces sao invalidados.
+  private static async afterChange(type: AgnusEventType, categoria: Categorias) {
+    const reason = `${type}:${categoria.id_categoria}`;
+
+    await CacheService.invalidateNamespace(CACHE_NAMESPACES.categorias, reason);
+    await CacheService.invalidateNamespace(CACHE_NAMESPACES.produtos, reason);
+    await EventBusService.publish(type, { id_categoria: categoria.id_categoria, nome: categoria.nome });
+  }
+
   static async findAll(req: CategoriaRequest, res: Response) {
     const pagination = parsePagination(req.query);
 
@@ -59,16 +72,24 @@ class CategoriasController {
       return res.status(400).json({ message: "page e limit devem ser inteiros positivos." });
     }
 
-    const { count, rows } = await Categorias.findAndCountAll({
-      limit: pagination.limit,
-      offset: pagination.offset,
-      order: [["id_categoria", "ASC"]],
-    });
+    const result = await CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.categorias, "lista", { page: pagination.page, limit: pagination.limit }),
+      CACHE_TTL.categoriasLista,
+      async () => {
+        const { count, rows } = await Categorias.findAndCountAll({
+          limit: pagination.limit,
+          offset: pagination.offset,
+          order: [["id_categoria", "ASC"]],
+        });
 
-    return res.status(200).json({
-      data: rows,
-      pagination: buildPaginationMeta(pagination.page, pagination.limit, count),
-    });
+        return {
+          data: rows,
+          pagination: buildPaginationMeta(pagination.page, pagination.limit, count),
+        };
+      },
+    );
+
+    return res.status(200).json(result);
   }
 
   static async getById(req: CategoriaRequest, res: Response) {
@@ -78,7 +99,12 @@ class CategoriasController {
       return res.status(400).json({ message: "ID da categoria invalido." });
     }
 
-    const categoria = await Categorias.findByPk(categoryId);
+    const categoria = await CacheService.getOrSet(
+      CacheService.buildKey(CACHE_NAMESPACES.categorias, "detalhe", { id: categoryId }),
+      CACHE_TTL.categoriaDetalhe,
+      () => Categorias.findByPk(categoryId),
+      (value) => value !== null,
+    );
 
     if (!categoria) {
       return res.status(404).json({ message: "Categoria nao encontrada." });
@@ -102,7 +128,10 @@ class CategoriasController {
       return res.status(400).json({ message: duplicateMessage });
     }
 
-    return res.status(201).send(await Categorias.create({ nome: payload.nome! }));
+    const categoria = await Categorias.create({ nome: payload.nome! });
+
+    await CategoriasController.afterChange("categoria.criada", categoria);
+    return res.status(201).send(categoria);
   }
 
   static async update(req: CategoriaRequest, res: Response) {
@@ -132,6 +161,7 @@ class CategoriasController {
     }
 
     await categoria.update({ nome: payload.nome ?? categoria.nome });
+    await CategoriasController.afterChange("categoria.atualizada", categoria);
     return res.status(200).send(categoria);
   }
 
@@ -149,6 +179,7 @@ class CategoriasController {
     }
 
     await categoria.destroy();
+    await CategoriasController.afterChange("categoria.removida", categoria);
     return res.status(204).send();
   }
 }

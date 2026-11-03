@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { CACHE_NAMESPACES } from "../config/cache";
 import ProdutoCores from "../models/ProdutoCores";
 import ProdutoFotos from "../models/ProdutoFotos";
 import Produtos from "../models/Produtos";
@@ -10,6 +11,7 @@ import type {
   ProdutoFotoSourceInput,
   ProdutoFotoUpdateData,
 } from "../types/produto-foto.types";
+import CacheService from "../services/cache.service";
 import { saveProdutoFotoBits } from "../utils/produtoFotoStorage";
 
 type ProdutoFotoRequest = Request<ProdutoFotoRouteParams, object, ProdutoFotoBody>;
@@ -50,6 +52,14 @@ class ProdutoFotoPayload {
 }
 
 class ProdutoFotosController {
+  // As imagens fazem parte da resposta do catalogo, entao toda alteracao invalida o cache de produtos.
+  private static invalidateCatalogCache(action: string, foto: ProdutoFotos) {
+    return CacheService.invalidateNamespace(
+      CACHE_NAMESPACES.produtos,
+      `produto_foto.${action}:${foto.id_produto}`,
+    );
+  }
+
   private static parsePositiveId(value: string | undefined) {
     const parsedId = Number(value);
 
@@ -218,13 +228,14 @@ class ProdutoFotosController {
       return res.status(colorResult.status).json({ message: colorResult.message });
     }
 
-    return res.status(201).send(
-      await ProdutoFotos.create({
-        id_produto: payload.productId!,
-        id_produto_cor: payload.colorId!,
-        caminho_url: photoPath,
-      }),
-    );
+    const foto = await ProdutoFotos.create({
+      id_produto: payload.productId!,
+      id_produto_cor: payload.colorId!,
+      caminho_url: photoPath,
+    });
+
+    await ProdutoFotosController.invalidateCatalogCache("criada", foto);
+    return res.status(201).send(foto);
   }
 
   static async update(req: ProdutoFotoRequestWithFiles, res: Response) {
@@ -271,6 +282,7 @@ class ProdutoFotosController {
     }
 
     await foto.update(ProdutoFotosController.buildUpdateData(foto, payload, photoPath));
+    await ProdutoFotosController.invalidateCatalogCache("atualizada", foto);
     return res.status(200).send(foto);
   }
 
@@ -288,6 +300,7 @@ class ProdutoFotosController {
     }
 
     await foto.destroy();
+    await ProdutoFotosController.invalidateCatalogCache("removida", foto);
     return res.status(204).send();
   }
 }
