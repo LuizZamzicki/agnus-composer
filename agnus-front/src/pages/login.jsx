@@ -7,6 +7,13 @@ import logoCompleto from "../img/marca/logo-completo.png";
 import { apiUrl } from "../utils/api";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
 
+const CHAVE_DESTINO = "agnus_destino_login";
+
+// O Google só devolve para /login, então o destino fica guardado durante a ida e a volta.
+function destinoSeguro(valor) {
+  return valor && valor.startsWith("/") && !valor.startsWith("//") ? valor : null;
+}
+
 function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -96,7 +103,11 @@ function Login() {
           })
         );
 
-        const redirect = searchParams.get("redirect");
+        const redirect =
+          destinoSeguro(searchParams.get("redirect")) ||
+          destinoSeguro(sessionStorage.getItem(CHAVE_DESTINO));
+
+        sessionStorage.removeItem(CHAVE_DESTINO);
 
         const destino =
           tipo === "administrador"
@@ -202,6 +213,22 @@ function Login() {
           return;
         }
 
+        // Quem acabou de criar a conta segue direto, sem digitar tudo de novo.
+        const entrada = await fetch(apiUrl("auth/login"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, senha: form.senha }),
+        }).catch(() => null);
+        const sessao = entrada?.ok ? await entrada.json().catch(() => null) : null;
+        const tokenNovo = sessao?.token || sessao?.access_token || sessao?.accessToken;
+
+        if (tokenNovo) {
+          localStorage.setItem("auth", JSON.stringify(sessao));
+          localStorage.setItem("auth_token", tokenNovo);
+          navigate(destinoSeguro(searchParams.get("redirect")) || "/", { replace: true });
+          return;
+        }
+
         setSuccess("Cadastro realizado com sucesso!");
 
         setForm({
@@ -229,7 +256,7 @@ function Login() {
         });
 
         const data = await response.json().catch(() => ({}));
-        const redirect = searchParams.get("redirect");
+        const redirect = destinoSeguro(searchParams.get("redirect"));
 
         if (!response.ok) {
           setError(data?.message || "Credenciais inválidas.");
@@ -260,6 +287,8 @@ function Login() {
   function handleGoogleLogin() {
     const redirect = searchParams.get("redirect") || "/";
 
+    sessionStorage.setItem(CHAVE_DESTINO, redirect);
+
     window.location.href =
       apiUrl(`auth/google?redirect=${encodeURIComponent(redirect)}`);
   }
@@ -287,7 +316,11 @@ function Login() {
       <section className="login-panel">
         <div className="login-brand">
           <h1><img src={logoCompleto} alt="Agnus" /></h1>
-          <p>{modoCadastro ? "Crie a sua conta" : "Entre na sua conta"}</p>
+          <p>
+            {searchParams.get("redirect") === "/finalizar"
+              ? `${modoCadastro ? "Crie a sua conta" : "Entre na sua conta"} para concluir o pedido. Sua sacola fica guardada.`
+              : modoCadastro ? "Crie a sua conta" : "Entre na sua conta"}
+          </p>
         </div>
 
         <div className="login-tabs">

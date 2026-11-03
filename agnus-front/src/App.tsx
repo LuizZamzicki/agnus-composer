@@ -8,6 +8,8 @@ import Home from "./pages/cliente/home";
 import Catalogo from "./pages/cliente/catalogo";
 import Carrinho from "./pages/cliente/carrinho";
 import Produto from "./pages/cliente/produto";
+import Finalizar from "./pages/cliente/finalizar";
+import PedidoConfirmado from "./pages/cliente/pedidoConfirmado";
 
 import Cliente from "./pages/cliente/cliente";
 import ClientePerfil from "./pages/cliente/clientePerfil";
@@ -75,6 +77,8 @@ function App() {
         <Route path="/produtos" element={<Catalogo />} />
 
         <Route path="/carrinho" element={<Carrinho />} />
+        <Route path="/finalizar" element={<Finalizar />} />
+        <Route path="/pedido-confirmado/:id" element={<PedidoConfirmado />} />
         <Route path="/produto/:id_produto" element={<Produto />} />
 
         <Route path="/cliente" element={<Cliente />}>

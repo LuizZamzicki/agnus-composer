@@ -1,43 +1,44 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
+import {
+    SessaoExpirada,
+    avisarSacola,
+    encerrarSessao,
+    formatarReal,
+    lerSacolaVisitante,
+    listarItens,
+    salvarSacolaVisitante,
+    sessaoDeAdmin,
+    sincronizarVisitante,
+    usuarioDaSessao,
+} from "../../utils/sacola";
 
 let toastTimeout;
+
+function formatarItem(item) {
+    return {
+        ...item,
+        id_produto: item.produto?.id_produto,
+        nome_produto: item.produto?.nome || "Produto",
+        nome_cor: item.cor?.nome || "Cor",
+        nome_tamanho: item.grade?.nome || "Tamanho",
+        img: item.foto_produto ? assetUrl(item.foto_produto) : null,
+        preco_unitario: Number(item.preco_unitario || 0),
+    };
+}
 
 function Carrinho() {
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const [sessaoExpirou, setSessaoExpirou] = useState(false);
 
-    const [confirmFinish, setConfirmFinish] = useState(false);
-    const [selectedItems, setSelectedItems] = useState([]);
-
-    const auth = JSON.parse(localStorage.getItem("auth") || "{}");
-    const token = localStorage.getItem("auth_token");
-
-    const user = auth?.user || auth;
-
-    const id_usuario = Number(
-        user?.id_usuario ||
-        user?.id ||
-        0
-    );
-
-    const isAdmin = user?.tipo === "administrador";
-    const isLogged = !!token;
-
-    const safeJson = async (res) => {
-        const text = await res.text();
-        if (!text) return null;
-        try {
-            return JSON.parse(text);
-        } catch {
-            return null;
-        }
-    };
+    const idUsuario = usuarioDaSessao();
+    const isAdmin = sessaoDeAdmin();
 
     function showToast(message, type = "success") {
         setToast({ message, type });
@@ -45,122 +46,95 @@ function Carrinho() {
         toastTimeout = setTimeout(() => setToast(null), 3000);
     }
 
-    async function carregarCarrinho() {
+    const carregarCarrinho = useCallback(async () => {
+        setLoading(true);
+
         try {
-            setLoading(true);
-
-            if (isAdmin || !id_usuario) {
+            if (isAdmin) {
                 setCart([]);
-                return;
+            } else if (!idUsuario) {
+                setCart(lerSacolaVisitante());
+            } else {
+                await sincronizarVisitante(idUsuario);
+                setCart((await listarItens(idUsuario)).map(formatarItem));
             }
-
-            const carrinhoRes = await fetch(apiUrl(`carts?id_usuario=${id_usuario}`), { headers: authHeaders() });
-            const carrinhos = await safeJson(carrinhoRes);
-
-            if (!carrinhos?.length) {
-                setCart([]);
-                return;
+        } catch (error) {
+            if (error instanceof SessaoExpirada) {
+                setSessaoExpirou(true);
+                setCart(lerSacolaVisitante());
+            } else {
+                showToast("Não foi possível carregar a sacola. Tente de novo.", "error");
             }
-
-            const carrinho = carrinhos[0];
-
-            const itensRes = await fetch(apiUrl(`cart-items/${carrinho.id_carrinho}`), { headers: authHeaders() });
-            const itens = await safeJson(itensRes);
-
-            if (!itens?.length) {
-                setCart([]);
-                return;
-            }
-
-            const itensFormatados = itens.map((item) => ({
-                ...item,
-                nome_produto: item.produto?.nome || "Produto",
-                nome_cor: item.cor?.nome || "Cor",
-                nome_tamanho: item.grade?.nome || "Tamanho",
-                img: item.foto_produto
-                    ? assetUrl(item.foto_produto)
-                    : null,
-                preco_unitario: Number(item.preco_unitario || 0)
-            }));
-
-            setCart(itensFormatados);
-
-        } catch {
-            setCart([]);
-            showToast("Erro ao carregar carrinho", "error");
         } finally {
             setLoading(false);
         }
-    }
+    }, [idUsuario, isAdmin]);
 
     useEffect(() => {
-        if (!isLogged) {
-            setLoading(false);
-            setCart([]);
+        carregarCarrinho();
+    }, [carregarCarrinho]);
+
+    function atualizarVisitante(itens) {
+        setCart(itens);
+        salvarSacolaVisitante(itens);
+    }
+
+    async function alterarQtd(item, delta) {
+        const quantidade = item.quantidade + delta;
+
+        if (quantidade < 1) {
             return;
         }
 
-        carregarCarrinho();
-    }, [id_usuario]);
-
-    function toggleSelect(id) {
-        setSelectedItems(prev =>
-            prev.includes(id)
-                ? prev.filter(i => i !== id)
-                : [...prev, id]
-        );
-    }
-
-    function selecionarTodos() {
-        if (selectedItems.length === cart.length) {
-            setSelectedItems([]);
-        } else {
-            setSelectedItems(cart.map(i => i.id_carrinho_item));
+        if (!idUsuario) {
+            atualizarVisitante(cart.map((p) => (
+                p.id_carrinho_item === item.id_carrinho_item ? { ...p, quantidade } : p
+            )));
+            return;
         }
-    }
 
-    async function alterarQtd(item, tipo) {
         try {
-            const novaQtd =
-                tipo === "add"
-                    ? item.quantidade + 1
-                    : item.quantidade - 1;
-
-            if (novaQtd < 1) return;
-
             const res = await fetch(apiUrl(`cart-items/${item.id_carrinho_item}`), {
                 method: "PUT",
                 headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({ quantidade: novaQtd })
+                body: JSON.stringify({ quantidade }),
             });
+
+            if (res.status === 401) {
+                encerrarSessao();
+                setSessaoExpirou(true);
+                setCart(lerSacolaVisitante());
+                return;
+            }
 
             if (!res.ok) {
                 showToast("Erro ao atualizar quantidade", "error");
                 return;
             }
 
-            setCart(prev =>
-                prev.map(p =>
-                    p.id_carrinho_item === item.id_carrinho_item
-                        ? { ...p, quantidade: novaQtd }
-                        : p
-                )
-            );
-
+            setCart((prev) => prev.map((p) => (
+                p.id_carrinho_item === item.id_carrinho_item ? { ...p, quantidade } : p
+            )));
+            avisarSacola();
         } catch {
             showToast("Erro ao atualizar quantidade", "error");
         }
     }
 
-    function removerItem(id) {
-        setConfirmDelete(id);
-    }
-
     async function confirmarRemocao() {
+        const id = confirmDelete;
+
+        setConfirmDelete(null);
+
+        if (!idUsuario) {
+            atualizarVisitante(cart.filter((i) => i.id_carrinho_item !== id));
+            return;
+        }
+
         try {
-            const res = await fetch(apiUrl(`cart-items/${confirmDelete}`), {
+            const res = await fetch(apiUrl(`cart-items/${id}`), {
                 method: "DELETE",
-                headers: authHeaders()
+                headers: authHeaders(),
             });
 
             if (!res.ok) {
@@ -168,110 +142,15 @@ function Carrinho() {
                 return;
             }
 
-            setCart(prev => prev.filter(i => i.id_carrinho_item !== confirmDelete));
-            setSelectedItems(prev => prev.filter(i => i !== confirmDelete));
-
-            showToast("Produto removido com sucesso");
-
+            setCart((prev) => prev.filter((i) => i.id_carrinho_item !== id));
+            avisarSacola();
         } catch {
             showToast("Erro ao remover produto", "error");
-        } finally {
-            setConfirmDelete(null);
         }
     }
 
-    async function finalizarCompra() {
-        const selecionados = cart.filter(i =>
-            selectedItems.includes(i.id_carrinho_item)
-        );
-
-        if (!selecionados.length) {
-            showToast("Selecione algum item primeiro.", "error");
-            return;
-        }
-
-        try {
-            const enderecoRes = await fetch(apiUrl(`user-addresses/${id_usuario}`), { headers: authHeaders() });
-            const enderecos = await safeJson(enderecoRes);
-
-            if (!Array.isArray(enderecos) || enderecos.length === 0) {
-                showToast("Cadastre um endereço primeiro", "error");
-                return;
-            }
-
-            const endereco = enderecos[0];
-
-            const pedidoRes = await fetch(apiUrl("orders"), {
-                method: "POST",
-                headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({
-                    id_usuario,
-                    id_usuario_endereco: endereco.id_usuario_endereco,
-                    status: "aguardando_pagamento",
-                    valor_total: selecionados.reduce(
-                        (acc, item) => acc + item.preco_unitario * item.quantidade,
-                        0
-                    ),
-                    valor_frete: 0
-                })
-            });
-
-            const pedidoData = await safeJson(pedidoRes);
-
-            const id_pedido = pedidoData?.id_pedido || pedidoData?.id;
-
-            await Promise.all(
-                selecionados.map(item =>
-                    fetch(apiUrl("order-items"), {
-                        method: "POST",
-                        headers: authHeaders({ "Content-Type": "application/json" }),
-                        body: JSON.stringify({
-                            id_pedido,
-                            id_produto_cor: item.id_produto_cor,
-                            id_produto_grade: item.id_produto_grade,
-                            quantidade: item.quantidade
-                        })
-                    })
-                )
-            );
-
-            await Promise.all(
-                selecionados.map(item =>
-                    fetch(apiUrl(`cart-items/${item.id_carrinho_item}`), {
-                        method: "DELETE",
-                        headers: authHeaders()
-                    })
-                )
-            );
-
-            setCart(prev =>
-                prev.filter(i => !selectedItems.includes(i.id_carrinho_item))
-            );
-
-            setSelectedItems([]);
-            showToast("Pedido realizado com sucesso!");
-
-        } catch {
-            showToast("Erro ao finalizar compra", "error");
-        }
-    }
-
-    const subtotal = cart
-        .filter(i => selectedItems.includes(i.id_carrinho_item))
-        .reduce(
-            (acc, item) => acc + item.preco_unitario * item.quantidade,
-            0
-        );
-
-    if (!isLogged) {
-        return (
-            <div className="cart-empty">
-                <h1>Entre para ver a sua sacola</h1>
-                <p>As peças que você escolher ficam guardadas na sua conta.</p>
-                <Link to="/login" className="empty-btn">Entrar</Link>
-            </div>
-        );
-    }
+    const total = cart.reduce((acc, item) => acc + item.preco_unitario * item.quantidade, 0);
+    const linkFinalizar = idUsuario ? "/finalizar" : "/login?redirect=/finalizar";
 
     if (loading) {
         return (
@@ -294,9 +173,24 @@ function Carrinho() {
         return (
             <div className="cart-empty">
                 <span className="cart-empty-icon"><ShoppingBag size={44} strokeWidth={1} aria-hidden="true" /></span>
-                <h1>Sua sacola está vazia</h1>
-                <p>Quando escolher uma peça, ela aparece aqui.</p>
-                <Link to="/catalogo" className="empty-btn">Ver a coleção</Link>
+                {sessaoExpirou ? (
+                    <>
+                        <h1>Entre de novo para ver a sua sacola</h1>
+                        <p>Sua sessão terminou, mas as peças continuam guardadas na sua conta.</p>
+                        <Link to="/login?redirect=/carrinho" className="empty-btn">Entrar</Link>
+                    </>
+                ) : (
+                    <>
+                        <h1>Sua sacola está vazia</h1>
+                        <p>Quando escolher uma peça, ela aparece aqui.</p>
+                        <Link to="/catalogo" className="empty-btn">Ver a coleção</Link>
+                        {!idUsuario && (
+                            <p className="cart-empty-login">
+                                Já escolheu antes? <Link to="/login?redirect=/carrinho">Entre na sua conta</Link>
+                            </p>
+                        )}
+                    </>
+                )}
             </div>
         );
     }
@@ -305,53 +199,23 @@ function Carrinho() {
         <div className="cart-page">
 
             {toast && (
-                <div data-cy="carrinho-toast" className={`toast ${toast.type}`}>
+                <div data-cy="carrinho-toast" className={`toast ${toast.type}`} role="status">
                     {toast.message}
                 </div>
             )}
 
             {confirmDelete && (
                 <div className="modal-overlay">
-                    <div className="modal-confirm">
+                    <div className="modal-confirm" role="dialog" aria-modal="true">
                         <h3>Tirar esta peça da sacola?</h3>
 
                         <div className="modal-actions">
-                            <button
-                                data-cy="cancelar-remover"
-                                onClick={() => setConfirmDelete(null)}
-                            >
-                                Cancelar
+                            <button data-cy="cancelar-remover" onClick={() => setConfirmDelete(null)}>
+                                Manter
                             </button>
 
-                            <button
-                                data-cy="confirmar-remover"
-                                onClick={confirmarRemocao}
-                            >
+                            <button data-cy="confirmar-remover" onClick={confirmarRemocao}>
                                 Sim, remover
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {confirmFinish && (
-                <div className="modal-overlay">
-                    <div className="modal-confirm">
-                        <h3>Confirmar o pedido?</h3>
-
-                        <div className="modal-actions">
-                            <button
-                                data-cy="cancelar-finalizar"
-                                onClick={() => setConfirmFinish(false)}
-                            >
-                                Cancelar
-                            </button>
-
-                            <button
-                                data-cy="confirmar-finalizar"
-                                onClick={finalizarCompra}
-                            >
-                                Sim, finalizar
                             </button>
                         </div>
                     </div>
@@ -366,97 +230,84 @@ function Carrinho() {
 
             <div className="cart-container">
                 <div className="cart-items">
-                    <label className="select-all">
-                        <input data-cy="selecionar-todos" type="checkbox"
-                            checked={cart.length > 0 && selectedItems.length === cart.length}
-                            onChange={selecionarTodos} />
-                        Selecionar todos
-                    </label>
+                    {cart.map((item) => (
+                        <div className="cart-item" key={item.id_carrinho_item}>
+                            {item.img && <img src={item.img} alt={item.nome_produto} />}
 
-                    {cart.map(item =>
+                            <div className="cart-info">
+                                <h3>
+                                    {item.id_produto
+                                        ? <Link to={`/produto/${item.id_produto}`}>{item.nome_produto}</Link>
+                                        : item.nome_produto}
+                                </h3>
 
-                    (<div className="cart-item"
-                        key={item.id_carrinho_item}>
+                                <span>Cor: {item.nome_cor} • Tam: {item.nome_tamanho}</span>
 
-                        <input
-                            data-cy={`selecionar-item-${item.id_carrinho_item}`}
-                            type="checkbox"
-                            checked={selectedItems.includes(item.id_carrinho_item)}
-                            onChange={() => toggleSelect(item.id_carrinho_item)}
-                            aria-label={`Incluir ${item.nome_produto} no pedido`}
-                        />
+                                <div className="qtd">
+                                    <button
+                                        data-cy={`diminuir-${item.id_carrinho_item}`}
+                                        aria-label="Diminuir quantidade"
+                                        disabled={item.quantidade <= 1}
+                                        onClick={() => alterarQtd(item, -1)}
+                                    >
+                                        <Minus size={14} strokeWidth={1.5} />
+                                    </button>
 
-                        {item.img && (<img src={item.img}
+                                    <span data-cy={`quantidade-${item.id_carrinho_item}`}>
+                                        {item.quantidade}
+                                    </span>
 
-                            alt={item.nome_produto} />)}
+                                    <button
+                                        data-cy={`aumentar-${item.id_carrinho_item}`}
+                                        aria-label="Aumentar quantidade"
+                                        onClick={() => alterarQtd(item, 1)}
+                                    >
+                                        <Plus size={14} strokeWidth={1.5} />
+                                    </button>
+                                </div>
+                            </div>
 
-                        <div className="cart-info">
-
-                            <h3>{item.nome_produto}</h3>
-
-                            <span>
-                                Cor: {item.nome_cor} • Tam: {item.nome_tamanho}
-                            </span>
-
-                            <div className="qtd">
+                            <div className="cart-price">
+                                <span>{formatarReal(item.preco_unitario * item.quantidade)}</span>
                                 <button
-                                    data-cy={`diminuir-${item.id_carrinho_item}`}
-                                    aria-label="Diminuir quantidade"
-                                    onClick={() => alterarQtd(item, "remove")}>
-                                    <Minus size={14} strokeWidth={1.5} />
-                                </button>
-
-                                <span data-cy={`quantidade-${item.id_carrinho_item}`}>
-                                    {item.quantidade}
-                                </span>
-
-                                <button
-                                    data-cy={`aumentar-${item.id_carrinho_item}`}
-                                    aria-label="Aumentar quantidade"
-                                    onClick={() => alterarQtd(item, "add")}>
-                                    <Plus size={14} strokeWidth={1.5} />
+                                    type="button"
+                                    className="cart-remove"
+                                    data-cy={`remover-${item.id_carrinho_item}`}
+                                    aria-label={`Remover ${item.nome_produto}`}
+                                    onClick={() => setConfirmDelete(item.id_carrinho_item)}
+                                >
+                                    <Trash2 size={18} strokeWidth={1.5} />
                                 </button>
                             </div>
                         </div>
-                        <div className="cart-price">
-                            <span>
-                                R$ {(item.preco_unitario * item.quantidade).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                            </span>
-                            <button
-                                type="button"
-                                className="cart-remove"
-                                data-cy={`remover-${item.id_carrinho_item}`}
-                                aria-label={`Remover ${item.nome_produto}`}
-                                onClick={() => removerItem(item.id_carrinho_item)}
-                            >
-                                <Trash2 size={18} strokeWidth={1.5} />
-                            </button>
-                        </div>
-                    </div>))}
+                    ))}
                 </div>
 
                 <div className="cart-summary">
                     <h2>Resumo</h2>
                     <div>
-                        <span>Subtotal</span>
-                        <span>R$ {subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        <span>Peças</span>
+                        <span>{formatarReal(total)}</span>
+                    </div>
+                    <div>
+                        <span>Frete</span>
+                        <span className="cart-frete">combinado depois</span>
                     </div>
                     <hr />
                     <div>
                         <strong>Total</strong>
-                        <strong>R$ {subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+                        <strong data-cy="carrinho-total">{formatarReal(total)}</strong>
                     </div>
-                    <button
-                        data-cy="finalizar-compra"
-                        className="finish-btn"
-                        onClick={() => setConfirmFinish(true)}
-                    >
+                    <Link data-cy="finalizar-compra" className="finish-btn" to={linkFinalizar}>
                         Finalizar pedido
-                    </button>
+                    </Link>
+                    {!idUsuario && (
+                        <p className="cart-hint">Na próxima etapa, você entra na sua conta ou cria uma. Sua sacola fica guardada.</p>
+                    )}
                 </div>
             </div>
-        </div>);
+        </div>
+    );
 }
 
 export default Carrinho;
-

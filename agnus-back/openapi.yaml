@@ -579,6 +579,32 @@ paths:
               schema: { $ref: "#/components/schemas/Pedido" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /orders/checkout:
+    post:
+      operationId: postOrdersCheckout
+      tags:
+        - Pedidos
+      summary: Finaliza a sacola do usuario autenticado em uma unica transacao
+      description: O total e calculado no servidor; pedido, itens e baixa da sacola sao gravados juntos.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_usuario_endereco]
+              properties:
+                id_usuario_endereco:
+                  type: integer
+      responses:
+        "201":
+          description: Pedido criado
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Uma peca da sacola nao esta mais disponivel
   /orders/me:
     get:
       operationId: getOrdersMe

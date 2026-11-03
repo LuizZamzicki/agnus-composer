@@ -1,6 +1,17 @@
+import { ChevronRight } from "lucide-react";
+import { formatarReal } from "../../utils/sacola";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
+
+const STATUS_PEDIDO = {
+    aguardando_calculo_frete: "Calculando o frete",
+    aguardando_pagamento: "Aguardando pagamento",
+    pago: "Pago",
+    enviado: "Enviado",
+    entregue: "Entregue",
+    cancelado: "Cancelado",
+};
 
 function ClientePedidos() {
     const [pedidos, setPedidos] = useState([]);
@@ -127,26 +138,26 @@ function ClientePedidos() {
                             >
                                 <strong>Pedido #{pedido.id_pedido}</strong>
                                 <span>{formatarData(pedido.data_criacao)}</span>
-                                <span
+                                <ChevronRight
+                                    size={18}
+                                    strokeWidth={1.5}
+                                    aria-hidden="true"
                                     style={{
                                         transform:
                                             openPedido === pedido.id_pedido
                                                 ? "rotate(90deg)"
                                                 : "rotate(0deg)",
-                                        display: "inline-block",
                                         transition: "0.2s",
                                     }}
-                                >
-                                    ▶
-                                </span>
+                                />
                             </div>
 
                             <span className={`status ${pedido.status}`}>
-                                {pedido.status}
+                                {STATUS_PEDIDO[pedido.status] || pedido.status}
                             </span>
 
                             <strong className="pedido-valor">
-                                R$ {Number(pedido.valor_total).toFixed(2)}
+                                {formatarReal(pedido.valor_total)}
                             </strong>
                         </div>
 
@@ -179,7 +190,7 @@ function ClientePedidos() {
                                         </div>
 
                                         <strong>
-                                            R$ {Number(item.subtotal).toFixed(2)}
+                                            {formatarReal(item.subtotal)}
                                         </strong>
                                     </div>
                                 ))}

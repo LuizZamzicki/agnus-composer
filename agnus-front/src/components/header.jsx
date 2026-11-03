@@ -1,12 +1,13 @@
 import { Search, User, ShoppingBag, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import "../css/cliente/app.css";
 import "../css/cliente/header.css";
 import escrita from "../img/marca/escrita.png";
 import simbolo from "../img/marca/simbolo.png";
 import { tempoLiturgico } from "../utils/liturgia";
+import { EVENTO_SACOLA, avisarSacola, contarPecas, sessaoDeAdmin } from "../utils/sacola";
 
 function Header() {
     const navigate = useNavigate();
@@ -17,6 +18,8 @@ function Header() {
     const [showHeader, setShowHeader] = useState(true);
     const [tempo] = useState(() => tempoLiturgico());
     const [lastScrollY, setLastScrollY] = useState(0);
+    const [pecas, setPecas] = useState(0);
+    const { pathname } = useLocation();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -69,6 +72,7 @@ function Header() {
 
         setToken(null);
         setAuth(null);
+        avisarSacola();
 
         navigate("/login");
     }
@@ -85,6 +89,26 @@ function Header() {
             // clearInterval(interval);
         };
     }, []);
+
+    useEffect(() => {
+        let ativo = true;
+
+        async function atualizar() {
+            const total = sessaoDeAdmin() ? 0 : await contarPecas().catch(() => 0);
+
+            if (ativo) {
+                setPecas(total);
+            }
+        }
+
+        atualizar();
+        window.addEventListener(EVENTO_SACOLA, atualizar);
+
+        return () => {
+            ativo = false;
+            window.removeEventListener(EVENTO_SACOLA, atualizar);
+        };
+    }, [pathname]);
 
     return (
         <header className={`header ${showHeader ? "show" : "hide"}`}>
@@ -110,8 +134,13 @@ function Header() {
                         <User size={20} strokeWidth={1.5} />
                     </Link>
 
-                    <Link to="/carrinho" aria-label="Sacola">
+                    <Link
+                        to="/carrinho"
+                        className="sacola-link"
+                        aria-label={pecas ? `Sacola, ${pecas} ${pecas === 1 ? "peça" : "peças"}` : "Sacola"}
+                    >
                         <ShoppingBag size={20} strokeWidth={1.5} />
+                        {pecas > 0 && <span data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
                     </Link>
 
                     {token && (

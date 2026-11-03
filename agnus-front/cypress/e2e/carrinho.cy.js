@@ -122,40 +122,11 @@ describe("Carrinho", () => {
             );
     });
 
-    it("deve selecionar produto", () => {
-
-        mockCarrinho();
-
-        cy.visit("/carrinho");
-
-        cy.get('[data-cy="selecionar-item-10"]')
-            .check();
-
-        cy.get('[data-cy="selecionar-item-10"]')
-            .should("be.checked");
-    });
-
-    it("deve selecionar todos produtos", () => {
-
-        mockCarrinho();
-
-        cy.visit("/carrinho");
-
-        cy.get('[data-cy="selecionar-todos"]')
-            .check();
-
-        cy.get('[data-cy="selecionar-item-10"]')
-            .should("be.checked");
-    });
-
     it("deve calcular subtotal", () => {
 
         mockCarrinho();
 
         cy.visit("/carrinho");
-
-        cy.get('[data-cy="selecionar-item-10"]')
-            .check();
 
         cy.contains("R$ 200,00").should("exist");
     });
@@ -204,7 +175,7 @@ describe("Carrinho", () => {
 
         cy.wait("@delete");
 
-        cy.contains("SEU CARRINHO ESTÁ VAZIO").should("exist");
+        cy.contains("Sua sacola está vazia").should("exist");
     });
 
     it("deve mostrar erro ao falhar remoção", () => {
@@ -270,7 +241,7 @@ describe("Carrinho", () => {
         cy.visit("/carrinho");
 
         cy.get('[data-cy="diminuir-10"]')
-            .click();
+            .should("be.disabled");
 
         cy.get('[data-cy="quantidade-10"]')
             .should(
@@ -288,7 +259,7 @@ describe("Carrinho", () => {
         cy.contains("R$ 200,00").should("exist");
     });
 
-    it("deve calcular vários produtos selecionados", () => {
+    it("deve somar todos os produtos", () => {
 
         cy.intercept(
             "GET",
@@ -329,9 +300,6 @@ describe("Carrinho", () => {
 
         cy.visit("/carrinho");
 
-        cy.get('[data-cy="selecionar-todos"]')
-            .check();
-
         cy.contains("R$ 200,00").should("exist");
     });
 
@@ -346,15 +314,38 @@ describe("Carrinho", () => {
 
         cy.visit("/carrinho");
 
-        cy.contains("SEU CARRINHO ESTÁ VAZIO").should("exist");
+        cy.contains("Sua sacola está vazia").should("exist");
     });
 
-    it("não deve acessar sem login", () => {
+    it("visitante vê a sacola sem precisar de conta", () => {
         localStorage.clear();
 
         cy.visit("/carrinho");
 
-        cy.contains("VOCÊ PRECISA ESTAR LOGADO").should("exist");
+        cy.contains("Sua sacola está vazia").should("exist");
+    });
+
+    it("visitante é levado ao login ao finalizar", () => {
+        localStorage.clear();
+        localStorage.setItem(
+            "agnus_sacola_visitante",
+            JSON.stringify([{
+                id_carrinho_item: "v-1-2",
+                id_produto_cor: 1,
+                id_produto_grade: 2,
+                quantidade: 1,
+                preco_unitario: 100,
+                nome_produto: "Camisa"
+            }])
+        );
+
+        cy.visit("/carrinho");
+
+        cy.get('[data-cy="carrinho-total"]').should("contain", "100,00");
+
+        cy.get('[data-cy="finalizar-compra"]').click();
+
+        cy.location("search").should("eq", "?redirect=/finalizar");
     });
 
     it("admin não possui carrinho", () => {
@@ -368,6 +359,6 @@ describe("Carrinho", () => {
 
         cy.visit("/carrinho");
 
-        cy.contains("ADMINISTRADORES NÃO POSSUEM CARRINHO").should("exist");
+        cy.contains("Administradores não têm sacola").should("exist");
     });
 });
