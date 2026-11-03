@@ -21,6 +21,9 @@ import type {
 } from "../types/produto.types";
 import { normalizeRgbColor } from "../utils/color";
 import { saveProdutoFotoBits } from "../utils/produtoFotoStorage";
+import { CACHE_NAMESPACES } from "../config/cache";
+import CacheService from "./cache.service";
+import EventBusService from "./eventBus.service";
 import { removeProdutoFromSearchIndex, syncProdutoToSearchIndex } from "./produtoSearchIndex.service";
 
 class ProdutoPayload {
@@ -117,7 +120,11 @@ class ProdutoMutationService {
     }
 
     try {
-      return { data: await ProdutoMutationService.createProductBundle(payload) };
+      const data = await ProdutoMutationService.createProductBundle(payload);
+      await ProdutoMutationService.afterChange("produto.criado", data.produto.id_produto, {
+        nome: payload.nome,
+      });
+      return { data };
     } catch (error) {
       return {
         message: ProdutoMutationService.getErrorMessage(error, "Falha ao criar produto com itens."),
@@ -141,6 +148,10 @@ class ProdutoMutationService {
 
     try {
       await ProdutoMutationService.updateProductBundle(produto!, payload, productId);
+      await ProdutoMutationService.afterChange("produto.atualizado", productId, {
+        nome: produto!.nome,
+        ativo: produto!.ativo,
+      });
       return { data: produto! };
     } catch (error) {
       return {
@@ -173,8 +184,18 @@ class ProdutoMutationService {
 
     await ProdutoMutationService.deleteProductBundle(produto, productId, orderFilters);
     await removeProdutoFromSearchIndex(productId);
+    await ProdutoMutationService.afterChange("produto.removido", productId);
 
     return { data: null };
+  }
+
+  static async afterChange(
+    type: "produto.criado" | "produto.atualizado" | "produto.removido",
+    productId: number,
+    details: Record<string, boolean | string | null | undefined> = {},
+  ) {
+    await CacheService.invalidateNamespace(CACHE_NAMESPACES.produtos, `${type}:${productId}`);
+    await EventBusService.publish(type, { id_produto: productId, ...details });
   }
 
   static async getCreateError(payload: ProdutoPayload) {

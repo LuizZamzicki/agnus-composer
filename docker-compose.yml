@@ -28,13 +28,30 @@ services:
     networks:
       - data
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: agnus-redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./agnus-back
+    image: agnus-backend:local
     container_name: agnus-backend
     restart: unless-stopped
     env_file:
       - ./agnus-back/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      SERVICE_NAME: agnus-api
     ports:
       - "3000:3000"
     depends_on:
@@ -42,6 +59,8 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_started
+      redis:
+        condition: service_healthy
     volumes:
       - produto_fotos:/app/produto_fotos
       - avaliacao_fotos:/app/avaliacao_fotos
@@ -53,6 +72,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Consumidor dos eventos publicados pela API no Redis Pub/Sub (mesma imagem, outro processo).
+  worker:
+    image: agnus-backend:local
+    pull_policy: never
+    container_name: agnus-worker
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    env_file:
+      - ./agnus-back/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      SERVICE_NAME: agnus-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - data
 
   ngrok:
     image: ngrok/ngrok:latest
@@ -98,7 +137,7 @@ services:
     networks:
       - app
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://127.0.0.1/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

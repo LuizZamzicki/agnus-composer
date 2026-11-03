@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { MulterError } from "multer";
 import { HttpError } from "../types/http_error";
+import logger from "../utils/logger";
 
 const MULTER_ERROR_MESSAGES: Record<string, string> = {
   LIMIT_FILE_SIZE: "Arquivo muito grande. Tamanho maximo permitido: 20MB.",
@@ -10,7 +11,7 @@ const MULTER_ERROR_MESSAGES: Record<string, string> = {
 
 export const errorHandler = (
   error: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
@@ -37,6 +38,8 @@ export const errorHandler = (
   if (error.name === "SequelizeValidationError") {
     return res.status(400).json({ message: "Os dados enviados sao invalidos." });
   }
+
+  logger.error("http.erro_nao_tratado", { method: req.method, path: req.path, error });
 
   return res.status(500).json({ message: "Erro interno do servidor. Tente novamente mais tarde." });
 };
