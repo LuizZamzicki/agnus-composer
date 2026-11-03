@@ -18,6 +18,7 @@ const controllerMock = {
   login: handler,
   me: handler,
   findMine: handler,
+  checkout: handler,
   catalog: handler,
   bestSellers: handler,
   googleStart: handler,

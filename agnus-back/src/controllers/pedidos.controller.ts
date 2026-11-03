@@ -3,6 +3,7 @@ import Pedidos from "../models/Pedidos";
 import UsuarioEnderecos from "../models/UsuarioEnderecos";
 import Usuarios from "../models/Usuarios";
 import type { AuthenticatedResponseLocals } from "../middlewares/auth.middleware";
+import CheckoutService, { CheckoutError } from "../services/checkout.service";
 import EventBusService from "../services/eventBus.service";
 import type {
   PedidoBody,
@@ -270,6 +271,27 @@ class PedidosController {
       valor_total: pedido.valor_total,
     });
     return res.status(201).send(pedido);
+  }
+
+  // Finaliza a compra da sacola do usuario autenticado; o id vem do token.
+  static async checkout(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
+    const addressId = PedidosController.parsePositiveId(req.body.id_usuario_endereco);
+
+    if (!addressId) {
+      return res.status(400).json({ message: "Escolha um endereço de entrega." });
+    }
+
+    try {
+      return res
+        .status(201)
+        .send(await CheckoutService.finalizar(res.locals.authUser!.id_usuario, addressId));
+    } catch (error) {
+      if (error instanceof CheckoutError) {
+        return res.status(error.status).json({ message: error.message });
+      }
+
+      throw error;
+    }
   }
 
   static async update(req: PedidoRequest, res: Response) {

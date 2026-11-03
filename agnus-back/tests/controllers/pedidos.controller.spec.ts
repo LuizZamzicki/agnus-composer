@@ -12,8 +12,18 @@ import {
 } from "../../src/utils/itemDetails";
 import UsuarioEnderecos from "../../src/models/UsuarioEnderecos";
 import Usuarios from "../../src/models/Usuarios";
+import CheckoutService, { CheckoutError } from "../../src/services/checkout.service";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 
+jest.mock("../../src/services/checkout.service", () => {
+  class CheckoutError extends Error {
+    constructor(readonly status: number, message: string) {
+      super(message);
+    }
+  }
+
+  return { __esModule: true, CheckoutError, default: { finalizar: jest.fn() } };
+});
 jest.mock("../../src/models/PedidoItens", () => ({
   __esModule: true,
   default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
@@ -492,5 +502,47 @@ describe("PedidoItensController", () => {
     await PedidoItensController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(item.destroy).toHaveBeenCalled();
     expect(response.status).toHaveBeenCalledWith(204);
+  });
+});
+
+describe("PedidosController.checkout", () => {
+  const finalizar = CheckoutService.finalizar as unknown as jest.Mock;
+  const authLocals = { authUser: { id_usuario: 1 } };
+
+  beforeEach(() => finalizar.mockReset());
+
+  it("usa o usuario do token, nao o do corpo", async () => {
+    finalizar.mockResolvedValue({ id_pedido: 7 });
+    const res = mockResponse();
+    res.locals = authLocals;
+
+    await PedidosController.checkout(
+      mockRequest({ body: { id_usuario_endereco: 3, id_usuario: 99 } }) as never,
+      res as never,
+    );
+
+    expect(finalizar).toHaveBeenCalledWith(1, 3);
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it("exige um endereco", async () => {
+    const res = mockResponse();
+    res.locals = authLocals;
+
+    await PedidosController.checkout(mockRequest({ body: {} }) as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(finalizar).not.toHaveBeenCalled();
+  });
+
+  it("devolve a mensagem de erros conhecidos do checkout", async () => {
+    finalizar.mockRejectedValue(new CheckoutError(409, "indisponivel"));
+    const res = mockResponse();
+    res.locals = authLocals;
+
+    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3 } }) as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ message: "indisponivel" });
   });
 });
