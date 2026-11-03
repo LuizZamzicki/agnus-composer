@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import "../css/cliente/app.css";
 import "../css/cliente/header.css";
-import logo2 from "../img/logoAgnus.png";
+import { tempoLiturgico } from "../utils/liturgia";
 
 function Header() {
     const navigate = useNavigate();
@@ -13,6 +13,7 @@ function Header() {
     const [auth, setAuth] = useState(null);
 
     const [showHeader, setShowHeader] = useState(true);
+    const [tempo] = useState(() => tempoLiturgico());
     const [lastScrollY, setLastScrollY] = useState(0);
 
     useEffect(() => {
@@ -85,36 +86,43 @@ function Header() {
 
     return (
         <header className={`header ${showHeader ? "show" : "hide"}`}>
-            <div className="logo">
-                <Link className="logoInicio" to="/">
-                    <img className="logoAgnusImg" src={logo2} alt="logo" />
-                </Link>
+            <div className="header-bar">
+                <nav className="menu_header" aria-label="Principal">
+                    <Link to="/" className="nav-link">Início</Link>
+                    <Link to="/catalogo" className="nav-link">Coleção</Link>
+                </nav>
+
+                <div className="logo">
+                    <Link className="logoInicio" to="/" aria-label="Agnus, página inicial">
+                        AGNUS
+                    </Link>
+                </div>
+
+                <nav className="opcoes_header" aria-label="Conta e sacola">
+                    <Link to="/catalogo" aria-label="Buscar peças">
+                        <Search size={20} strokeWidth={1.5} />
+                    </Link>
+
+                    <Link to={getUserRoute()} aria-label={token ? "Minha conta" : "Entrar"}>
+                        <User size={20} strokeWidth={1.5} />
+                    </Link>
+
+                    <Link to="/carrinho" aria-label="Sacola">
+                        <ShoppingBag size={20} strokeWidth={1.5} />
+                    </Link>
+
+                    {token && (
+                        <button type="button" className="logout-icon" onClick={logout} aria-label="Sair">
+                            <LogOut size={20} strokeWidth={1.5} />
+                        </button>
+                    )}
+                </nav>
             </div>
 
-            <nav className="menu_header">
-                <Link to="/" className="nav-link">Home</Link>
-                <Link to="/catalogo" className="nav-link">Catálogo</Link>
-            </nav>
-
-            <nav className="opcoes_header">
-                <Link to="/catalogo">
-                    <Search size={22} />
-                </Link>
-
-                <Link to={getUserRoute()}>
-                    <User size={22} />
-                </Link>
-
-                <Link to="/carrinho">
-                    <ShoppingBag size={22} />
-                </Link>
-
-                {token && (
-                    <a className="logout-icon" onClick={logout}>
-                        <LogOut size={22} />
-                    </a>
-                )}
-            </nav>
+            <div className="season-strip" data-tempo={tempo.chave}>
+                <span className="season-dot" aria-hidden="true" />
+                <span>{tempo.nome}</span>
+            </div>
         </header>
     );
 }

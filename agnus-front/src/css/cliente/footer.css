@@ -1,167 +1,87 @@
 .footer {
-    display: flex;
-    flex-wrap: wrap;
-    margin: auto;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    background-color: rgb(31, 31, 31);
-    color: white;
-}
-
-.escritaCentro {
-    color: #FFD100;
-    display: flex;
-    justify-content: center;
-    margin-bottom: -20px;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.escritaPrincipal {
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-bottom: -10px;
-    font-size: 40px;
-    font-weight: bold;
-    max-width: 700px;
-}
-
-.descricao {
-    color: white;
-    font-size: 16px;
-    max-width: 650px;
-    text-align: center;
-    margin: 15px 0 30px 0;
-    line-height: 1.6;
-}
-
-.container-btn {
-    display: flex;
-    justify-content: center;
-}
-
-.btn-compra {
-    background-color: #FFD100;
-    border: 2px solid #FFD100;
-    color: black;
-    text-decoration: none;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-family: Arial, Helvetica, sans-serif;
-    transition: all 0.3s ease;
-}
-
-.btn-compra:hover {
-    background-color: #FFD100;
-    border: 2px solid #FFD100;
-    transform: translateY(-3px);
-}
-
-.footer-rodape {
-    background: rgb(31, 31, 31);
-    color: #cfcfcf;
-    margin-top: 30px;
-}
-
-.footer-baixo {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 60px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-.footer-desc {
-    max-width: 350px;
-}
-
-.footer-desc h3 {
-    color: white;
-    font-size: 28px;
-    margin-bottom: 10px;
-}
-
-.footer-desc span {
-    color: #FFD100;
-}
-
-.footer-links h4,
-.footer-contato h4 {
-    color: #FFD100;
-    margin-bottom: 10px;
-}
-
-.footer-links {
-    display: flex;
-    flex-direction: column;
-}
-
-.footer-links a {
-    text-decoration: none;
-    color: #cfcfcf;
-    margin-bottom: 6px;
-}
-
-.footer-links a:hover {
-    color: #FFD100;
-}
-
-.footer-contato {
-    display: flex;
-    flex-direction: column;
-}
-
-.footer-contato a {
-    text-decoration: none;
-    color: #cfcfcf;
-    margin-bottom: 6px;
-}
-
-.footer-contato a:hover {
-    color: #FFD100;
-}
-
-.footer-copy {
-    border-top: 2px solid #323232;
-    text-align: center;
-    font-size: 14px;
-    color: #8a8a8a;
+    margin-top: auto;
+    background: var(--stone-2);
+    color: var(--ink);
+    border-top: 1px solid var(--line);
 }
 
 .footer-container {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
-    width: 100%;
+    padding: 64px clamp(16px, 4vw, 48px) 28px;
 }
 
-.footer-menu {
+.footer-baixo {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+}
+
+.footer-mark {
+    margin: 0 0 14px;
+    font: 28px/1 var(--f-display);
+    letter-spacing: 0.5em;
+}
+
+.footer-desc p {
+    margin: 0 0 8px;
+    color: var(--ink-2);
+    max-width: 34ch;
+}
+
+.footer-desc .footer-latin {
+    margin-top: 18px;
+    font: 13px var(--f-caps);
+    letter-spacing: var(--track-caps);
+    color: var(--lit);
+}
+
+.footer h4 {
+    margin: 0 0 14px;
+    font: 13px/1 var(--f-caps);
+    letter-spacing: 0.22em;
+    color: var(--muted);
+}
+
+.footer-links,
+.footer-contato {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+}
+
+.footer-links a,
+.footer-contato a,
+.footer-contato span {
+    display: inline-flex;
     align-items: center;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.ico {
-    transform: translateY(7px);
-}
-
-.developed {
-    margin-bottom: 00px;
-}
-
-.linkSocial {
+    gap: 10px;
+    color: var(--ink);
     text-decoration: none;
-    color: #8a8a8a;
-    transition: all 0.2s ease;
+    width: fit-content;
 }
 
-.linkSocial:hover {
-    color: #FFD100;
+.footer-links a:hover,
+.footer-contato a:hover {
+    color: var(--lit);
+    text-decoration: underline;
+}
+
+.footer-copy {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
     font-size: 15px;
+    color: var(--muted);
+}
+
+.footer-copy p { margin: 0; }
+
+@media (max-width: 760px) {
+    .footer-baixo { grid-template-columns: 1fr 1fr; }
+    .footer-desc { grid-column: 1 / -1; }
 }
