@@ -15,16 +15,19 @@ import PedidosController from './controllers/pedidos.controller';
 import UsuarioContatosController from './controllers/usuarioContatos.controller';
 import UsuarioEnderecosController from './controllers/usuarioEnderecos.controller';
 import UsersController from './controllers/usuarios.controller';
-import authenticateToken, { authorizeSelfOrAdmin } from './middlewares/auth.middleware';
+import authenticateToken, { authorizeRoles, authorizeSelfOrAdmin } from './middlewares/auth.middleware';
 import { errorHandler } from './middlewares/error.middleware';
 import { authorizeOrderOwnerOrAdmin, authorizeOwnOrderBody } from './middlewares/pedidoAuthorization.middleware';
 import { checarPermissao } from './middlewares/permission.middleware';
 import { PERMISSIONS } from './config/permissions';
 import { uploadAny } from './middlewares/upload.middleware';
+import { requestLogger } from './middlewares/requestLogger.middleware';
+import { getMetricsSnapshot } from './utils/metrics';
 import cors from "cors";
 
 const app = express();
 
+app.use(requestLogger);
 app.use(cors());
 
 app.use(express.json({ limit: '20mb' }));
@@ -35,6 +38,10 @@ app.use('/avaliacao_fotos', express.static(path.resolve(process.cwd(), 'avaliaca
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
+});
+
+app.get('/metrics', authenticateToken, authorizeRoles('administrador'), (_req: Request, res: Response) => {
+  res.status(200).json(getMetricsSnapshot());
 });
 
 const router: Router = Router();
