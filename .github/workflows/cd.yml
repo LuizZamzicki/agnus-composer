@@ -1,0 +1,123 @@
+name: CD
+
+# Esqueleto de entrega continua: build -> test -> publish (imagens) -> deploy -> verify/rollback.
+# Dispara em tags de versao (v3.3.0) ou manualmente. O deploy so roda se o ambiente
+# "producao" tiver os segredos DEPLOY_HOST, DEPLOY_USER e DEPLOY_SSH_KEY configurados.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag da imagem a publicar (ex.: v3.3.0)"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/agnus
+  VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
+jobs:
+  test:
+    name: Testes (gate de qualidade)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agnus-back/package-lock.json
+      - name: Backend - lint e testes
+        working-directory: agnus-back
+        run: |
+          npm ci
+          npm run lint
+          npm test
+
+  build:
+    name: Build e publicacao das imagens
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Imagem do backend (API + worker)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./agnus-back
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-backend:${{ env.VERSION }}
+            ${{ env.IMAGE_PREFIX }}-backend:latest
+      - name: Imagem do frontend (build estatico)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./agnus-front
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ env.VERSION }}
+            ${{ env.IMAGE_PREFIX }}-frontend:latest
+
+  deploy:
+    name: Deploy (producao)
+    needs: build
+    runs-on: ubuntu-latest
+    environment: producao
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+    steps:
+      - name: Verificar se o ambiente esta configurado
+        id: check
+        run: |
+          if [ -z "$DEPLOY_HOST" ]; then
+            echo "Segredos de deploy ausentes: etapa ignorada (esqueleto)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Estrategia: deploy simples com rollback automatico. Guarda a versao em execucao,
+      # sobe a nova, valida o healthcheck e, se falhar, volta para a anterior.
+      - name: Deploy com rollback automatico
+        if: steps.check.outputs.enabled == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/agnus
+            PREVIOUS=$(cat .current_version 2>/dev/null || echo latest)
+            export AGNUS_VERSION=${{ env.VERSION }}
+            docker compose pull backend worker frontend
+            docker compose up -d --no-build
+            for i in $(seq 1 30); do
+              if curl -fsk https://localhost/api/health > /dev/null; then
+                echo "$AGNUS_VERSION" > .current_version
+                echo "Deploy $AGNUS_VERSION OK"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Healthcheck falhou. Rollback para $PREVIOUS"
+            export AGNUS_VERSION=$PREVIOUS
+            docker compose up -d --no-build
+            exit 1
+
+      - name: Smoke test publico
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          curl -fsS "https://${DEPLOY_HOST}/api/health"
+          curl -fsS "https://${DEPLOY_HOST}/api/products/catalog?limit=1" > /dev/null
