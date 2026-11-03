@@ -1,75 +1,47 @@
 import "../css/cliente/app.css"
 import "../css/cliente/footer.css"
 import { Instagram, Mail } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Footer() {
-
-    const location = useLocation();
-    const isHome = location.pathname === "/";
-
     return (
         <footer className="footer">
             <div className="footer-container">
-
-                {isHome && (
-                    <div className="footer-menu">
-                        <h5 className="escritaCentro">PRINT ON DEMAND</h5>
-                        <h1 className="escritaPrincipal">Cada peça é feita para você</h1>
-                        <p className="descricao">
-                            Sem estoque parado, sem desperdício.
-                            Sua peça é produzida sob demanda com qualidade <br />
-                            premium e entregue diretamente para você.
-                            Exclusividade com propósito.
-                        </p>
-                        <div className="container-btn">
-                            <Link className="btn-compra" to="/catalogo">
-                                COMPRAR AGORA
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
-                <div className="footer-rodape">
-                    <div className="footer-baixo">
-                        <div className="footer-desc">
-                            <h3>AGNUS<span>†</span></h3>
-                            <p>
-                                Roupas fitness com identidade católica. Vista sua fé, supere seus
-                                limites.
-                            </p>
-                        </div>
-
-                        <div className="footer-links">
-                            <h4>LINKS</h4>
-                            <Link to="/">Início</Link>
-                            <Link to="/carrinho">Carrinho</Link>
-                            <Link to="/cliente">Minha Conta</Link>
-                        </div>
-
-                        <div className="footer-contato">
-                            <h4>CONTATO</h4>
-                            <a href="#"><Instagram size={22} className="ico" /> agnus.fit</a>
-
-                            <Link to="/contato" className="nav-link">
-                                <Mail size={22} className="ico" /> contato@agnus.fit
-                            </Link>
-                        </div>
-                    </div>
-
-                    <div className="footer-copy">
+                <div className="footer-baixo">
+                    <div className="footer-desc">
+                        <p className="footer-mark">AGNUS</p>
                         <p>
-                            © 2026 AGNUS. Todos os direitos reservados. Print-on-demand —
-                            produção consciente, sem desperdício.
+                            Roupas de treino com identidade católica,
+                            feitas sob encomenda.
                         </p>
-                        <p className="developed">
-                            Developed by
-                            <a href="#" className="linkSocial"> Bruno Medeiros </a> and
-                            <a href="#" className="linkSocial"> Luiz Zamzicki </a>
-                        </p>
+                        <p className="footer-latin">Ecce Agnus Dei</p>
+                    </div>
+
+                    <nav className="footer-links" aria-label="Rodapé">
+                        <h4>Loja</h4>
+                        <Link to="/">Início</Link>
+                        <Link to="/catalogo">Coleção</Link>
+                        <Link to="/carrinho">Sacola</Link>
+                        <Link to="/cliente">Minha conta</Link>
+                    </nav>
+
+                    <div className="footer-contato">
+                        <h4>Contato</h4>
+                        <a href="https://www.instagram.com/agnus.fit/" target="_blank" rel="noreferrer">
+                            <Instagram size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> @agnus.fit
+                        </a>
+                        <a href="mailto:contato@agnus.fit">
+                            <Mail size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> contato@agnus.fit
+                        </a>
                     </div>
                 </div>
 
+                <div className="footer-copy">
+                    <p>© {new Date().getFullYear()} Agnus. Todos os direitos reservados.</p>
+                    <p className="developed">
+                        Desenvolvido por Bruno Medeiros e Luiz Zamzicki
+                    </p>
+                </div>
             </div>
         </footer>
     )

@@ -252,19 +252,19 @@ function ClienteContatos() {
                         )}
 
                         <div className="acoes">
-                            <span data-cy="editar-contato" onClick={(e) => {
+                            <button type="button" data-cy="editar-contato" onClick={(e) => {
                                 e.stopPropagation();
                                 abrirEditar(c);
                             }}>
                                 Editar
-                            </span>
+                            </button>
 
-                            <span data-cy="excluir-contato" onClick={(e) => {
+                            <button type="button" data-cy="excluir-contato" onClick={(e) => {
                                 e.stopPropagation();
                                 setConfirmDelete(c);
                             }}>
                                 Excluir
-                            </span>
+                            </button>
                         </div>
                     </div>
                 ))}

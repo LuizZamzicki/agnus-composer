@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../../css/cliente/produto.css";
+import { authHeaders } from "../../utils/api";
 
 function Produto() {
     const { id_produto } = useParams();
@@ -147,7 +148,8 @@ function Produto() {
         const verificarPedido = async () => {
             try {
                 const resPedidos = await fetch(
-                    `${BASE_URL}orders?${new URLSearchParams({ id_usuario })}`
+                    `${BASE_URL}orders/me?status=entregue`,
+                    { headers: authHeaders() }
                 );
 
                 if (!resPedidos.ok) {
@@ -166,7 +168,8 @@ function Produto() {
                 const itensPedidos = await Promise.all(
                     pedidosEntregues.map(async (pedido) => {
                         const resItens = await fetch(
-                            `${BASE_URL}order-items/${pedido.id_pedido}`
+                            `${BASE_URL}order-items/${pedido.id_pedido}`,
+                            { headers: authHeaders() }
                         );
 
                         if (!resItens.ok) return [];
@@ -309,7 +312,7 @@ function Produto() {
         try {
             const res = await fetch(`${BASE_URL}product-reviews`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify(payload)
             });
 
@@ -334,6 +337,7 @@ function Produto() {
 
                 await fetch(`${BASE_URL}product-review-photos`, {
                     method: "POST",
+                    headers: authHeaders(),
                     body: formData
                 });
             }
@@ -376,7 +380,7 @@ function Produto() {
         }
 
         try {
-            const res = await fetch(`${BASE_URL}carts?id_usuario=${id_usuario}`);
+            const res = await fetch(`${BASE_URL}carts?id_usuario=${id_usuario}`, { headers: authHeaders() });
             const carrinhos = await res.json();
 
             let carrinho;
@@ -384,7 +388,7 @@ function Produto() {
             if (!Array.isArray(carrinhos) || carrinhos.length === 0) {
                 const novo = await fetch(`${BASE_URL}carts`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({ id_usuario })
                 });
 
@@ -403,7 +407,7 @@ function Produto() {
                 return;
             }
 
-            const itensRes = await fetch(`${BASE_URL}cart-items/${idCarrinho}`);
+            const itensRes = await fetch(`${BASE_URL}cart-items/${idCarrinho}`, { headers: authHeaders() });
             const itens = await itensRes.json();
 
             const listaItens = Array.isArray(itens) ? itens : itens?.data || [];
@@ -418,7 +422,7 @@ function Produto() {
 
                 const updateRes = await fetch(`${BASE_URL}cart-items/${existente.id_carrinho_item}`, {
                     method: "PUT",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({
                         quantidade: novaQtd
                     })
@@ -435,7 +439,7 @@ function Produto() {
 
             const response = await fetch(`${BASE_URL}cart-items`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                     id_carrinho: Number(idCarrinho),
                     id_produto_cor: Number(corSelecionada),
@@ -621,7 +625,7 @@ function Produto() {
                     <p>{produto.descricao}</p>
 
                     <div className="produto-opcao">
-                        <span>TAMANHO</span>
+                        <span>Tamanho</span>
 
                         <div className="opcoes">
                             {tamanhos.length === 0 ? (
@@ -650,7 +654,7 @@ function Produto() {
                     </div>
 
                     <div className="produto-opcao">
-                        <span>COR</span>
+                        <span>Cor</span>
 
                         <div className="opcoes">
                             {cores.length === 0 ? (
@@ -685,10 +689,10 @@ function Produto() {
                         disabled={cores.length === 0 || tamanhos.length === 0}
                     >
                         {cores.length === 0 || tamanhos.length === 0
-                            ? "PRODUTO INDISPONÍVEL"
+                            ? "Peça indisponível"
                             : isAdmin
-                                ? "INDISPONÍVEL PARA ADMIN"
-                                : "ADICIONAR AO CARRINHO"}
+                                ? "Indisponível para administrador"
+                                : "Adicionar à sacola"}
                     </button>
 
                 </div>
@@ -699,7 +703,7 @@ function Produto() {
                 <div className="avaliacoes-header">
 
                     <div className="resumo">
-                        <h2>AVALIAÇÕES</h2>
+                        <h2>Avaliações</h2>
 
                         {avaliacaoResumo.total > 0 && (
                             <>
@@ -793,17 +797,16 @@ function Produto() {
 
                 {avaliacoes.length === 0 ? (
                     <div className="sem-avaliacoes">
-                        Ainda não há avaliações para este produto.
+                        Ainda não há avaliações para esta peça.
                         <br />
-                        Realize seu pedido e seja o primeiro a avaliar!
+                        Quem receber a sua poderá ser o primeiro a contar como foi.
                     </div>
                 ) : (
                     avaliacoes.map((a, i) => (
                         <div key={i} className="avaliacao-card">
                             <div className="avaliacao-top">
                                 <div className="avaliacao-usuario">
-                                    <strong>{a.titulo?.trim() || "Usuário Anônimo"}</strong>
-                                    <span>Comentário: <br /></span>
+                                    <strong>{a.titulo?.trim() || "Cliente Agnus"}</strong>
                                 </div>
 
                                 {renderStars(a.nota)}
@@ -833,7 +836,7 @@ function Produto() {
             </div>
 
             <div className="relacionados">
-                <h2>Produtos relacionados</h2>
+                <h2>Também da coleção</h2>
 
                 <div className="relacionados-grid">
                     {relacionados.map(p => (
@@ -863,16 +866,18 @@ function Produto() {
                 >
                     <button
                         className="lightbox-close"
+                        aria-label="Fechar"
                         onClick={(e) => {
                             e.stopPropagation();
                             setLightboxOpen(false);
                         }}
                     >
-                        ✕
+                        <X size={26} strokeWidth={1.5} />
                     </button>
 
                     <button
                         className="lightbox-prev"
+                        aria-label="Foto anterior"
                         onClick={(e) => {
                             e.stopPropagation();
                             setLightboxIndex((prev) =>
@@ -880,7 +885,7 @@ function Produto() {
                             );
                         }}
                     >
-                        ‹
+                        <ChevronLeft size={34} strokeWidth={1.25} />
                     </button>
 
                     <img
@@ -892,6 +897,7 @@ function Produto() {
 
                     <button
                         className="lightbox-next"
+                        aria-label="Próxima foto"
                         onClick={(e) => {
                             e.stopPropagation();
                             setLightboxIndex((prev) =>
@@ -899,7 +905,7 @@ function Produto() {
                             );
                         }}
                     >
-                        ›
+                        <ChevronRight size={34} strokeWidth={1.25} />
                     </button>
                 </div>
             )}

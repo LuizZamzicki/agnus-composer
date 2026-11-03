@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import "../css/login.css";
+import hero from "../img/hero.png";
 import { apiUrl } from "../utils/api";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
 
@@ -264,15 +266,27 @@ function Login() {
   return (
     <main className="login">
       <button
+        type="button"
         onClick={() => navigate("/")}
         className="back-home-btn"
       >
-        ← Voltar
+        <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" /> Voltar
       </button>
+
+      <aside className="login-art" aria-hidden="true">
+        <div className="login-arch">
+          <img src={hero} alt="" />
+        </div>
+        <blockquote>
+          <p>“Glorificai, pois, a Deus no vosso corpo.”</p>
+          <cite>1 Coríntios 6,20</cite>
+        </blockquote>
+      </aside>
+
       <section className="login-panel">
         <div className="login-brand">
           <h1>AGNUS</h1>
-          <p>{modoCadastro ? "Crie sua conta" : "Entre na sua conta"}</p>
+          <p>{modoCadastro ? "Crie a sua conta" : "Entre na sua conta"}</p>
         </div>
 
         <div className="login-tabs">
@@ -338,12 +352,14 @@ function Login() {
               required
             />
 
-            <span
+            <button
+              type="button"
               className="password-toggle"
+              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
               onClick={() => setMostrarSenha(!mostrarSenha)}
             >
-              👁️
-            </span>
+              {mostrarSenha ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
+            </button>
           </div>
 
           {modoCadastro && senhaForca && (
@@ -397,14 +413,14 @@ function Login() {
                 required
               />
 
-              <span
+              <button
+                type="button"
                 className="password-toggle"
-                onClick={() =>
-                  setMostrarConfirmarSenha(!mostrarConfirmarSenha)
-                }
+                aria-label={mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
               >
-                👁️
-              </span>
+                {mostrarConfirmarSenha ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
+              </button>
             </div>
           )}
 
@@ -421,22 +437,22 @@ function Login() {
         </form>
 
         <div className="login-divider">
-          <span>OU</span>
+          <span>ou</span>
         </div>
 
-        <button className="google-btn" onClick={handleGoogleLogin}>
+        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
           <img
             src="https://developers.google.com/identity/images/g-logo.png"
-            alt="Google"
+            alt=""
           />
           Continuar com Google
         </button>
 
         <div className="switch-mode">
           {modoCadastro ? "Já tem conta?" : "Não tem conta?"}
-          <span onClick={() => setModoCadastro(!modoCadastro)}>
-            {modoCadastro ? " Entrar" : " Criar conta"}
-          </span>
+          <button type="button" onClick={() => setModoCadastro(!modoCadastro)}>
+            {modoCadastro ? "Entrar" : "Criar conta"}
+          </button>
         </div>
       </section>
     </main>

@@ -272,16 +272,16 @@ function ClienteEnderecos() {
                         )}
 
                         <div className="acoes">
-                            <span data-cy="editar-endereco" onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }}>
+                            <button type="button" data-cy="editar-endereco" onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }}>
                                 Editar
-                            </span>
+                            </button>
 
-                            <span data-cy="excluir-endereco" onClick={(ev) => {
+                            <button type="button" data-cy="excluir-endereco" onClick={(ev) => {
                                 ev.stopPropagation();
                                 setConfirmDelete(e);
                             }}>
                                 Excluir
-                            </span>
+                            </button>
                         </div>
                     </div>
                 ))}

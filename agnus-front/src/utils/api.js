@@ -34,3 +34,10 @@ export function assetUrl(path = "") {
   const value = path.trim();
   return value ? apiUrl(value) : "";
 }
+
+// Cabecalhos com o token do usuario logado; rotas de dados pessoais exigem autenticacao.
+export function authHeaders(extra = {}) {
+  const token = localStorage.getItem("auth_token");
+
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : { ...extra };
+}

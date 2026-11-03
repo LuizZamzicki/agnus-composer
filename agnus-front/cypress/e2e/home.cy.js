@@ -57,7 +57,7 @@ describe('Página Home', () => {
 
         cy.get('[data-cy="ver-colecao"]')
             .should('be.visible')
-            .and('contain', 'VER COLEÇÃO');
+            .and('contain', 'Ver a coleção');
     });
 
     it('deve navegar para catálogo ao clicar no botão', () => {

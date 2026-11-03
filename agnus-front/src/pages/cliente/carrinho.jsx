@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Trash2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../../css/cliente/carrinho.css";
-import { apiUrl, assetUrl } from "../../utils/api";
+import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 
 let toastTimeout;
 
@@ -54,7 +54,7 @@ function Carrinho() {
                 return;
             }
 
-            const carrinhoRes = await fetch(apiUrl(`carts?id_usuario=${id_usuario}`));
+            const carrinhoRes = await fetch(apiUrl(`carts?id_usuario=${id_usuario}`), { headers: authHeaders() });
             const carrinhos = await safeJson(carrinhoRes);
 
             if (!carrinhos?.length) {
@@ -64,7 +64,7 @@ function Carrinho() {
 
             const carrinho = carrinhos[0];
 
-            const itensRes = await fetch(apiUrl(`cart-items/${carrinho.id_carrinho}`));
+            const itensRes = await fetch(apiUrl(`cart-items/${carrinho.id_carrinho}`), { headers: authHeaders() });
             const itens = await safeJson(itensRes);
 
             if (!itens?.length) {
@@ -130,7 +130,7 @@ function Carrinho() {
 
             const res = await fetch(apiUrl(`cart-items/${item.id_carrinho_item}`), {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ quantidade: novaQtd })
             });
 
@@ -159,7 +159,8 @@ function Carrinho() {
     async function confirmarRemocao() {
         try {
             const res = await fetch(apiUrl(`cart-items/${confirmDelete}`), {
-                method: "DELETE"
+                method: "DELETE",
+                headers: authHeaders()
             });
 
             if (!res.ok) {
@@ -190,7 +191,7 @@ function Carrinho() {
         }
 
         try {
-            const enderecoRes = await fetch(apiUrl(`user-addresses/${id_usuario}`));
+            const enderecoRes = await fetch(apiUrl(`user-addresses/${id_usuario}`), { headers: authHeaders() });
             const enderecos = await safeJson(enderecoRes);
 
             if (!Array.isArray(enderecos) || enderecos.length === 0) {
@@ -202,7 +203,7 @@ function Carrinho() {
 
             const pedidoRes = await fetch(apiUrl("orders"), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                     id_usuario,
                     id_usuario_endereco: endereco.id_usuario_endereco,
@@ -223,7 +224,7 @@ function Carrinho() {
                 selecionados.map(item =>
                     fetch(apiUrl("order-items"), {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: authHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify({
                             id_pedido,
                             id_produto_cor: item.id_produto_cor,
@@ -237,7 +238,8 @@ function Carrinho() {
             await Promise.all(
                 selecionados.map(item =>
                     fetch(apiUrl(`cart-items/${item.id_carrinho_item}`), {
-                        method: "DELETE"
+                        method: "DELETE",
+                        headers: authHeaders()
                     })
                 )
             );
@@ -264,9 +266,9 @@ function Carrinho() {
     if (!isLogged) {
         return (
             <div className="cart-empty">
-                <h1>VOCÊ PRECISA ESTAR LOGADO</h1>
-                <p>Entre na sua conta para ver seu carrinho.</p>
-                <Link to="/login" className="empty-btn">Fazer login</Link>
+                <h1>Entre para ver a sua sacola</h1>
+                <p>As peças que você escolher ficam guardadas na sua conta.</p>
+                <Link to="/login" className="empty-btn">Entrar</Link>
             </div>
         );
     }
@@ -274,7 +276,7 @@ function Carrinho() {
     if (loading) {
         return (
             <div className="cart-empty">
-                <h1>CARREGANDO SEU CARRINHO...</h1>
+                <p className="cart-loading">Carregando a sua sacola…</p>
             </div>
         );
     }
@@ -282,7 +284,7 @@ function Carrinho() {
     if (isAdmin) {
         return (
             <div className="cart-empty">
-                <h1>ADMINISTRADORES NÃO POSSUEM CARRINHO</h1>
+                <h1>Administradores não têm sacola</h1>
                 <Link to="/admin" className="empty-btn">Ir para o painel</Link>
             </div>
         );
@@ -291,9 +293,10 @@ function Carrinho() {
     if (cart.length === 0) {
         return (
             <div className="cart-empty">
-                <h1>SEU CARRINHO ESTÁ VAZIO</h1>
-                <span><ShoppingBag size={60} /></span>
-                <Link to="/catalogo" className="empty-btn">Ver Catálogo</Link>
+                <span className="cart-empty-icon"><ShoppingBag size={44} strokeWidth={1} aria-hidden="true" /></span>
+                <h1>Sua sacola está vazia</h1>
+                <p>Quando escolher uma peça, ela aparece aqui.</p>
+                <Link to="/catalogo" className="empty-btn">Ver a coleção</Link>
             </div>
         );
     }
@@ -310,7 +313,7 @@ function Carrinho() {
             {confirmDelete && (
                 <div className="modal-overlay">
                     <div className="modal-confirm">
-                        <h3>Remover produto?</h3>
+                        <h3>Tirar esta peça da sacola?</h3>
 
                         <div className="modal-actions">
                             <button
@@ -334,7 +337,7 @@ function Carrinho() {
             {confirmFinish && (
                 <div className="modal-overlay">
                     <div className="modal-confirm">
-                        <h3>Finalizar pedido?</h3>
+                        <h3>Confirmar o pedido?</h3>
 
                         <div className="modal-actions">
                             <button
@@ -356,14 +359,14 @@ function Carrinho() {
             )}
 
             <Link to="/catalogo" className="back-link">
-                ← Continuar comprando
+                <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" /> Continuar escolhendo
             </Link>
 
-            <h1>CARRINHO</h1>
+            <h1>Sacola</h1>
 
             <div className="cart-container">
                 <div className="cart-items">
-                    <label style={{ marginBottom: 10, display: "block" }}>
+                    <label className="select-all">
                         <input data-cy="selecionar-todos" type="checkbox"
                             checked={cart.length > 0 && selectedItems.length === cart.length}
                             onChange={selecionarTodos} />
@@ -380,7 +383,7 @@ function Carrinho() {
                             type="checkbox"
                             checked={selectedItems.includes(item.id_carrinho_item)}
                             onChange={() => toggleSelect(item.id_carrinho_item)}
-                            style={{ marginRight: 10 }}
+                            aria-label={`Incluir ${item.nome_produto} no pedido`}
                         />
 
                         {item.img && (<img src={item.img}
@@ -398,8 +401,9 @@ function Carrinho() {
                             <div className="qtd">
                                 <button
                                     data-cy={`diminuir-${item.id_carrinho_item}`}
-                                    onClick={() => alterarQtd(item, "remove")}> -
-
+                                    aria-label="Diminuir quantidade"
+                                    onClick={() => alterarQtd(item, "remove")}>
+                                    <Minus size={14} strokeWidth={1.5} />
                                 </button>
 
                                 <span data-cy={`quantidade-${item.id_carrinho_item}`}>
@@ -408,7 +412,9 @@ function Carrinho() {
 
                                 <button
                                     data-cy={`aumentar-${item.id_carrinho_item}`}
-                                    onClick={() => alterarQtd(item, "add")}>+
+                                    aria-label="Aumentar quantidade"
+                                    onClick={() => alterarQtd(item, "add")}>
+                                    <Plus size={14} strokeWidth={1.5} />
                                 </button>
                             </div>
                         </div>
@@ -416,23 +422,28 @@ function Carrinho() {
                             <span>
                                 R$ {(item.preco_unitario * item.quantidade).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </span>
-                            <Trash2
+                            <button
+                                type="button"
+                                className="cart-remove"
                                 data-cy={`remover-${item.id_carrinho_item}`}
+                                aria-label={`Remover ${item.nome_produto}`}
                                 onClick={() => removerItem(item.id_carrinho_item)}
-                            />
+                            >
+                                <Trash2 size={18} strokeWidth={1.5} />
+                            </button>
                         </div>
                     </div>))}
                 </div>
 
                 <div className="cart-summary">
-                    <h2>RESUMO</h2>
+                    <h2>Resumo</h2>
                     <div>
-                        <span>Subtotal: </span>
+                        <span>Subtotal</span>
                         <span>R$ {subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                     </div>
                     <hr />
                     <div>
-                        <strong>TOTAL: </strong>
+                        <strong>Total</strong>
                         <strong>R$ {subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
                     </div>
                     <button
@@ -440,7 +451,7 @@ function Carrinho() {
                         className="finish-btn"
                         onClick={() => setConfirmFinish(true)}
                     >
-                        FINALIZAR COMPRA
+                        Finalizar pedido
                     </button>
                 </div>
             </div>
@@ -448,3 +459,4 @@ function Carrinho() {
 }
 
 export default Carrinho;
+
