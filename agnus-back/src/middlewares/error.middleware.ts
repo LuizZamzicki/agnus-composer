@@ -25,6 +25,11 @@ export const errorHandler = (
     });
   }
 
+  // JSON malformado no corpo e erro do cliente, nao do servidor.
+  if ((error as Error & { type?: string }).type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Corpo da requisicao nao e um JSON valido." });
+  }
+
   if (error.name === "SequelizeUniqueConstraintError") {
     return res.status(409).json({ message: "Este registro ja existe no sistema." });
   }
