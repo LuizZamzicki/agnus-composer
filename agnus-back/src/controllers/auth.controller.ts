@@ -4,7 +4,6 @@ import Usuarios from "../models/Usuarios";
 import AuthService from "../services/auth.service";
 import type { ErrorLike } from "../types/errors.types";
 import { isValidEmail } from "../utils/userValidation";
-import UsuarioSenhasHistoricoController from "./usuarioSenhasHistorico.controller";
 
 type AuthResponse = Response<object, AuthenticatedResponseLocals>;
 
@@ -48,51 +47,6 @@ class AuthController {
 
   private static buildLoginErrorRedirect(message: string, appRedirect?: string) {
     return `${AuthController.redirectBase(appRedirect)}error=${encodeURIComponent(message)}`;
-  }
-
-  private static formatElapsedTime(date: Date) {
-    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
-
-    if (minutes < 1) {
-      return "agora mesmo";
-    }
-
-    if (minutes < 60) {
-      return `ha ${minutes} minuto${minutes > 1 ? "s" : ""}`;
-    }
-
-    const hours = Math.floor(minutes / 60);
-
-    if (hours < 24) {
-      return `ha ${hours} hora${hours > 1 ? "s" : ""}`;
-    }
-
-    const days = Math.floor(hours / 24);
-    return `ha ${days} dia${days > 1 ? "s" : ""}`;
-  }
-
-  private static formatDateTime(date: Date) {
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-      timeZone: "America/Sao_Paulo",
-    }).format(date);
-  }
-
-  private static buildPasswordReuseMessage(date: Date) {
-    const elapsedTime = AuthController.formatElapsedTime(date);
-    const formattedDate = AuthController.formatDateTime(date);
-    return `Essa senha ja foi usada ${elapsedTime} (em ${formattedDate}).`;
-  }
-
-  private static async buildLoginErrorMessage(email: string, senha: string) {
-    const reusedAt = await UsuarioSenhasHistoricoController.findByPasswordHash(email, senha);
-
-    if (!reusedAt) {
-      return "Credenciais invalidas.";
-    }
-
-    return AuthController.buildPasswordReuseMessage(reusedAt);
   }
 
   private static getGoogleErrorRedirect(query: Request["query"]) {
@@ -167,7 +121,7 @@ class AuthController {
     }
 
     return res.status(401).json({
-      message: await AuthController.buildLoginErrorMessage(email, senha),
+      message: "Credenciais invalidas.",
     });
   }
 

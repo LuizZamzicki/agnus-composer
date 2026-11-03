@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
+import { detectImageExtension } from "./imageSignature";
 import type {
   AvaliacaoFotoUpload,
   ParsedBinaryImage,
@@ -89,10 +90,15 @@ const parseMulterFile = (file: Express.Multer.File): ParsedBinaryImage | null =>
   return { buffer: file.buffer, extension };
 };
 
-const persistImage = async (parsedImage: ParsedBinaryImage): Promise<string> => {
-  const fileName = `${Date.now()}-${randomUUID()}.${
-    sanitizeExtension(parsedImage.extension) || "png"
-  }`;
+// O conteudo decide o formato: arquivo que nao e imagem e recusado, mesmo com extensao valida.
+const persistImage = async (parsedImage: ParsedBinaryImage): Promise<string | null> => {
+  const extension = detectImageExtension(parsedImage.buffer);
+
+  if (!extension) {
+    return null;
+  }
+
+  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
 
   await fs.mkdir(PHOTO_DIR, { recursive: true });
   await fs.writeFile(path.join(PHOTO_DIR, fileName), parsedImage.buffer);

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
+import { detectImageExtension } from "./imageSignature";
 
 type ParsedBinaryImage = {
   buffer: Buffer;
@@ -26,25 +27,6 @@ const sanitizeExtension = (extension: string) => {
 
 const extensionFromMime = (mimeType: string): string | null => {
   return MIME_EXTENSION_MAP[mimeType.toLowerCase()] ?? null;
-};
-
-const sniffImageExtension = (buffer: Buffer): string | null => {
-  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
-    return "png";
-  }
-  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return "jpg";
-  }
-  if (buffer.length >= 6 && (buffer.subarray(0, 6).toString("ascii") === "GIF87a" || buffer.subarray(0, 6).toString("ascii") === "GIF89a")) {
-    return "gif";
-  }
-  if (buffer.length >= 12 && buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") {
-    return "webp";
-  }
-  if (buffer.length >= 2 && buffer[0] === 0x42 && buffer[1] === 0x4d) {
-    return "bmp";
-  }
-  return null;
 };
 
 const resolveExtension = (
@@ -247,7 +229,7 @@ const parseImageBitsInput = (input: unknown): ParsedBinaryImage | null => {
       return null;
     }
 
-    const extension = sniffImageExtension(buffer);
+    const extension = detectImageExtension(buffer);
     if (!extension) {
       return null;
     }
@@ -268,7 +250,12 @@ export const saveProdutoFotoBits = async (input: unknown): Promise<string | null
     return null;
   }
 
-  const extension = sanitizeExtension(parsed.extension) || "png";
+  // O conteudo decide o formato: arquivo que nao e imagem e recusado, mesmo com extensao valida.
+  const extension = detectImageExtension(parsed.buffer);
+  if (!extension) {
+    return null;
+  }
+
   const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
 
   await fs.mkdir(PHOTO_DIR, { recursive: true });

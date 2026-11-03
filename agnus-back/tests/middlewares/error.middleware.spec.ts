@@ -11,6 +11,14 @@ describe("error.middleware", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Recurso nao encontrado." });
   });
 
+  it("responde 400 para JSON malformado no corpo", () => {
+    const next = jest.fn(), response = mockResponse();
+    const parseError = Object.assign(new SyntaxError("Unexpected token"), { type: "entity.parse.failed" });
+    errorHandler(parseError, mockRequest(), response, next);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Corpo da requisicao nao e um JSON valido." });
+  });
+
   it("traduz LIMIT_FILE_SIZE do multer para uma mensagem amigavel", () => {
     const next = jest.fn(), response = mockResponse();
     errorHandler(new MulterError("LIMIT_FILE_SIZE"), mockRequest(), response, next);

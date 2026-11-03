@@ -6,6 +6,7 @@ import ProdutoFotos from "../../src/models/ProdutoFotos";
 import ProdutoGrades from "../../src/models/ProdutoGrades";
 import Produtos from "../../src/models/Produtos";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
+import { INVALID_IMAGE_MESSAGE } from "../../src/utils/imageSignature";
 
 jest.mock("../../src/models/ProdutoCores", () => ({
   __esModule: true,
@@ -331,6 +332,26 @@ describe("ProdutoFotosController", () => {
     await ProdutoFotosController.create(mockRequest({ body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({ message: "id_produto, id_produto_cor e caminho_url (ou bits) sao obrigatorios." });
+  });
+
+  it("create e update recusam arquivo que nao e imagem, mesmo nomeado como .png", async () => {
+    const disguised = { fieldname: "foto", originalname: "foto.png", mimetype: "image/png", buffer: Buffer.from("<html></html>") };
+    const createResponse = mockResponse();
+    const createRequest = Object.assign(mockRequest({ body: { id_produto: 1, id_produto_cor: 10 } }), { files: [disguised] });
+
+    await ProdutoFotosController.create(createRequest as never, createResponse);
+    expect(createResponse.status).toHaveBeenCalledWith(400);
+    expect(createResponse.json).toHaveBeenCalledWith({ message: INVALID_IMAGE_MESSAGE });
+
+    const updateResponse = mockResponse();
+    const foto = buildModelInstance({ id_produto_foto: 1, id_produto: 1, id_produto_cor: 10, caminho_url: "a.jpg" });
+    fotosModel.findByPk.mockResolvedValueOnce(foto);
+    const updateRequest = Object.assign(mockRequest({ params: { id: "1" }, body: {} }), { files: [disguised] });
+
+    await ProdutoFotosController.update(updateRequest as never, updateResponse);
+    expect(updateResponse.status).toHaveBeenCalledWith(400);
+    expect(updateResponse.json).toHaveBeenCalledWith({ message: INVALID_IMAGE_MESSAGE });
+    expect(foto.update).not.toHaveBeenCalled();
   });
 
   it("create retorna 400 para id_produto invalido", async () => {
