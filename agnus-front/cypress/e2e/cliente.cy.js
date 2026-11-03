@@ -46,7 +46,7 @@ describe('Área do cliente', () => {
             }
         }).as("getUsers");
 
-        cy.intercept("GET", "**/orders*", {
+        cy.intercept("GET", "**/orders/me*", {
             statusCode: 200,
             body: []
         }).as("getOrders");
@@ -70,6 +70,10 @@ describe('Área do cliente', () => {
             statusCode: 200,
             body: []
         }).as("getContatos");
+
+        cy.intercept("GET", "**/user-addresses/**", { statusCode: 200, body: [] }).as("getUserAddresses");
+
+        cy.intercept("GET", "**/user-contacts/**", { statusCode: 200, body: [] }).as("getUserContacts");
 
         cy.intercept("GET", "**/products*", {
             statusCode: 200,

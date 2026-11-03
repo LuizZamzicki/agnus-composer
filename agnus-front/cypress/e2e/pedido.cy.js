@@ -19,7 +19,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: []
             }
@@ -36,7 +36,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: [
                     {
@@ -58,7 +58,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: [
                     {
@@ -107,7 +107,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: [
                     {
@@ -138,7 +138,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: [
                     {
@@ -182,7 +182,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 body: [
                     {
@@ -201,6 +201,8 @@ describe('Pedidos cliente', () => {
             }
         );
 
+        cy.intercept('GET', '**/order-items/*', { body: [] });
+
         cy.visit('/cliente/pedidos');
 
         cy.get('[data-cy="pedido-card"]')
@@ -214,7 +216,7 @@ describe('Pedidos cliente', () => {
 
         cy.intercept(
             'GET',
-            '**/orders',
+            '**/orders/me',
             {
                 statusCode: 401
             }
@@ -230,7 +232,7 @@ describe('Pedidos cliente', () => {
     });
 
     it('deve tratar erro ao buscar pedidos', () => {
-        cy.intercept('GET', '**/orders', {
+        cy.intercept('GET', '**/orders/me', {
             statusCode: 500,
             body: { message: 'Erro' }
         }).as('pedidosErro');

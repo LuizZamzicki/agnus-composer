@@ -433,7 +433,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('← Voltar')
+        cy.contains('Voltar')
             .click();
 
         cy.url()

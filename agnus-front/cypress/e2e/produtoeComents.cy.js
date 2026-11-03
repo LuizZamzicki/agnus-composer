@@ -142,7 +142,7 @@ describe('Produto - avaliações', () => {
 
         cy.intercept(
             'GET',
-            '**/orders**',
+            '**/orders/me**',
             {
                 statusCode: 200,
                 body: [
@@ -249,7 +249,7 @@ describe('Produto - avaliações', () => {
 
         cy.intercept(
             'GET',
-            '**/orders**',
+            '**/orders/me**',
             {
                 body: [
                     {
