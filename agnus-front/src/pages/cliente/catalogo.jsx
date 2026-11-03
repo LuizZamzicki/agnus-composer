@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import "../../css/cliente/vitrine.css";
 import "../../css/cliente/catalogo.css";
-import { Filter, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 
 function Catalogo() {
@@ -16,7 +17,6 @@ function Catalogo() {
     const [totalPaginas, setTotalPaginas] = useState(1);
     const [avaliacoes, setAvaliacoes] = useState({});
 
-    const navigate = useNavigate();
     async function carregarProdutos(pag = 1) {
         try {
 
@@ -94,12 +94,12 @@ function Catalogo() {
         const nota = Number(media) || 0;
 
         return (
-            <div className="stars">
+            <div className="stars" aria-label={nota ? `Nota ${nota.toFixed(1)} de 5` : "Sem avaliações"}>
                 {[1, 2, 3, 4, 5].map(i => (
                     <Star
                         key={i}
-                        size={14}
-                        fill={i <= Math.round(nota) ? "#facc15" : "#e5e5e5"}
+                        size={13}
+                        fill={i <= Math.round(nota) ? "var(--brass)" : "var(--line)"}
                         stroke="none"
                     />
                 ))}
@@ -122,127 +122,123 @@ function Catalogo() {
     });
 
     return (
-
         <div className="catalog-page">
-            <section className="catalog-hero">
-                <span>EXPLORE</span>
-                <h1>CATÁLOGO</h1>
-                <p>Encontre a peça perfeita que une fé e performance</p>
-            </section>
+            <header className="catalog-hero">
+                <h1>A coleção</h1>
+                <p>Peças de treino para quem entende o corpo como templo.</p>
+            </header>
 
             <div className="catalog-container">
-
-                <aside className="catalog-sidebar">
-                    <span><Filter size={22} /> FILTROS</span>
-
-                    <input
-                        type="text"
-                        data-cy="buscar-produto"
-                        placeholder="Buscar produto..."
-                        value={busca}
-                        onChange={(e) => {
-                            setBusca(e.target.value);
-                            setPagina(1);
-                        }}
-                    />
+                <aside className="catalog-sidebar" aria-label="Filtros">
+                    <label className="catalog-search">
+                        <Search size={18} strokeWidth={1.5} aria-hidden="true" />
+                        <span className="sr-only">Buscar peça</span>
+                        <input
+                            type="search"
+                            data-cy="buscar-produto"
+                            placeholder="Buscar produto..."
+                            value={busca}
+                            onChange={(e) => {
+                                setBusca(e.target.value);
+                                setPagina(1);
+                            }}
+                        />
+                    </label>
 
                     <div className="filter-group">
-                        <span>CATEGORIA</span>
+                        <h2>Categoria</h2>
                         <ul>
-                            <li
-                                className={categoria === "Todos" ? "active" : ""}
-                                onClick={() => {
-                                    setCategoria("Todos");
-                                    setPagina(1);
-                                }}
-                            >
-                                Todos
-                            </li>
-
-                            {categorias.map(cat => (
-                                <li
-                                    key={cat.id_categoria}
-                                    className={Number(categoria) === cat.id_categoria ? "active" : ""}
+                            <li>
+                                <button
+                                    type="button"
+                                    className={categoria === "Todos" ? "active" : ""}
+                                    aria-pressed={categoria === "Todos"}
                                     onClick={() => {
-                                        setCategoria(cat.id_categoria);
+                                        setCategoria("Todos");
                                         setPagina(1);
                                     }}
                                 >
-                                    {cat.nome}
+                                    Todas
+                                </button>
+                            </li>
+
+                            {categorias.map(cat => (
+                                <li key={cat.id_categoria}>
+                                    <button
+                                        type="button"
+                                        className={Number(categoria) === cat.id_categoria ? "active" : ""}
+                                        aria-pressed={Number(categoria) === cat.id_categoria}
+                                        onClick={() => {
+                                            setCategoria(cat.id_categoria);
+                                            setPagina(1);
+                                        }}
+                                    >
+                                        {cat.nome}
+                                    </button>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
                     <div className="filter-group">
-                        <span>ORDENAR POR</span>
-                        <select onChange={(e) => setOrdem(e.target.value)} data-cy="ordenar">
+                        <label htmlFor="catalogo-ordem"><h2>Ordenar por</h2></label>
+                        <select id="catalogo-ordem" onChange={(e) => setOrdem(e.target.value)} data-cy="ordenar">
                             <option value="relevancia">Relevância</option>
                             <option value="menor">Menor preço</option>
                             <option value="maior">Maior preço</option>
                         </select>
                     </div>
-
                 </aside>
 
-                <section className="catalog-products">
-
-                    <p className="catalog-count">
-                        Página {pagina} de {totalPaginas}
-                    </p>
-
+                <section className="catalog-products" aria-label="Peças">
                     <div className="catalog-grid">
-
                         {produtosOrdenados.map(prod => {
-
                             const imgPadrao = prod.imagens?.[0];
                             const imgHover = prod.imagens?.[1] || imgPadrao;
 
                             return (
-                                <div
+                                <Link
                                     data-cy={`produto-card-${prod.id_produto}`}
                                     className="product-card"
                                     key={prod.id_produto}
-                                    onClick={() => navigate(`/produto/${prod.id_produto}`)}
-                                    style={{ cursor: "pointer" }}
+                                    to={`/produto/${prod.id_produto}`}
                                 >
                                     <div className="product-image">
-                                        <img
-                                            src={imgPadrao}
-                                            className="img-default"
-                                            onError={(e) => (e.target.src = imgPadrao)}
-                                        />
-
-                                        <img
-                                            src={imgHover}
-                                            className="img-hover"
-                                            onError={(e) => (e.target.src = imgHover)}
-                                        />
+                                        {imgPadrao && (
+                                            <img src={imgPadrao} alt={prod.nome} className="img-default" loading="lazy" />
+                                        )}
+                                        {imgHover && (
+                                            <img src={imgHover} alt="" aria-hidden="true" className="img-hover" loading="lazy" />
+                                        )}
                                     </div>
 
                                     <div className="product-info">
                                         <h3>{prod.nome}</h3>
-
                                         {renderStars(avaliacoes[prod.id_produto])}
-
-                                        <span>
+                                        <span className="product-price">
                                             R$ {Number(prod.preco_base || 0).toLocaleString("pt-BR", {
                                                 minimumFractionDigits: 2
                                             })}
                                         </span>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
 
+                        {produtosOrdenados.length === 0 && (
+                            <p className="catalog-empty">
+                                Nenhuma peça encontrada{busca ? ` para “${busca}”` : ""}.
+                            </p>
+                        )}
                     </div>
 
-                    <div className="pagination">
+                    <nav className="pagination" aria-label="Paginação">
                         <button
                             disabled={pagina === 1}
                             onClick={() => setPagina(pagina - 1)}
+                            aria-label="Página anterior"
                         >
-                            ←
+                            <ChevronLeft size={18} strokeWidth={1.5} />
                         </button>
 
                         <span>{pagina} / {totalPaginas}</span>
@@ -250,13 +246,12 @@ function Catalogo() {
                         <button
                             disabled={pagina === totalPaginas}
                             onClick={() => setPagina(pagina + 1)}
+                            aria-label="Próxima página"
                         >
-                            →
+                            <ChevronRight size={18} strokeWidth={1.5} />
                         </button>
-                    </div>
-
+                    </nav>
                 </section>
-
             </div>
         </div>
     );

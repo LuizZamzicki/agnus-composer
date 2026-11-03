@@ -1,0 +1,89 @@
+/* Peças compartilhadas pela página inicial e pelo catálogo. */
+
+/* Cartão de produto */
+.product-card {
+    display: block;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.product-image {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--stone-2);
+    border-radius: var(--radius);
+}
+
+.product-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.6s var(--ease-out), transform 0.9s var(--ease-out);
+}
+
+.product-image .img-hover { opacity: 0; }
+
+.product-card:hover .img-hover { opacity: 1; }
+.product-card:hover .product-image img { transform: scale(1.03); }
+
+.product-info {
+    padding: 14px 0 0;
+    display: grid;
+    gap: 4px;
+}
+
+.product-info h3 {
+    margin: 0;
+    font: 400 20px/1.25 var(--f-display);
+    letter-spacing: 0.03em;
+}
+
+.product-card:hover .product-info h3 {
+    text-decoration: underline;
+    text-decoration-color: var(--lit);
+    text-underline-offset: 0.25em;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+}
+
+.product-price {
+    font: 15px/1.3 var(--f-caps);
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Paginação */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 48px 0 0;
+    font: 15px var(--f-caps);
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+}
+
+.pagination button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
+}
+
+.pagination button:hover:not(:disabled) { background: var(--ink); color: var(--stone); }
+.pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+
