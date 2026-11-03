@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Star, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, ChevronLeft, ChevronRight, Star, X } from "lucide-react";
 import "../../css/cliente/produto.css";
 import { authHeaders } from "../../utils/api";
+import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, usuarioDaSessao } from "../../utils/sacola";
 
 function Produto() {
     const { id_produto } = useParams();
@@ -18,8 +18,6 @@ function Produto() {
         auth?.id ||
         0
     );
-
-    const navigate = useNavigate();
 
     const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -36,6 +34,10 @@ function Produto() {
     const [corSelecionada, setCorSelecionada] = useState(null);
     const [loading, setLoading] = useState(true);
     const [alerta, setAlerta] = useState(null);
+    const [faltaEscolher, setFaltaEscolher] = useState(null);
+    const [erroCompra, setErroCompra] = useState("");
+    const [adicionando, setAdicionando] = useState(false);
+    const [adicionado, setAdicionado] = useState(false);
 
     const [podeAvaliar, setPodeAvaliar] = useState(false);
 
@@ -359,108 +361,54 @@ function Produto() {
     };
 
     const adicionarCarrinho = async () => {
+        setErroCompra("");
+
         if (isAdmin) {
-            setAlerta({ tipo: "erro", mensagem: "Administradores não podem comprar" });
-            return;
-        }
-
-        if (!id_usuario) {
-            setAlerta({ tipo: "erro", mensagem: "Faça login para continuar" });
-
-            setTimeout(() => {
-                navigate(`/login?redirect=/produto/${id_produto}`);
-            }, 1500);
-
+            setErroCompra("Contas de administrador não fazem compras.");
             return;
         }
 
         if (!tamanhoSelecionado || !corSelecionada) {
-            setAlerta({ tipo: "erro", mensagem: "Selecione tamanho e cor!" });
+            setFaltaEscolher(!tamanhoSelecionado ? "tamanho" : "cor");
             return;
         }
 
+        const item = {
+            id_produto: produto.id_produto,
+            id_produto_cor: Number(corSelecionada),
+            id_produto_grade: Number(tamanhoSelecionado),
+            quantidade: 1,
+            preco_unitario: precoFinal,
+            nome_produto: produto.nome,
+            nome_cor: corObj?.nome,
+            nome_tamanho: gradeObj?.nome,
+            img: imgPadrao
+        };
+
+        setAdicionando(true);
+
         try {
-            const res = await fetch(`${BASE_URL}carts?id_usuario=${id_usuario}`, { headers: authHeaders() });
-            const carrinhos = await res.json();
+            const idSessao = usuarioDaSessao();
 
-            let carrinho;
-
-            if (!Array.isArray(carrinhos) || carrinhos.length === 0) {
-                const novo = await fetch(`${BASE_URL}carts`, {
-                    method: "POST",
-                    headers: authHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ id_usuario })
-                });
-
-                carrinho = await novo.json();
+            if (idSessao) {
+                await adicionarItem(idSessao, item);
+                avisarSacola();
             } else {
-                carrinho = carrinhos[0];
+                adicionarVisitante(item);
             }
 
-            const idCarrinho =
-                carrinho?.id_carrinho ||
-                carrinho?.id ||
-                carrinho?.dataValues?.id_carrinho;
-
-            if (!idCarrinho) {
-                setAlerta({ tipo: "erro", mensagem: "Erro ao obter carrinho" });
-                return;
-            }
-
-            const itensRes = await fetch(`${BASE_URL}cart-items/${idCarrinho}`, { headers: authHeaders() });
-            const itens = await itensRes.json();
-
-            const listaItens = Array.isArray(itens) ? itens : itens?.data || [];
-
-            const existente = listaItens.find(i =>
-                Number(i.id_produto_cor) === Number(corSelecionada) &&
-                Number(i.id_produto_grade) === Number(tamanhoSelecionado)
-            );
-
-            if (existente) {
-                const novaQtd = Number(existente.quantidade) + 1;
-
-                const updateRes = await fetch(`${BASE_URL}cart-items/${existente.id_carrinho_item}`, {
-                    method: "PUT",
-                    headers: authHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({
-                        quantidade: novaQtd
-                    })
-                });
-
-                if (!updateRes.ok) {
-                    setAlerta({ tipo: "erro", mensagem: "Erro ao atualizar item no carrinho" });
-                    return;
-                }
-
-                setAlerta({ tipo: "sucesso", mensagem: "Quantidade atualizada no carrinho!" });
-                return;
-            }
-
-            const response = await fetch(`${BASE_URL}cart-items`, {
-                method: "POST",
-                headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({
-                    id_carrinho: Number(idCarrinho),
-                    id_produto_cor: Number(corSelecionada),
-                    id_produto_grade: Number(tamanhoSelecionado),
-                    quantidade: 1,
-                    preco_unitario: precoFinal
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setAlerta({ tipo: "erro", mensagem: data.message || "Erro ao adicionar item" });
-                return;
-            }
-
-            setAlerta({ tipo: "sucesso", mensagem: "Produto adicionado ao carrinho!" });
-
+            setAdicionado(true);
         } catch (err) {
-            console.error(err);
-            setAlerta({ tipo: "erro", mensagem: "Erro ao adicionar ao carrinho" });
+            // Sessão vencida não pode custar a venda: a peça fica guardada até o cliente entrar.
+            if (err instanceof SessaoExpirada) {
+                adicionarVisitante(item);
+                setAdicionado(true);
+            } else {
+                console.error(err);
+                setErroCompra("Não foi possível adicionar a peça. Tente de novo.");
+            }
+        } finally {
+            setAdicionando(false);
         }
     };
 
@@ -539,11 +487,15 @@ function Produto() {
 
                 const resCores = await fetch(`${BASE_URL}product-colors/${id_produto}`);
                 const dataCores = await resCores.json();
-                setCores(Array.isArray(dataCores) ? dataCores : dataCores.data || []);
+                const listaCores = Array.isArray(dataCores) ? dataCores : dataCores.data || [];
+                setCores(listaCores);
+                setCorSelecionada(listaCores.length === 1 ? Number(listaCores[0].id_produto_cor) : null);
 
                 const resGrades = await fetch(`${BASE_URL}product-grades/${id_produto}`);
                 const dataGrades = await resGrades.json();
-                setTamanhos(Array.isArray(dataGrades) ? dataGrades : dataGrades.data || []);
+                const listaTamanhos = Array.isArray(dataGrades) ? dataGrades : dataGrades.data || [];
+                setTamanhos(listaTamanhos);
+                setTamanhoSelecionado(listaTamanhos.length === 1 ? Number(listaTamanhos[0].id_produto_grade) : null);
 
             } catch {
                 setProduto(null);
@@ -624,7 +576,7 @@ function Produto() {
 
                     <p>{produto.descricao}</p>
 
-                    <div className="produto-opcao">
+                    <div className={`produto-opcao ${faltaEscolher === "tamanho" ? "falta" : ""}`}>
                         <span>Tamanho</span>
 
                         <div className="opcoes">
@@ -642,18 +594,24 @@ function Produto() {
                                                 ? "active"
                                                 : ""
                                         }
-                                        onClick={() =>
-                                            setTamanhoSelecionado(Number(t.id_produto_grade))
-                                        }
+                                        aria-pressed={tamanhoSelecionado === t.id_produto_grade}
+                                        onClick={() => {
+                                            setTamanhoSelecionado(Number(t.id_produto_grade));
+                                            setFaltaEscolher(null);
+                                            setAdicionado(false);
+                                        }}
                                     >
                                         {t.nome}
                                     </button>
                                 ))
                             )}
                         </div>
+                        {faltaEscolher === "tamanho" && (
+                            <small data-cy="falta-tamanho" className="opcao-aviso" role="alert">Escolha o seu tamanho.</small>
+                        )}
                     </div>
 
-                    <div className="produto-opcao">
+                    <div className={`produto-opcao ${faltaEscolher === "cor" ? "falta" : ""}`}>
                         <span>Cor</span>
 
                         <div className="opcoes">
@@ -671,29 +629,45 @@ function Produto() {
                                                 ? "active"
                                                 : ""
                                         }
-                                        onClick={() =>
-                                            setCorSelecionada(Number(c.id_produto_cor))
-                                        }
+                                        aria-pressed={corSelecionada === c.id_produto_cor}
+                                        onClick={() => {
+                                            setCorSelecionada(Number(c.id_produto_cor));
+                                            setFaltaEscolher(null);
+                                            setAdicionado(false);
+                                        }}
                                     >
                                         {c.nome}
                                     </button>
                                 ))
                             )}
                         </div>
+                        {faltaEscolher === "cor" && (
+                            <small data-cy="falta-cor" className="opcao-aviso" role="alert">Escolha a cor.</small>
+                        )}
                     </div>
 
-                    <button
-                        data-cy="adicionar-carrinho"
-                        className="btn-comprar"
-                        onClick={adicionarCarrinho}
-                        disabled={cores.length === 0 || tamanhos.length === 0}
-                    >
-                        {cores.length === 0 || tamanhos.length === 0
-                            ? "Peça indisponível"
-                            : isAdmin
-                                ? "Indisponível para administrador"
-                                : "Adicionar à sacola"}
-                    </button>
+                    {adicionado ? (
+                        <div data-cy="peca-adicionada" className="peca-adicionada" role="status">
+                            <p><Check size={20} strokeWidth={1.5} aria-hidden="true" /> Peça adicionada à sacola</p>
+                            <Link data-cy="ir-para-sacola" to="/carrinho" className="btn-agnus">Ver sacola e finalizar</Link>
+                            <Link to="/catalogo" className="btn-agnus-ghost">Continuar escolhendo</Link>
+                        </div>
+                    ) : (
+                        <button
+                            data-cy="adicionar-carrinho"
+                            className="btn-comprar"
+                            onClick={adicionarCarrinho}
+                            disabled={cores.length === 0 || tamanhos.length === 0 || adicionando}
+                        >
+                            {cores.length === 0 || tamanhos.length === 0
+                                ? "Peça indisponível"
+                                : adicionando
+                                    ? "Adicionando…"
+                                    : "Adicionar à sacola"}
+                        </button>
+                    )}
+
+                    {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
 
                 </div>
             </div>

@@ -424,3 +424,30 @@
     .thumbs img { width: 60px; }
     .img-main { max-width: 460px; width: 100%; justify-self: center; }
 }
+
+.produto-opcao.falta > span { color: var(--danger); }
+.produto-opcao.falta .opcoes button:not(:disabled) { border-color: var(--danger); }
+
+.opcao-aviso {
+    display: block;
+    margin-top: 8px;
+    color: var(--danger);
+    font-size: 16px;
+}
+
+.peca-adicionada {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.peca-adicionada p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 4px;
+    color: var(--ok);
+    font-size: 19px;
+}
+
+.peca-adicionada .btn-agnus { min-height: 56px; }
