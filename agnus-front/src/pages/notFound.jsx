@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import "../css/notFound.css";
 
@@ -5,39 +6,29 @@ function NotFound() {
     const location = useLocation();
 
     return (
-        <div className="nf-container">
+        <main className="nf-container">
             <div className="nf-content">
+                <p className="nf-code">404</p>
 
-                <h1>404</h1>
+                <h1>Esta página se perdeu</h1>
 
-                <div className="nf-line"></div>
-
-                <h2>PÁGINA NÃO ENCONTRADA</h2>
-
-                <p>
-                    O caminho <span>{location.pathname}</span> não existe.
-                    Verifique o endereço ou retorne à página inicial.
+                <p className="nf-text">
+                    Como a ovelha da parábola, o endereço <code>{location.pathname}</code> saiu
+                    do rebanho. Voltemos ao caminho.
                 </p>
 
-                <div className="nf-actions">
-                    <Link to="/" className="btn-primary404">
-                        PÁGINA INICIAL
-                    </Link>
+                <p className="nf-verse">“Alegrai-vos comigo, porque achei a minha ovelha perdida.” <cite>Lucas 15,6</cite></p>
 
-                    <Link to="/catalogo" className="btn-outline404">
-                        VER CATÁLOGO
-                    </Link>
+                <div className="nf-actions">
+                    <Link to="/" className="btn-agnus">Página inicial</Link>
+                    <Link to="/catalogo" className="btn-agnus-ghost">Ver a coleção</Link>
                 </div>
 
-                <span
-                    className="nf-back"
-                    onClick={() => window.history.back()}
-                >
-                    ← VOLTAR À PÁGINA ANTERIOR
-                </span>
-
+                <button type="button" className="nf-back" onClick={() => window.history.back()}>
+                    <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" /> Voltar à página anterior
+                </button>
             </div>
-        </div>
+        </main>
     );
 }
 
