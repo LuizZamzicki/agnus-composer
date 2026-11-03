@@ -85,6 +85,29 @@ describe("PedidosController", () => {
     expect(response.send).toHaveBeenCalledWith([]);
   });
 
+  it("findMine lista so os pedidos do usuario do token, ignorando id_usuario da query", async () => {
+    const response = mockResponse();
+    response.locals = { authUser: { id_usuario: 7, email: "c@a.com", tipo: "cliente" } };
+    pedidosModel.findAll.mockResolvedValueOnce([{ id_pedido: 1, id_usuario: 7 }]);
+
+    await PedidosController.findMine(mockRequest({ query: { id_usuario: "99", status: "entregue" } }), response);
+
+    expect(pedidosModel.findAll).toHaveBeenLastCalledWith({
+      where: { id_usuario: 7, status: "entregue" },
+      order: [["data_criacao", "DESC"]],
+    });
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.send).toHaveBeenCalledWith([{ id_pedido: 1, id_usuario: 7 }]);
+  });
+
+  it("findMine retorna 400 para status invalido", async () => {
+    const response = mockResponse();
+    response.locals = { authUser: { id_usuario: 7, email: "c@a.com", tipo: "cliente" } };
+    await PedidosController.findMine(mockRequest({ query: { status: "foo" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "status invalido." });
+  });
+
   it("getById retorna 400 para id invalido", async () => {
     const response = mockResponse();
     await PedidosController.getById(mockRequest({ params: { id: "x" } }), response);
