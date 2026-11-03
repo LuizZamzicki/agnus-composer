@@ -129,6 +129,7 @@ router.delete('/cart-items/:id', CarrinhoItensController.remove);
 
 router.get('/orders', authenticateToken, checarPermissao(PERMISSIONS.PEDIDO_LISTAR), PedidosController.findAll);
 router.post('/orders', authenticateToken, authorizeOwnOrderBody('id_usuario'), PedidosController.create);
+router.get('/orders/me', authenticateToken, PedidosController.findMine);
 router.get('/orders/:id', authenticateToken, authorizeOrderOwnerOrAdmin('id'), PedidosController.getById);
 router.put('/orders/:id', authenticateToken, checarPermissao(PERMISSIONS.PEDIDO_ATUALIZAR), PedidosController.update);
 router.delete('/orders/:id', authenticateToken, checarPermissao(PERMISSIONS.PEDIDO_EXCLUIR), PedidosController.remove);

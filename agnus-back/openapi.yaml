@@ -579,6 +579,32 @@ paths:
               schema: { $ref: "#/components/schemas/Pedido" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /orders/me:
+    get:
+      operationId: getOrdersMe
+      tags:
+        - Pedidos
+      summary: Pedidos do usuario autenticado (cliente ou admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/PedidoStatus"
+      responses:
+        "200":
+          description: Pedidos do proprio usuario, mais recentes primeiro
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pedido"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /orders/{id}:
     parameters: [ { $ref: "#/components/parameters/Id" } ]
     get:

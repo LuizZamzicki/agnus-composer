@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Pedidos from "../models/Pedidos";
 import UsuarioEnderecos from "../models/UsuarioEnderecos";
 import Usuarios from "../models/Usuarios";
+import type { AuthenticatedResponseLocals } from "../middlewares/auth.middleware";
 import EventBusService from "../services/eventBus.service";
 import type {
   PedidoBody,
@@ -187,6 +188,25 @@ class PedidosController {
           ...(where.id_usuario ? { id_usuario: where.id_usuario } : {}),
           ...(where.status ? { status: where.status } : {}),
         },
+      }),
+    );
+  }
+
+  // Pedidos do usuario autenticado; o id vem do token, nunca da query.
+  static async findMine(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
+    const where = PedidosController.buildWhere({ status: req.query.status });
+
+    if ("message" in where) {
+      return res.status(400).json({ message: where.message });
+    }
+
+    return res.status(200).send(
+      await Pedidos.findAll({
+        where: {
+          id_usuario: res.locals.authUser!.id_usuario,
+          ...(where.status ? { status: where.status } : {}),
+        },
+        order: [["data_criacao", "DESC"]],
       }),
     );
   }
