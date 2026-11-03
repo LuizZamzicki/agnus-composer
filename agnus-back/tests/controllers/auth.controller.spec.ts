@@ -68,34 +68,22 @@ describe("AuthController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "email invalido." });
   });
 
-  it("login informa reutilizacao de senha", async () => {
-    const reusedAt = new Date("2026-01-01T12:00:00.000Z");
+  it("login nao revela que a senha informada ja foi usada", async () => {
     const response = mockResponse();
-    const nowSpy = jest
-      .spyOn(Date, "now")
-      .mockReturnValue(reusedAt.getTime() + 5 * 60000);
+    const historySpy = jest.spyOn(UsuarioSenhasHistoricoController, "findByPasswordHash");
 
     authService.authenticate.mockResolvedValueOnce(null);
-    jest.spyOn(UsuarioSenhasHistoricoController, "findByPasswordHash").mockResolvedValueOnce(reusedAt);
 
-    await AuthController.login(mockRequest({ body: { email: "a@a.com", senha: "123" } }), response);
+    await AuthController.login(mockRequest({ body: { email: "a@a.com", senha: "SenhaAntiga@1" } }), response);
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({
-      message: `Essa senha ja foi usada ha 5 minutos (em ${new Intl.DateTimeFormat("pt-BR", {
-        dateStyle: "short",
-        timeStyle: "short",
-        timeZone: "America/Sao_Paulo",
-      }).format(reusedAt)}).`,
-    });
-
-    nowSpy.mockRestore();
+    expect(response.json).toHaveBeenCalledWith({ message: "Credenciais invalidas." });
+    expect(historySpy).not.toHaveBeenCalled();
   });
 
   it("login retorna 401 com credenciais invalidas", async () => {
     const response = mockResponse();
     authService.authenticate.mockResolvedValueOnce(null);
-    jest.spyOn(UsuarioSenhasHistoricoController, "findByPasswordHash").mockResolvedValueOnce(null);
     await AuthController.login(mockRequest({ body: { email: "a@a.com", senha: "123" } }), response);
     expect(response.status).toHaveBeenCalledWith(401);
     expect(response.json).toHaveBeenCalledWith({ message: "Credenciais invalidas." });
