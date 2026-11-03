@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import "../css/cliente/app.css";
 import "../css/cliente/header.css";
+import escrita from "../img/marca/escrita.png";
+import simbolo from "../img/marca/simbolo.png";
 import { tempoLiturgico } from "../utils/liturgia";
 
 function Header() {
@@ -94,7 +96,8 @@ function Header() {
 
                 <div className="logo">
                     <Link className="logoInicio" to="/" aria-label="Agnus, página inicial">
-                        AGNUS
+                        <img className="logo-simbolo" src={simbolo} alt="" />
+                        <img className="logo-escrita" src={escrita} alt="" />
                     </Link>
                 </div>
 

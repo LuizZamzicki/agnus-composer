@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   Users,
 } from "lucide-react";
+import simboloClaro from "../../img/marca/simbolo-claro.png";
 
 function obterMenuAtivo(pathname) {
 
@@ -97,6 +98,8 @@ function AdminMenuLateral() {
             ←
           </Link>
         </div>
+
+        <img className="admin-sidebar__mark" src={simboloClaro} alt="" />
 
         <h3>Agnus Admin</h3>
 

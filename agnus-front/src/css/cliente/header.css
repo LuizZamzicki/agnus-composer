@@ -44,12 +44,18 @@
 .logo { justify-self: center; }
 
 .logoInicio {
-    font: 26px/1 var(--f-display);
-    letter-spacing: 0.5em;
-    padding-left: 0.5em;
-    color: var(--ink);
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+
+.logoInicio img {
+    display: block;
+    width: auto;
+}
+
+.logo-simbolo { height: 46px; }
+.logo-escrita { height: 25px; }
 
 .opcoes_header {
     justify-self: end;
@@ -102,6 +108,8 @@
     .header-bar { grid-template-columns: 1fr auto; }
     .menu_header { display: none; }
     .logo { justify-self: start; }
-    .logoInicio { font-size: 21px; letter-spacing: 0.38em; padding-left: 0; }
+    .logoInicio { gap: 8px; }
+    .logo-simbolo { height: 42px; }
+    .logo-escrita { height: 21px; }
     .opcoes_header { gap: 0; }
 }

@@ -434,3 +434,8 @@
   font-size: 12px;
   white-space: nowrap;
 }
+
+.admin-sidebar__mark {
+  height: 40px;
+  width: auto;
+}
