@@ -85,6 +85,24 @@
     background: var(--stone-2);
 }
 
+.sacola-link { position: relative; }
+
+.sacola-contador {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--lit);
+    color: var(--on-lit);
+    border-radius: 9px;
+    font: 12px/1 var(--f-ui);
+}
+
 .season-strip {
     display: flex;
     align-items: center;
