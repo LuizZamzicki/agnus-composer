@@ -61,6 +61,7 @@ describe("AuthService", () => {
     process.env.GOOGLE_CLIENT_ID = "client";
     process.env.GOOGLE_CLIENT_SECRET = "secret-google";
     process.env.GOOGLE_REDIRECT_URI = "http://localhost/callback";
+    delete process.env.GOOGLE_REDIRECT_URI_WEB;
     process.env.GOOGLE_OAUTH_SCOPES = "openid email profile";
     process.env.GOOGLE_STATE_SECRET = "state-secret";
     global.fetch = fetchMock;
@@ -123,6 +124,37 @@ describe("AuthService", () => {
     expect(url).toContain("client_id=client");
     expect(url).toContain("redirect_uri=http%3A%2F%2Flocalhost%2Fcallback");
     expect(url).toContain("state=state-token");
+  });
+
+  it("usa o callback web no site e o callback publico (ngrok) no app", () => {
+    process.env.GOOGLE_REDIRECT_URI = "https://agnus.ngrok-free.dev/auth/google/callback";
+    process.env.GOOGLE_REDIRECT_URI_WEB = "https://localhost/api/auth/google/callback";
+    jwtMock.sign.mockReturnValue("state-token");
+
+    expect(AuthService.buildGoogleAuthorizationUrl()).toContain(
+      `redirect_uri=${encodeURIComponent("https://localhost/api/auth/google/callback")}`,
+    );
+    expect(AuthService.buildGoogleAuthorizationUrl("agnusapp://login")).toContain(
+      `redirect_uri=${encodeURIComponent("https://agnus.ngrok-free.dev/auth/google/callback")}`,
+    );
+    jwtMock.sign.mockReset();
+  });
+
+  it.each([
+    ["site", undefined, "https://localhost/api/auth/google/callback"],
+    ["app", "agnusapp://login", "https://agnus.ngrok-free.dev/auth/google/callback"],
+  ])("na troca do codigo (%s) repete o redirect_uri usado na autorizacao", async (_label, appRedirect, expected) => {
+    process.env.GOOGLE_REDIRECT_URI = "https://agnus.ngrok-free.dev/auth/google/callback";
+    process.env.GOOGLE_REDIRECT_URI_WEB = "https://localhost/api/auth/google/callback";
+    jwtMock.verify
+      .mockReturnValueOnce({ provider: "google" } as never)
+      .mockReturnValueOnce({ provider: "google", ...(appRedirect ? { redirect: appRedirect } : {}) } as never);
+    fetchMock.mockResolvedValueOnce(new Response("bad code", { status: 400 }));
+
+    await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Falha ao obter token Google");
+
+    const body = fetchMock.mock.calls[0][1]?.body as URLSearchParams;
+    expect(body.get("redirect_uri")).toBe(expected);
   });
 
   it("buildGoogleAuthorizationUrl falha sem configuracao", () => {

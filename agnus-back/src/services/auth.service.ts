@@ -27,8 +27,16 @@ class AuthService {
     return process.env.GOOGLE_CLIENT_SECRET!;
   }
 
-  private static getGoogleRedirectUri() {
-    return process.env.GOOGLE_REDIRECT_URI!;
+  /**
+   * O app mobile precisa de um callback público (ngrok); o site volta pelo nginx local,
+   * evitando a página de aviso do ngrok. Sem GOOGLE_REDIRECT_URI_WEB, usa o mesmo para os dois.
+   */
+  private static getGoogleRedirectUri(appRedirect?: string) {
+    if (appRedirect) {
+      return process.env.GOOGLE_REDIRECT_URI!;
+    }
+
+    return process.env.GOOGLE_REDIRECT_URI_WEB || process.env.GOOGLE_REDIRECT_URI!;
   }
 
   private static getGoogleScopes() {
@@ -129,7 +137,7 @@ class AuthService {
     AuthService.ensureGoogleOAuthConfig();
     const params = new URLSearchParams({
       client_id: AuthService.getGoogleClientId(),
-      redirect_uri: AuthService.getGoogleRedirectUri(),
+      redirect_uri: AuthService.getGoogleRedirectUri(redirect),
       response_type: "code",
       scope: AuthService.getGoogleScopes(),
       access_type: "offline",
@@ -175,12 +183,12 @@ class AuthService {
     throw new Error(`${errorPrefix}: ${response.status} ${await response.text()}`);
   }
 
-  private static async exchangeGoogleCodeForToken(code: string) {
+  private static async exchangeGoogleCodeForToken(code: string, appRedirect?: string) {
     const body = new URLSearchParams({
       code,
       client_id: AuthService.getGoogleClientId(),
       client_secret: AuthService.getGoogleClientSecret(),
-      redirect_uri: AuthService.getGoogleRedirectUri(),
+      redirect_uri: AuthService.getGoogleRedirectUri(appRedirect),
       grant_type: "authorization_code",
     });
 
@@ -212,8 +220,8 @@ class AuthService {
     }
   }
 
-  private static async fetchVerifiedGoogleUser(code: string) {
-    const tokenResponse = await AuthService.exchangeGoogleCodeForToken(code);
+  private static async fetchVerifiedGoogleUser(code: string, appRedirect?: string) {
+    const tokenResponse = await AuthService.exchangeGoogleCodeForToken(code, appRedirect);
     const googleUser = await AuthService.fetchGoogleUserInfo(tokenResponse.access_token);
     AuthService.ensureVerifiedGoogleEmail(googleUser);
     return googleUser;
@@ -258,11 +266,13 @@ class AuthService {
   static async authenticateWithGoogle(code: string, state: string) {
     AuthService.ensureGoogleOAuthConfig();
     AuthService.ensureValidGoogleState(state);
-    const googleUser = await AuthService.fetchVerifiedGoogleUser(code);
+    // O Google exige na troca do código o mesmo redirect_uri da autorização; o state assinado diz qual foi.
+    const appRedirect = AuthService.peekGoogleStateRedirect(state);
+    const googleUser = await AuthService.fetchVerifiedGoogleUser(code, appRedirect);
     const user = await AuthService.findOrCreateGoogleUser(googleUser);
     return {
       ...AuthService.buildAuthResponse(user),
-      redirect: AuthService.peekGoogleStateRedirect(state),
+      redirect: appRedirect,
     };
   }
 }
