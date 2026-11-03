@@ -5,13 +5,25 @@ As pastas do front e back devem ficar exatamente assim:
 - agnus-back
 - agnus-front
 
-Se precisar regerar certificados, use a sequencia de comandos abaixo
+> 📚 **Documentação técnica e de gestão** (C4, ADRs, DDD, OpenAPI, SLOs, runbook, Cynefin, backlog, Jira): [docs/README.md](docs/README.md)
 
-- choco install mkcert
-- mkcert agnus
-- mkcert -install
+## Configuração
 
-coloque os arquivos agnus-key.pem e agnus.pem dentro de uma pasta chamada "certs"
+1. Copie os arquivos de exemplo e preencha os valores:
+   - `.env.example` → `.env`
+   - `agnus-back/.env.example` → `agnus-back/.env` (a `DB_PASSWORD` deve ser igual à `MYSQL_ROOT_PASSWORD`)
+   - `agnus-front/.env` com `REACT_APP_API_BASE_URL=/api/`
+2. Gere os certificados e coloque `agnus.pem` e `agnus-key.pem` numa pasta `certs/` na raiz:
+
+   | Windows | macOS |
+   | --- | --- |
+   | `choco install mkcert` | `brew install mkcert` |
+   | `mkcert -install` | `mkcert -install` |
+   | `mkcert -cert-file certs/agnus.pem -key-file certs/agnus-key.pem agnus localhost 127.0.0.1` | (mesmo comando) |
+
+> ⚠️ Arquivos `.env` criados no Windows podem vir com quebra de linha CRLF, e o `\r` passa a fazer parte das senhas. No macOS/Linux, converta com `sed -i '' 's/\r$//' .env agnus-back/.env agnus-front/.env`.
+>
+> ⚠️ O MySQL só lê `MYSQL_ROOT_PASSWORD` na **primeira** inicialização do volume. Para trocar a senha depois, altere-a dentro do banco ou recrie o volume `agnus_mysql_data` (apaga os dados).
 
 ## Docker
 
@@ -19,7 +31,18 @@ Comandos para subir e derrubar containers:
 
 - docker compose down
 - docker compose up -d --build
-  
+
+| Serviço | Função | Acesso |
+| --- | --- | --- |
+| `nginx` | Proxy reverso + TLS, serve o frontend | <https://localhost> |
+| `backend` | API Node/Express | <https://localhost/api> · Swagger: <https://localhost/api/docs/> |
+| `worker` | Consome eventos do Redis Pub/Sub | `docker compose logs -f worker` |
+| `mysql` | Banco de dados | rede interna |
+| `redis` | Cache + Pub/Sub | rede interna |
+| `meilisearch` | Busca textual | rede interna |
+| `frontend` | Gera o build do React e encerra | — |
+| `ngrok` | Túnel público (opcional, precisa de token) | <http://localhost:4040> |
+
 
 Documentação Agnus
 
