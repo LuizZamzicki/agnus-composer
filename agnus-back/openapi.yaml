@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Agnus API
-  version: 3.3.0
+  version: 3.4.0
   description: |
     API REST do e-commerce Agnus (roupas esportivas com estampas catolicas, modelo print on demand).
 
@@ -22,8 +22,12 @@ tags:
   - name: Categorias
   - name: Produtos
   - name: Fotos de produto
+  - name: Contatos
+  - name: Variacoes de produto
+  - name: Avaliacoes
   - name: Carrinho
   - name: Pedidos
+  - name: Itens de pedido
 
 paths:
   /health:
@@ -507,7 +511,7 @@ paths:
     post:
       operationId: postCartItems
       tags: [ Carrinho ]
-      summary: Adiciona item (cor + grade) ao carrinho, validando estoque
+      summary: Adiciona item (cor + grade) ao carrinho, validando a variante
       requestBody:
         required: true
         content:
@@ -564,7 +568,11 @@ paths:
     post:
       operationId: postOrders
       tags: [ Pedidos ]
-      summary: Cria pedido do proprio usuario (publica `pedido.criado`)
+      summary: Lancamento manual de pedido pela equipe (permissao PEDIDO_CRIAR; publica `pedido.criado`)
+      description: |
+        O cliente compra por `POST /orders/checkout`. Aqui a equipe lanca um pedido manual, que nasce
+        sem itens e sempre aberto (`aguardando_calculo_frete` ou `aguardando_pagamento`). Um `valor_total`
+        enviado e ignorado: o total comeca no frete e e recalculado a cada item adicionado em `/order-items`.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -578,6 +586,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Pedido" }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
   /orders/checkout:
     post:
@@ -650,6 +659,10 @@ paths:
       operationId: putOrdersPorId
       tags: [ Pedidos ]
       summary: Atualiza pedido/status (permissao PEDIDO_ATUALIZAR; publica `pedido.atualizado`)
+      description: |
+        Transicoes permitidas: `aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue`;
+        `cancelado` a partir de qualquer status anterior a `enviado`. Qualquer outra transicao retorna 409.
+        Alterar `valor_frete` recalcula `valor_total`; um `valor_total` enviado e ignorado.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -658,7 +671,15 @@ paths:
             schema: { $ref: "#/components/schemas/PedidoInput" }
       responses:
         "200": { description: Atualizado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Transicao de status invalida
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { message: "Transicao de status invalida: entregue -> aguardando_pagamento." }
     delete:
       operationId: deleteOrdersPorId
       tags: [ Pedidos ]
@@ -667,6 +688,207 @@ paths:
       responses:
         "204": { description: Removido }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /order-items:
+    post:
+      operationId: postOrderItems
+      tags: [ Itens de pedido ]
+      summary: Adiciona item a um pedido aberto (permissao PEDIDO_ATUALIZAR)
+      description: O preco unitario vem do catalogo no momento da inclusao e o `valor_total` do pedido e recalculado.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoItemInput" }
+      responses:
+        "201":
+          description: Item criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PedidoItem" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Pedido ja pago, enviado, entregue ou cancelado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /order-items/{id_order}:
+    get:
+      operationId: getOrderItemsPorIdOrder
+      tags: [ Itens de pedido ]
+      summary: Itens de um pedido (dono do pedido ou admin)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id_order, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Itens com dados do produto, cor e grade
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PedidoItem" } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /order-items/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    put:
+      operationId: putOrderItemsPorId
+      tags: [ Itens de pedido ]
+      summary: Altera item de um pedido aberto (permissao PEDIDO_ATUALIZAR; recalcula o total)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoItemInput" }
+      responses:
+        "200": { description: Item atualizado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      operationId: deleteOrderItemsPorId
+      tags: [ Itens de pedido ]
+      summary: Remove item de um pedido aberto (permissao PEDIDO_ATUALIZAR; recalcula o total)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /user-contacts:
+    post:
+      operationId: postUserContacts
+      tags: [ Contatos ]
+      summary: Cadastra contato (telefone/WhatsApp) do proprio usuario
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_usuario, valor ]
+              properties:
+                id_usuario: { type: integer }
+                tipo: { type: string, enum: [ telefone, celular, email, outro ] }
+                valor: { type: string, example: "(45) 99999-0000" }
+                principal: { type: boolean }
+      responses:
+        "201": { description: Contato criado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /user-contacts/{id_user}:
+    get:
+      operationId: getUserContactsPorIdUser
+      tags: [ Contatos ]
+      summary: Contatos do usuario (proprio usuario ou admin)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id_user, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Contatos }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /product-colors:
+    post:
+      operationId: postProductColors
+      tags: [ Variacoes de produto ]
+      summary: Adiciona cor ao produto (permissao PRODUTO_COR_CRIAR; invalida o cache de produtos)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_produto, nome, codigo_rgb ]
+              properties:
+                id_produto: { type: integer }
+                nome: { type: string, example: Marinho }
+                codigo_rgb: { type: string, example: "#1f2a44" }
+                acrescimo: { type: number }
+      responses:
+        "201": { description: Cor criada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /product-colors/{id_produto}:
+    get:
+      operationId: getProductColorsPorIdProduto
+      tags: [ Variacoes de produto ]
+      summary: Cores de um produto
+      security: []
+      parameters:
+        - { in: path, name: id_produto, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Cores }
+  /product-grades:
+    post:
+      operationId: postProductGrades
+      tags: [ Variacoes de produto ]
+      summary: Adiciona tamanho (grade) ao produto (permissao PRODUTO_GRADE_CRIAR)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_produto, nome ]
+              properties:
+                id_produto: { type: integer }
+                nome: { type: string, example: M }
+                acrescimo: { type: number }
+      responses:
+        "201": { description: Grade criada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /product-grades/{id_produto}:
+    get:
+      operationId: getProductGradesPorIdProduto
+      tags: [ Variacoes de produto ]
+      summary: Tamanhos de um produto
+      security: []
+      parameters:
+        - { in: path, name: id_produto, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Grades }
+
+  /product-reviews:
+    post:
+      operationId: postProductReviews
+      tags: [ Avaliacoes ]
+      summary: Avalia um produto (autor = usuario do token)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ id_usuario, id_produto ]
+              properties:
+                id_usuario: { type: integer }
+                id_produto: { type: integer }
+                nota: { type: integer, minimum: 1, maximum: 5 }
+                titulo: { type: string }
+                comentario: { type: string }
+      responses:
+        "201": { description: Avaliacao criada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /product-reviews/{id_produto}:
+    get:
+      operationId: getProductReviewsPorIdProduto
+      tags: [ Avaliacoes ]
+      summary: Avaliacoes publicas de um produto
+      security: []
+      parameters:
+        - { in: path, name: id_produto, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Avaliacoes }
 
 components:
   securitySchemes:
@@ -847,6 +1069,24 @@ components:
         valor_total: { type: number, nullable: true }
         valor_frete: { type: number, nullable: true }
         data_criacao: { type: string, format: date-time }
+    PedidoItem:
+      type: object
+      properties:
+        id_pedido_item: { type: integer }
+        id_pedido: { type: integer }
+        id_produto_cor: { type: integer }
+        id_produto_grade: { type: integer }
+        quantidade: { type: integer, minimum: 1 }
+        preco_unitario: { type: number, description: "Congelado no momento da compra" }
+        subtotal: { type: number }
+    PedidoItemInput:
+      type: object
+      required: [ id_pedido, id_produto_cor, id_produto_grade, quantidade ]
+      properties:
+        id_pedido: { type: integer }
+        id_produto_cor: { type: integer }
+        id_produto_grade: { type: integer }
+        quantidade: { type: integer, minimum: 1 }
     PedidoInput:
       type: object
       required: [ id_usuario, id_usuario_endereco ]
@@ -854,5 +1094,4 @@ components:
         id_usuario: { type: integer }
         id_usuario_endereco: { type: integer }
         status: { $ref: "#/components/schemas/PedidoStatus" }
-        valor_total: { type: number }
-        valor_frete: { type: number }
+        valor_frete: { type: number, description: "Ao mudar, o valor_total e recalculado (itens + frete)" }
