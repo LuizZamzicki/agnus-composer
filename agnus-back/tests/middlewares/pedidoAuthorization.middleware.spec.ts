@@ -1,7 +1,4 @@
-import {
-  authorizeOrderOwnerOrAdmin,
-  authorizeOwnOrderBody,
-} from "../../src/middlewares/pedidoAuthorization.middleware";
+import { authorizeOrderOwnerOrAdmin } from "../../src/middlewares/pedidoAuthorization.middleware";
 import Pedidos from "../../src/models/Pedidos";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 
@@ -60,38 +57,6 @@ describe("pedidoAuthorization.middleware", () => {
       response.locals.authUser = { id_usuario: 2, email: "b@b.com", tipo: "cliente" };
       pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1, id_usuario: 2 }));
       await middleware(mockRequest({ params: { id: "1" } }), response, next);
-      expect(next).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("authorizeOwnOrderBody", () => {
-    it("retorna 401 sem autenticacao", () => {
-      const next = jest.fn(), middleware = authorizeOwnOrderBody("id_usuario"), response = mockResponse();
-      middleware(mockRequest({ body: { id_usuario: 1 } }), response, next);
-      expect(response.status).toHaveBeenCalledWith(401);
-      expect(response.json).toHaveBeenCalledWith({ message: "Nao autenticado." });
-    });
-
-    it("libera administrador criando pedido para outro usuario", () => {
-      const next = jest.fn(), middleware = authorizeOwnOrderBody("id_usuario"), response = mockResponse();
-      response.locals.authUser = { id_usuario: 1, email: "a@a.com", tipo: "administrador" };
-      middleware(mockRequest({ body: { id_usuario: 9 } }), response, next);
-      expect(next).toHaveBeenCalledTimes(1);
-    });
-
-    it("retorna 403 quando o cliente tenta criar pedido para outro usuario", () => {
-      const next = jest.fn(), middleware = authorizeOwnOrderBody("id_usuario"), response = mockResponse();
-      response.locals.authUser = { id_usuario: 2, email: "b@b.com", tipo: "cliente" };
-      middleware(mockRequest({ body: { id_usuario: 9 } }), response, next);
-      expect(response.status).toHaveBeenCalledWith(403);
-      expect(response.json).toHaveBeenCalledWith({ message: "Voce so pode criar pedidos para o proprio usuario." });
-      expect(next).not.toHaveBeenCalled();
-    });
-
-    it("chama next quando o cliente cria pedido para si mesmo", () => {
-      const next = jest.fn(), middleware = authorizeOwnOrderBody("id_usuario"), response = mockResponse();
-      response.locals.authUser = { id_usuario: 2, email: "b@b.com", tipo: "cliente" };
-      middleware(mockRequest({ body: { id_usuario: 2 } }), response, next);
       expect(next).toHaveBeenCalledTimes(1);
     });
   });
