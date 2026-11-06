@@ -47,9 +47,29 @@ const handlers: Partial<Record<AgnusEventType, AgnusEventHandler>> = {
   },
 };
 
+// A auditoria e um efeito secundario: se o Redis falhar nela, a notificacao segue mesmo assim.
 const processarEvento = async (event: AgnusEvent) => {
-  await registrarAuditoria(event);
+  try {
+    await registrarAuditoria(event);
+  } catch (error) {
+    logger.warn("auditoria.falha", {
+      eventId: event.id,
+      type: event.type,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   await handlers[event.type]?.(event);
+};
+
+// A conexao de comandos nao tem fila offline: sem esperar o "ready", o primeiro evento
+// depois de cada inicio do worker falhava ao gravar a auditoria.
+const aguardarConexaoDeComandos = async () => {
+  const client = getRedisClient();
+
+  if (client && client.status !== "ready") {
+    await new Promise<void>((resolve) => client.once("ready", () => resolve()));
+  }
 };
 
 const shutdown = async (signal: string) => {
@@ -59,6 +79,7 @@ const shutdown = async (signal: string) => {
 };
 
 const bootstrap = async () => {
+  await aguardarConexaoDeComandos();
   await EventBusService.subscribe(processarEvento);
   logger.info("worker.iniciado");
 
