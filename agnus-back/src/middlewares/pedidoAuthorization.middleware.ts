@@ -34,24 +34,3 @@ export const authorizeOrderOwnerOrAdmin = (paramName = "id") =>
 
     return next();
   };
-
-export const authorizeOwnOrderBody = (bodyField = "id_usuario") =>
-  (req: Request, res: AuthResponse, next: NextFunction) => {
-    const authUser = res.locals.authUser;
-
-    if (!authUser) {
-      return res.status(401).json({ message: "Nao autenticado." });
-    }
-
-    if (authUser.tipo === "administrador") {
-      return next();
-    }
-
-    const bodyUserId = Number((req.body as Record<string, unknown>)[bodyField]);
-
-    if (Number.isInteger(bodyUserId) && bodyUserId !== authUser.id_usuario) {
-      return res.status(403).json({ message: "Voce so pode criar pedidos para o proprio usuario." });
-    }
-
-    return next();
-  };

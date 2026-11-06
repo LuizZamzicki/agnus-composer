@@ -9,9 +9,9 @@
 | SLO-1 | API como um todo | **Disponibilidade** = requisições não-5xx ÷ total | **≥ 99,5%** | 30 dias | 0,5% ≈ 3,6 h/mês | `GET /metrics` → `sli.availability`; logs `http.request` com `status` |
 | SLO-2 | Catálogo (`/products/catalog`, `/products/:id`, `/categories`) | **Latência** p95 no backend | **p95 < 150 ms** e **p99 < 400 ms** | 7 dias | 5% das req. acima de 150 ms | `/metrics` → `latencyMs.p95/p99`; `durationMs` nos logs |
 | SLO-3 | Login (`POST /auth/login`) | Latência p95 (inclui hash Argon2) | **p95 < 800 ms** | 7 dias | 5% | logs `http.request` filtrados por `path` |
-| SLO-4 | Checkout (`POST /orders`) | **Taxa de sucesso** = 201 ÷ (201 + 5xx) | **≥ 99,9%** | 30 dias | 0,1% | logs `http.request` (`path=/orders`, `method=POST`) |
+| SLO-4 | Checkout (`POST /orders/checkout`) | **Taxa de sucesso** = 201 ÷ (201 + 5xx) | **≥ 99,9%** | 30 dias | 0,1% | logs `http.request` (`path=/orders/checkout`, `method=POST`) |
 | SLO-5 | Cache | **Taxa de acerto** = hits ÷ (hits + misses) | **≥ 70%** em horário comercial | 1 dia | — (indicador de eficiência) | `/metrics` → `sli.cacheHitRatio` |
-| SLO-6 | Consistência do catálogo | Tempo entre a edição pelo admin e a leitura pública atualizada | **0 s** (produto, categoria, foto); **≤ 60 s** (mais vendidos) | — | — | Teste em [redis-cache-e-eventos.md](../backend/redis-cache-e-eventos.md) |
+| SLO-6 | Consistência do catálogo | Tempo entre a edição pelo admin e a leitura pública atualizada | **0 s** (produto, cor, grade, foto, categoria); **≤ 60 s** (mais vendidos) | — | — | Teste em [redis-cache-e-eventos.md](../backend/redis-cache-e-eventos.md) |
 | SLO-7 | Eventos | **Entrega** = `evento.recebido` (worker) ÷ `evento.publicado` (API) | **≥ 99%** com o worker no ar | 7 dias | 1% | contagem dos logs `evento.publicado` (API) e `evento.recebido` (worker) |
 
 **Política do error budget:** se o budget de SLO-1 ou SLO-4 estourar no mês, novas features param e a sprint seguinte prioriza confiabilidade (correções, testes, alertas).
@@ -62,7 +62,7 @@ Todos os containers Node escrevem **JSON por linha** em stdout ([ADR 0007](adr/0
 | `http.request` | info / warn (4xx) / error (5xx) | Fim de toda requisição (exceto `/health`) | `method`, `path`, `status`, `durationMs`, `requestId` |
 | `http.erro_nao_tratado` | error | Exceção que virou 500 | `error.stack`, `path` |
 | `cache.hit` / `cache.miss` | info | Leitura com cache | `key`, `ttlSeconds` |
-| `cache.invalidado` | info | Escrita em produto/categoria/foto | `namespace`, `reason`, `removedKeys` |
+| `cache.invalidado` | info | Escrita em produto, cor, grade, foto ou categoria | `namespace`, `reason`, `removedKeys` |
 | `cache.falha` / `cache.circuito_aberto` | warn / error | Redis com problema | `operation`, `consecutiveFailures` |
 | `evento.publicado` | info | API publicou evento | `eventId`, `type`, `receivers`, `payload` |
 | `evento.recebido` | info | Worker consumiu evento | `eventId`, `type`, `origemRequestId` |

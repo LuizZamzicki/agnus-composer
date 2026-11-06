@@ -11,15 +11,15 @@ Rastreabilidade: cada história referencia os requisitos funcionais (RF) do [rea
 | **EP-01** Identidade e Acesso | Cliente e equipe entram com segurança e só fazem o que podem | US-01..06 | 5/6 ✅ |
 | **EP-02** Catálogo | Cliente encontra a peça certa rapidamente | US-07..14 | 6/8 ✅ (1 descartada) |
 | **EP-03** Carrinho | Cliente monta a compra com as variações corretas | US-15..16 | 2/2 ✅ |
-| **EP-04** Pedidos e Checkout | Pedido correto dispara a produção sob demanda | US-17..24, US-29 | 5/9 ✅ (1 descartada) |
+| **EP-04** Pedidos e Checkout | Pedido correto dispara a produção sob demanda | US-17..24, US-29 | 7/9 ✅ (1 descartada) |
 | **EP-05** Pagamento online | Cliente paga sem sair da loja | US-25..26 | 🔄 |
 | **EP-06** Avaliações | Prova social para novos clientes | US-27 | ✅ |
 | **EP-07** Painel administrativo | Equipe acompanha vendas e opera a loja | US-28 | 1/1 ✅ |
-| **EP-08** Plataforma e Qualidade (*enablers*) | Base técnica confiável para evoluir rápido | TS-01..10 | 8/10 ✅ |
+| **EP-08** Plataforma e Qualidade (*enablers*) | Base técnica confiável para evoluir rápido | TS-01..17 | 13/17 ✅ |
 
 ---
 
-## Release 4.0.0 — Pagamento online (próxima, em andamento)
+## Release 4.0.0 — Pagamento online e loja publicada (próxima, em andamento)
 
 ### US-25 · Pagar o pedido pelo Mercado Pago · `Must` · 8 pts · 🔄
 **Como** cliente, **quero** pagar com Pix ou cartão sem sair da loja **para** concluir a compra com segurança.
@@ -38,21 +38,15 @@ RF93
 - O mesmo webhook recebido duas vezes não duplica efeitos (idempotência pelo id do pagamento).
 - O evento de pagamento usa fila durável (Redis Streams), não Pub/Sub ([ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md)).
 
-### US-22 · Total do pedido calculado no servidor · `Must` · 5 pts · 🔄
-**Como** dono da loja, **quero** que o valor total seja calculado pela API **para** impedir que alguém altere o preço pelo navegador.
+### TS-16 · Publicar a loja em um endereço público · `Must` · 5 pts · 📋
+**Como** equipe, **quero** a loja acessível na internet **para** que clientes e avaliadores usem a versão real.
 **Critérios de aceite**
-- `valor_total` = soma de (preço da variante × quantidade) + frete, calculado no backend.
-- Um `valor_total` enviado pelo cliente é ignorado.
-- Pedido e itens são criados na **mesma transação**: se um item falhar, nada é gravado.
-- Situação: a loja já usa `POST /orders/checkout`, que atende a estes critérios. Falta aposentar `POST /orders`, que ainda aceita o valor enviado pelo cliente (verificar antes o uso pelo app mobile).
-RF60, RF64
+- Servidor com `docker compose` e certificado válido (Let's Encrypt).
+- Segredos `DEPLOY_HOST`, `DEPLOY_USER` e `DEPLOY_SSH_KEY` no ambiente `producao` do GitHub; uma tag `vX.Y.Z` publica a nova versão com rollback automático (`cd.yml`).
+- Link público registrado no readme.
 
-### US-23 · Transições de status válidas · `Should` · 3 pts · 📋
-**Como** equipe, **quero** que o sistema impeça transições impossíveis (ex.: `entregue → aguardando_pagamento`) **para** manter o histórico confiável.
-**Critérios de aceite**
-- Transições permitidas: `aguardando_pagamento → pago → enviado → entregue`; `cancelado` só antes de `enviado`.
-- Transição inválida retorna 409 com mensagem clara.
-RF69, RF70
+### TS-17 · Integrar Jira e GitHub · `Should` · 1 pt · 📋
+- App *GitHub for Jira* instalado; branches, commits e PRs citam `AGNUS-<n>`.
 
 ### US-24 · Notificar o cliente por e-mail sobre o status · `Should` · 5 pts · 📋
 **Como** cliente, **quero** receber um e-mail quando meu pedido mudar de status **para** acompanhar a entrega sem entrar no site.
@@ -82,20 +76,54 @@ RF23, RF27
 - Cada tempo pode ter uma coleção própria; a página inicial destaca a coleção do tempo atual.
 - Ideia validada no protótipo de comparação de direções visuais (2026-11-02); adiada porque hoje existe apenas uma estampa.
 
-### TS-11 · Aplicação do logotipo oficial no site · `Should` · — · ✅
-- Logo oficial (cordeiro com auréola e estandarte) aplicado no cabeçalho, rodapé, login, página 404, painel e ícones do site.
-- Arte original guardada em `docs/marca/`; versões otimizadas em `agnus-front/src/img/marca/`.
-
 ### US-14 · Cadastro de marcas · `Won't (por ora)` · — · ⛔
 **Motivo:** todas as peças são da própria marca Agnus. Volta ao backlog se a loja passar a revender outras marcas.
 RF33–RF36, RF40
 
 ### US-29 · Controle de estoque por variação · `Won't (repensado)` · — · ⛔
-**Motivo:** no modelo **print on demand**, as peças são produzidas depois do pedido, então não existe estoque físico a controlar. Os requisitos RF24–RF26 e RF55–RF57 foram substituídos pela regra "a variante (cor + grade) precisa existir e o produto precisa estar ativo". **Ação pendente:** atualizar esses RFs no readme.
+**Motivo:** no modelo **print on demand**, as peças são produzidas depois do pedido, então não existe estoque físico a controlar. Os requisitos RF24–RF26, RF56–RF57 e RF97 foram substituídos pela regra "a variante (cor + grade) precisa existir e o produto precisa estar ativo" (RF55). ✅ RFs marcados como substituídos no readme.
 
 ---
 
-## Release 3.3.0 — Desempenho e observabilidade ✅ (2026-11-02)
+## Release 3.4.0 — Regras do pedido e endurecimento ✅ (2026-11-06)
+
+### US-22 · Total do pedido calculado no servidor · `Must` · 5 pts · ✅
+**Como** dono da loja, **quero** que o valor total seja calculado pela API **para** impedir que alguém altere o preço pelo navegador.
+**Critérios de aceite**
+- ✅ `valor_total` = soma de (preço da variante × quantidade) + frete, calculado no backend (`CheckoutService` e `PedidoRegrasService.recalcularTotal`).
+- ✅ Um `valor_total` enviado pelo cliente é ignorado; `POST /orders` passou a ser lançamento manual exclusivo da equipe.
+- ✅ Pedido e itens são criados na **mesma transação**: se um item falhar, nada é gravado.
+- ✅ Incluir, alterar ou remover item, ou mudar o frete, refaz o total.
+RF60, RF64
+
+### US-23 · Transições de status válidas · `Should` · 3 pts · ✅
+**Como** equipe, **quero** que o sistema impeça transições impossíveis (ex.: `entregue → aguardando_pagamento`) **para** manter o histórico confiável.
+**Critérios de aceite**
+- ✅ Transições permitidas: `aguardando_calculo_frete → aguardando_pagamento → pago → enviado → entregue`; `cancelado` só antes de `enviado`.
+- ✅ Transição inválida retorna 409 com mensagem clara (`Transicao de status invalida: entregue -> aguardando_pagamento.`).
+- ✅ Itens só mudam enquanto o pedido está aberto.
+RF69, RF70
+
+### TS-12 · Rotas da API por bounded context · `Should` · 2 pts · ✅
+- ✅ `app.ts` dividido em `src/routes/*.routes.ts` (identidade, clientes, catálogo, avaliações, carrinho, pedidos).
+- ✅ A coleção Postman é gerada a partir desses módulos.
+
+### TS-13 · Endurecer o Nginx · `Should` · 2 pts · ✅
+- ✅ Upstream com keepalive, timeouts de proxy, gzip e cache dos estáticos com hash.
+- ✅ *Rate limit* no login: acima de 10/min por IP responde 429.
+- ✅ A porta 3000 da API fica só em `127.0.0.1`.
+
+### TS-14 · Tags SemVer e Releases no GitHub · `Must` · 1 pt · ✅
+- ✅ Tags anotadas `v2.0.0` a `v3.4.0` e uma Release por versão, com as notas do CHANGELOG ([versionamento](versionamento.md)).
+
+### TS-15 · Roteiro de validação da rubrica · `Should` · 1 pt · ✅
+- ✅ [docs/validacao-rubrica.md](../validacao-rubrica.md) e `npm run validar:rubrica` (16 verificações automáticas contra a stack).
+
+**Bugs corrigidos nesta release** (detalhes no [`jira-import.csv`](jira-import.csv)): CI vermelho após remover o `node_modules`; cliente criando pedido com valor e status próprios; cliente incluindo itens depois do checkout; cache não invalidado ao editar cor/grade; worker perdendo o primeiro evento após reiniciar.
+
+---
+
+## Release 3.3.0 — Desempenho, observabilidade e nova identidade ✅ (2026-11-03)
 
 ### US-12 · Catálogo rápido mesmo com muitos acessos · `Must` · 8 pts · ✅
 **Como** cliente, **quero** que o catálogo abra rápido **para** não desistir da compra.
@@ -123,6 +151,10 @@ RF33–RF36, RF40
 ### TS-08 · Pipeline de entrega contínua · `Should` · 3 pts · ✅
 - ✅ `cd.yml`: testes → imagens versionadas no GHCR → deploy com rollback automático.
 
+### TS-11 · Aplicação do logotipo oficial no site · `Should` · — · ✅
+- Logo oficial (cordeiro com auréola e estandarte) aplicado no cabeçalho, rodapé, login, página 404, painel e ícones do site.
+- Arte original guardada em `docs/marca/`; versões otimizadas em `agnus-front/src/img/marca/`.
+
 ### TS-09 · Migrar `sequelize.sync` para migrations · `Should` · 5 pts · 📋 (release 4.0.0)
 - Schema versionado em migrations; deploy roda `db:migrate` antes de subir a nova versão.
 
@@ -135,7 +167,7 @@ RF33–RF36, RF40
 
 ### US-08 · Enviar fotos reais dos produtos · `Must` · 5 pts · ✅
 **Como** administrador, **quero** enviar fotos do computador **para** mostrar as estampas com fidelidade.
-- ✅ Upload multipart via Multer; só JPEG, PNG e WebP; até 20 MB.
+- ✅ Upload multipart via Multer; JPEG, PNG, GIF, WebP e BMP, com o formato conferido pelos *magic bytes*; até 20 MB.
 - ✅ Arquivo inválido retorna 400 com mensagem clara.
 RF17–RF19
 

@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import { CACHE_NAMESPACES } from "../config/cache";
 import ProdutoGrades from "../models/ProdutoGrades";
+import CacheService from "../services/cache.service";
 import Produtos from "../models/Produtos";
 import type {
   ProdutoGradeBody,
@@ -44,6 +46,11 @@ class ProdutoGradePayload {
 }
 
 class ProdutoGradesController {
+  // Cores e grades entram no preco e na resposta do catalogo: toda escrita invalida o cache de produtos.
+  private static invalidateCatalogCache(action: string, grade: ProdutoGrades) {
+    return CacheService.invalidateNamespace(CACHE_NAMESPACES.produtos, `produto_grade.${action}:${grade.id_produto}`);
+  }
+
   private static parsePositiveId(value: string | undefined) {
     const parsedId = Number(value);
 
@@ -122,13 +129,14 @@ class ProdutoGradesController {
       return res.status(404).json({ message: productMessage });
     }
 
-    return res.status(201).send(
-      await ProdutoGrades.create({
-        id_produto: payload.productId!,
-        nome: payload.nome!,
-        acrescimo: payload.acrescimo,
-      }),
-    );
+    const grade = await ProdutoGrades.create({
+      id_produto: payload.productId!,
+      nome: payload.nome!,
+      acrescimo: payload.acrescimo,
+    });
+
+    await ProdutoGradesController.invalidateCatalogCache("criada", grade);
+    return res.status(201).send(grade);
   }
 
   static async update(req: ProdutoGradeRequest, res: Response) {
@@ -157,6 +165,7 @@ class ProdutoGradesController {
     }
 
     await grade.update(ProdutoGradesController.buildUpdateData(grade, payload));
+    await ProdutoGradesController.invalidateCatalogCache("atualizada", grade);
     return res.status(200).send(grade);
   }
 
@@ -174,6 +183,7 @@ class ProdutoGradesController {
     }
 
     await grade.destroy();
+    await ProdutoGradesController.invalidateCatalogCache("removida", grade);
     return res.status(204).send();
   }
 }

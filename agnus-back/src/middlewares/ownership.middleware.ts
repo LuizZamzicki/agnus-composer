@@ -6,15 +6,12 @@ import Carrinhos from "../models/Carrinhos";
 import Pedidos from "../models/Pedidos";
 import UsuarioContatos from "../models/UsuarioContatos";
 import UsuarioEnderecos from "../models/UsuarioEnderecos";
-import type { PedidoStatus } from "../types/pedido.types";
 import type { AuthenticatedResponseLocals } from "./auth.middleware";
 
 type AuthResponse = Response<object, AuthenticatedResponseLocals>;
 
 // Retorna o id do usuario dono do recurso, ou null quando o recurso nao existe.
 type OwnerResolver = (id: number) => Promise<number | null>;
-
-const OPEN_ORDER_STATUSES: PedidoStatus[] = ["aguardando_calculo_frete", "aguardando_pagamento"];
 
 const parseId = (value: unknown) => {
   const parsed = Number(value);
@@ -127,33 +124,4 @@ export const authorizeOwnerByQuery = (fieldName: string) =>
     }
 
     return parseId(req.query[fieldName]) === authUser.id_usuario ? next() : denyForeign(res);
-  };
-
-/** Cliente so adiciona itens ao proprio pedido enquanto ele ainda nao foi pago. */
-export const authorizeOpenOrderBody = (fieldName = "id_pedido") =>
-  async (req: Request, res: AuthResponse, next: NextFunction) => {
-    const authUser = res.locals.authUser;
-
-    if (!authUser) {
-      return denyUnauthenticated(res);
-    }
-
-    if (isAdmin(res)) {
-      return next();
-    }
-
-    const id = parseId((req.body as Record<string, unknown> | undefined)?.[fieldName]);
-    const pedido = id ? await Pedidos.findByPk(id) : null;
-
-    if (!pedido) {
-      return next();
-    }
-
-    if (pedido.id_usuario !== authUser.id_usuario) {
-      return denyForeign(res);
-    }
-
-    return OPEN_ORDER_STATUSES.includes(pedido.status)
-      ? next()
-      : res.status(409).json({ message: "Itens so podem ser adicionados a pedidos ainda nao pagos." });
   };

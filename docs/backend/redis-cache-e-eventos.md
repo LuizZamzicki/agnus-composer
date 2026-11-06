@@ -41,10 +41,10 @@ sequenceDiagram
 
 | Rota | Chave (exemplo) | TTL | Invalidada por |
 | --- | --- | --- | --- |
-| `GET /products` | `produtos:lista:limit=10&page=1` | 120 s | produto, categoria, foto |
-| `GET /products/catalog` | `produtos:catalogo:limit=24&page=1&sort=preco_asc` | 120 s | produto, categoria, foto |
-| `GET /products/best-sellers` | `produtos:mais-vendidos:...` | **60 s** | produto, categoria, foto (vendas: só pelo TTL) |
-| `GET /products/:id` | `produtos:detalhe:id=1` | 300 s | produto, categoria, foto |
+| `GET /products` | `produtos:lista:limit=10&page=1` | 120 s | produto, cor, grade, foto, categoria |
+| `GET /products/catalog` | `produtos:catalogo:limit=24&page=1&sort=preco_asc` | 120 s | produto, cor, grade, foto, categoria |
+| `GET /products/best-sellers` | `produtos:mais-vendidos:...` | **60 s** | produto, cor, grade, foto, categoria (vendas: só pelo TTL) |
+| `GET /products/:id` | `produtos:detalhe:id=1` | 300 s | produto, cor, grade, foto, categoria |
 | `GET /categories` | `categorias:lista:limit=10&page=1` | 600 s | categoria |
 | `GET /categories/:id` | `categorias:detalhe:id=1` | 600 s | categoria |
 
@@ -56,7 +56,7 @@ Todas as chaves recebem o prefixo `agnus:cache:`.
 | --- | --- | --- |
 | `agnus.eventos.produto.criado` / `.atualizado` / `.removido` | CRUD de produto | `id_produto`, `nome`, `ativo` |
 | `agnus.eventos.categoria.criada` / `.atualizada` / `.removida` | CRUD de categoria | `id_categoria`, `nome` |
-| `agnus.eventos.pedido.criado` | `POST /orders` | `id_pedido`, `id_usuario`, `status`, `valor_total` |
+| `agnus.eventos.pedido.criado` | `POST /orders/checkout` (compra do cliente) e `POST /orders` (lançamento manual da equipe) | `id_pedido`, `id_usuario`, `status`, `valor_total` |
 | `agnus.eventos.pedido.atualizado` | `PUT /orders/:id` | `id_pedido`, `id_usuario`, `status_anterior`, `status` |
 | `agnus.eventos.pedido.removido` | `DELETE /orders/:id` | `id_pedido` |
 
@@ -94,12 +94,24 @@ curl -sk -X PUT "$API/products/1" -H "Authorization: Bearer $TOKEN" \
 docker exec agnus-redis redis-cli --scan --pattern 'agnus:cache:produtos:*'   # vazio
 curl -sk "$API/products/1"                                                    # já vem com o nome novo (cache.miss)
 
+# 3b) Cor e grade também invalidam (o acréscimo entra no preço exibido)
+curl -sk "$API/products/1" > /dev/null                                       # aquece o cache
+curl -sk -X PUT "$API/product-colors/1" -H "Authorization: Bearer $TOKEN" \
+     -H 'Content-Type: application/json' -d '{"acrescimo":5}'
+#    log: cache.invalidado {namespace: produtos, reason: produto_cor.atualizada:1}
+
 # 4) Pub/Sub: pedido
 curl -sk -X PUT "$API/orders/1" -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' -d '{"status":"enviado"}'
 #    API:    evento.publicado  {type: pedido.atualizado, receivers: 1}
 #    Worker: evento.recebido   {origemRequestId: <mesmo requestId da API>}
 #            notificacao.cliente {statusAnterior: pago, statusNovo: enviado}
+#    (o pedido 1 precisa estar "pago": a API só aceita transições válidas)
+
+# 4b) Regra do agregado: transição impossível não publica evento
+curl -sk -X PUT "$API/orders/1" -H "Authorization: Bearer $TOKEN" \
+     -H 'Content-Type: application/json' -d '{"status":"aguardando_pagamento"}'
+#    409 {"message":"Transicao de status invalida: enviado -> aguardando_pagamento."}
 
 # 5) Assinar o canal "na mão" (prova independente da circulação)
 docker exec -it agnus-redis redis-cli PSUBSCRIBE 'agnus.eventos.*'
