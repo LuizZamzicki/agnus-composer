@@ -3,6 +3,7 @@ import PedidoItens from "../models/PedidoItens";
 import Pedidos from "../models/Pedidos";
 import ProdutoCores from "../models/ProdutoCores";
 import ProdutoGrades from "../models/ProdutoGrades";
+import PedidoRegrasService from "../services/pedidoRegras.service";
 import type {
   PedidoItemBody,
   PedidoItemControllerError,
@@ -110,10 +111,17 @@ class PedidoItensController {
     return null;
   }
 
-  private static async findOrderError(payload: PedidoItemPayload) {
-    return payload.hasOrderField() && !(await Pedidos.findByPk(payload.orderId!))
-      ? "Pedido nao encontrado."
-      : null;
+  private static readonly CLOSED_ORDER_MESSAGE = "Itens so podem ser alterados enquanto o pedido nao foi pago.";
+
+  private static isClosed(...pedidos: (Pedidos | null)[]) {
+    return pedidos.some((pedido) => pedido && !PedidoRegrasService.estaAberto(pedido.status));
+  }
+
+  // Cada pedido afetado tem o total refeito a partir dos itens (invariante do agregado).
+  private static async recalcularTotais(...pedidos: (Pedidos | null)[]) {
+    const unicos = [...new Map(pedidos.filter(Boolean).map((pedido) => [pedido!.id_pedido, pedido!])).values()];
+
+    await Promise.all(unicos.map((pedido) => PedidoRegrasService.recalcularTotal(pedido)));
   }
 
   private static buildSelection(item: PedidoItens | null, payload: PedidoItemPayload): PedidoItemSelection {
@@ -205,34 +213,33 @@ class PedidoItensController {
       return res.status(400).json({ message });
     }
 
-    const orderMessage = await PedidoItensController.findOrderError(payload);
+    const pedido = await Pedidos.findByPk(payload.orderId!);
+
+    if (!pedido) {
+      return res.status(404).json({ message: "Pedido nao encontrado." });
+    }
+
+    if (PedidoItensController.isClosed(pedido)) {
+      return res.status(409).json({ message: PedidoItensController.CLOSED_ORDER_MESSAGE });
+    }
+
     const selection = PedidoItensController.buildSelection(null, payload);
     const selectionError = await PedidoItensController.resolveSelectionError(selection);
-    const pricing = selectionError
-      ? null
-      : await PedidoItensController.resolvePricing(selection, payload.quantidade);
-
-    if (orderMessage) {
-      return res.status(404).json({ message: orderMessage });
-    }
 
     if (selectionError) {
       return res.status(selectionError.status).json({ message: selectionError.message });
     }
 
+    const pricing = await PedidoItensController.resolvePricing(selection, payload.quantidade);
+
     if (!pricing) {
       return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
     }
 
-    return res
-      .status(201)
-      .send(
-        await PedidoItensController.enrichItem(
-          await PedidoItens.create(
-            PedidoItensController.buildCreateData(payload, pricing),
-          ),
-        ),
-      );
+    const item = await PedidoItens.create(PedidoItensController.buildCreateData(payload, pricing));
+
+    await PedidoItensController.recalcularTotais(pedido);
+    return res.status(201).send(await PedidoItensController.enrichItem(item));
   }
 
   static async update(req: PedidoItemRequest, res: Response) {
@@ -254,23 +261,30 @@ class PedidoItensController {
       return res.status(400).json({ message });
     }
 
-    const orderMessage = await PedidoItensController.findOrderError(payload);
+    const pedidoAtual = await Pedidos.findByPk(item.id_pedido);
+    const pedidoDestino = payload.hasOrderField() && payload.orderId !== item.id_pedido
+      ? await Pedidos.findByPk(payload.orderId!)
+      : pedidoAtual;
+
+    if (payload.hasOrderField() && !pedidoDestino) {
+      return res.status(404).json({ message: "Pedido nao encontrado." });
+    }
+
+    if (PedidoItensController.isClosed(pedidoAtual, pedidoDestino)) {
+      return res.status(409).json({ message: PedidoItensController.CLOSED_ORDER_MESSAGE });
+    }
+
     const selection = PedidoItensController.buildSelection(item, payload);
     const selectionError = await PedidoItensController.resolveSelectionError(selection);
-    const pricing = selectionError
-      ? null
-      : await PedidoItensController.resolvePricing(
-          selection,
-          payload.hasQuantityField() ? payload.quantidade : item.quantidade,
-        );
-
-    if (orderMessage) {
-      return res.status(404).json({ message: orderMessage });
-    }
 
     if (selectionError) {
       return res.status(selectionError.status).json({ message: selectionError.message });
     }
+
+    const pricing = await PedidoItensController.resolvePricing(
+      selection,
+      payload.hasQuantityField() ? payload.quantidade : item.quantidade,
+    );
 
     if (!pricing) {
       return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
@@ -285,6 +299,7 @@ class PedidoItensController {
       ),
     );
 
+    await PedidoItensController.recalcularTotais(pedidoAtual, pedidoDestino);
     return res.status(200).send(await PedidoItensController.enrichItem(item));
   }
 
@@ -301,7 +316,14 @@ class PedidoItensController {
       return res.status(404).json({ message: "Item do pedido nao encontrado." });
     }
 
+    const pedido = await Pedidos.findByPk(item.id_pedido);
+
+    if (PedidoItensController.isClosed(pedido)) {
+      return res.status(409).json({ message: PedidoItensController.CLOSED_ORDER_MESSAGE });
+    }
+
     await item.destroy();
+    await PedidoItensController.recalcularTotais(pedido);
     return res.status(204).send();
   }
 }

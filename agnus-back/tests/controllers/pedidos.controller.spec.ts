@@ -71,7 +71,7 @@ const normalizeItemQuantityMock = normalizeItemQuantity as unknown as jest.Mock;
 const resolveProdutoContextMock = resolveProdutoContext as unknown as jest.Mock;
 
 describe("PedidosController", () => {
-  const payload = { id_usuario: 1, id_usuario_endereco: 1, status: "pago", valor_total: 20, valor_frete: 5 };
+  const payload = { id_usuario: 1, id_usuario_endereco: 1, status: "aguardando_pagamento", valor_total: 20, valor_frete: 5 };
 
   it("findAll retorna 400 para id_usuario invalido", async () => {
     const response = mockResponse();
@@ -195,8 +195,19 @@ describe("PedidosController", () => {
     pedidosModel.create.mockResolvedValueOnce(pedido);
     await PedidosController.create(mockRequest({ body: payload }), response);
     expect(response.status).toHaveBeenCalledWith(201);
-    expect(pedidosModel.create).toHaveBeenCalledWith(payload);
+    // O valor_total enviado (20) e ignorado: sem itens, o total comeca no frete.
+    expect(pedidosModel.create).toHaveBeenCalledWith({ ...payload, valor_total: 5 });
     expect(response.send).toHaveBeenCalledWith(pedido);
+  });
+
+  it("create retorna 400 quando o pedido manual tenta nascer pago", async () => {
+    const response = mockResponse();
+    await PedidosController.create(mockRequest({ body: { ...payload, status: "pago" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({
+      message: "Um pedido novo so pode comecar em aguardando_calculo_frete ou aguardando_pagamento.",
+    });
+    expect(pedidosModel.create).not.toHaveBeenCalled();
   });
 
   it("update retorna 400 para id invalido", async () => {
@@ -271,11 +282,37 @@ describe("PedidosController", () => {
       id_usuario: 1,
       id_usuario_endereco: 1,
       status: "enviado",
-      valor_total: 10,
       valor_frete: 2,
     });
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.send).toHaveBeenCalledWith(pedido);
+  });
+
+  it.each([
+    ["entregue", "aguardando_pagamento"],
+    ["enviado", "cancelado"],
+    ["cancelado", "pago"],
+    ["aguardando_pagamento", "entregue"],
+  ])("update retorna 409 na transicao invalida %s -> %s", async (atual, novo) => {
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: atual, valor_total: 10, valor_frete: 2 });
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    await PedidosController.update(mockRequest({ params: { id: "1" }, body: { status: novo } }), response);
+    expect(response.status).toHaveBeenCalledWith(409);
+    expect(response.json).toHaveBeenCalledWith({ message: `Transicao de status invalida: ${atual} -> ${novo}.` });
+    expect(pedido.update).not.toHaveBeenCalled();
+  });
+
+  it("update ignora valor_total do corpo e recalcula com o novo frete", async () => {
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "aguardando_calculo_frete", valor_total: 30, valor_frete: 0 });
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    enderecosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1 }));
+    pedidoItensModel.findAll.mockResolvedValueOnce([{ subtotal: 20 }, { subtotal: "10.50" }]);
+    await PedidosController.update(
+      mockRequest({ params: { id: "1" }, body: { status: "aguardando_pagamento", valor_frete: 12.3, valor_total: 1 } }),
+      response,
+    );
+    expect(pedido.update).toHaveBeenLastCalledWith({ valor_total: 42.8 });
+    expect(response.status).toHaveBeenCalledWith(200);
   });
 
   it("remove retorna 400 para id invalido", async () => {
@@ -304,6 +341,16 @@ describe("PedidosController", () => {
 
 describe("PedidoItensController", () => {
   const payload = { id_pedido: 1, id_produto_cor: 1, id_produto_grade: 1, quantidade: 1, preco_unitario: 10 };
+  const pedidoAberto = (status = "aguardando_pagamento") => buildModelInstance({ id_pedido: 1, status, valor_frete: 0 });
+
+  it("create retorna 409 quando o pedido ja foi pago", async () => {
+    const response = mockResponse();
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto("pago"));
+    await PedidoItensController.create(mockRequest({ body: payload }), response);
+    expect(response.status).toHaveBeenCalledWith(409);
+    expect(response.json).toHaveBeenCalledWith({ message: "Itens so podem ser alterados enquanto o pedido nao foi pago." });
+    expect(pedidoItensModel.create).not.toHaveBeenCalled();
+  });
 
   it("getByIdOrder retorna 400 para id invalido", async () => {
     const response = mockResponse();
@@ -344,7 +391,7 @@ describe("PedidoItensController", () => {
 
   it("create retorna 404 quando a cor nao existe", async () => {
     const response = mockResponse();
-    pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1 }));
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto());
     coresModel.findByPk.mockResolvedValueOnce(null);
     await PedidoItensController.create(mockRequest({ body: payload }), response);
     expect(response.status).toHaveBeenCalledWith(404);
@@ -353,7 +400,7 @@ describe("PedidoItensController", () => {
 
   it("create retorna 404 quando a grade nao existe", async () => {
     const response = mockResponse();
-    pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1 }));
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto());
     coresModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 1, id_produto: 7 }));
     gradesModel.findByPk.mockResolvedValueOnce(null);
     await PedidoItensController.create(mockRequest({ body: payload }), response);
@@ -363,7 +410,7 @@ describe("PedidoItensController", () => {
 
   it("create retorna 400 quando cor e grade nao pertencem ao mesmo produto", async () => {
     const response = mockResponse();
-    pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1 }));
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto());
     coresModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 1, id_produto: 7 }));
     gradesModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_grade: 1, id_produto: 8 }));
     await PedidoItensController.create(mockRequest({ body: payload }), response);
@@ -373,12 +420,13 @@ describe("PedidoItensController", () => {
 
   it("create retorna 201 com o item criado", async () => {
     const response = mockResponse(), item = buildModelInstance({ id_pedido_item: 1, id_pedido: 1, id_produto_cor: 1, id_produto_grade: 1, quantidade: 1, preco_unitario: 10 });
-    pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1 }));
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto());
     coresModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 1, id_produto: 7 }));
     gradesModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_grade: 1, id_produto: 7 }));
     resolveProdutoContextMock.mockResolvedValueOnce({ precoUnitario: 10 });
     enrichItemsWithProductDataMock.mockResolvedValueOnce([item]);
     pedidoItensModel.create.mockResolvedValueOnce(item);
+    pedidoItensModel.findAll.mockResolvedValueOnce([item]);
     await PedidoItensController.create(mockRequest({ body: payload }), response);
     expect(response.status).toHaveBeenCalledWith(201);
     expect(pedidoItensModel.create).toHaveBeenCalledWith({
@@ -389,6 +437,7 @@ describe("PedidoItensController", () => {
       preco_unitario: 10,
       subtotal: 10,
     });
+    expect(pedidoItensModel.findAll).toHaveBeenCalledWith({ where: { id_pedido: 1 } });
     expect(response.send).toHaveBeenCalledWith(item);
   });
 
@@ -456,13 +505,12 @@ describe("PedidoItensController", () => {
   it("update retorna 200 com o item atualizado", async () => {
     const response = mockResponse(), item = buildModelInstance({ id_pedido_item: 1, id_pedido: 1, id_produto_cor: 1, id_produto_grade: 1, quantidade: 1, preco_unitario: 10 });
     pedidoItensModel.findByPk.mockResolvedValueOnce(item);
-    pedidosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_pedido: 1 }));
-    coresModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 2, id_produto: 7 }));
-    gradesModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_grade: 3, id_produto: 7 }));
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto());
     coresModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 2, id_produto: 7 }));
     gradesModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto_grade: 3, id_produto: 7 }));
     resolveProdutoContextMock.mockResolvedValueOnce({ precoUnitario: 10 });
     enrichItemsWithProductDataMock.mockResolvedValueOnce([item]);
+    pedidoItensModel.findAll.mockResolvedValueOnce([item]);
     await PedidoItensController.update(
       mockRequest({ params: { id: "1" }, body: { id_pedido: 1, id_produto_cor: 2, id_produto_grade: 3, quantidade: 2 } }),
       response,
@@ -496,12 +544,28 @@ describe("PedidoItensController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Item do pedido nao encontrado." });
   });
 
-  it("remove retorna 204 quando exclui o item", async () => {
-    const response = mockResponse(), item = buildModelInstance({ id_pedido_item: 1 });
+  it("remove retorna 204 quando exclui o item e recalcula o total", async () => {
+    const response = mockResponse(), item = buildModelInstance({ id_pedido_item: 1, id_pedido: 1 }), pedido = pedidoAberto();
     pedidoItensModel.findByPk.mockResolvedValueOnce(item);
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    pedidoItensModel.findAll.mockResolvedValueOnce([]);
     await PedidoItensController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(item.destroy).toHaveBeenCalled();
+    expect(pedido.update).toHaveBeenCalledWith({ valor_total: 0 });
     expect(response.status).toHaveBeenCalledWith(204);
+  });
+
+  it("remove e update retornam 409 quando o pedido ja foi enviado", async () => {
+    const item = buildModelInstance({ id_pedido_item: 1, id_pedido: 1, id_produto_cor: 1, id_produto_grade: 1, quantidade: 1 });
+    const removeResponse = mockResponse(), updateResponse = mockResponse();
+    pedidoItensModel.findByPk.mockResolvedValueOnce(item).mockResolvedValueOnce(item);
+    pedidosModel.findByPk.mockResolvedValueOnce(pedidoAberto("enviado")).mockResolvedValueOnce(pedidoAberto("enviado"));
+    await PedidoItensController.remove(mockRequest({ params: { id: "1" } }), removeResponse);
+    await PedidoItensController.update(mockRequest({ params: { id: "1" }, body: { quantidade: 3 } }), updateResponse);
+    expect(removeResponse.status).toHaveBeenCalledWith(409);
+    expect(updateResponse.status).toHaveBeenCalledWith(409);
+    expect(item.destroy).not.toHaveBeenCalled();
+    expect(item.update).not.toHaveBeenCalled();
   });
 });
 
