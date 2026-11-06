@@ -35,7 +35,7 @@ Comandos para subir e derrubar containers:
 | Serviço | Função | Acesso |
 | --- | --- | --- |
 | `nginx` | Proxy reverso + TLS, serve o frontend | <https://localhost> |
-| `backend` | API Node/Express | <https://localhost/api> · Swagger: <https://localhost/api/docs/> |
+| `backend` | API Node/Express (porta 3000 só em `127.0.0.1`, para debug) | <https://localhost/api> · Swagger: <https://localhost/api/docs/> |
 | `worker` | Consome eventos do Redis Pub/Sub | `docker compose logs -f worker` |
 | `mysql` | Banco de dados | rede interna |
 | `redis` | Cache + Pub/Sub | rede interna |
@@ -168,11 +168,11 @@ RF22: O sistema deve permitir marcar produtos como ativos ou inativos.
 
 RF23: O sistema deve permitir marcar produtos como destaque.
 
-RF24: O sistema deve permitir controlar o estoque disponível de cada produto.
+~~RF24: O sistema deve permitir controlar o estoque disponível de cada produto.~~ *Substituído: no print on demand não há estoque físico (ver US-29 no [backlog](docs/gestao/product-backlog.md)).*
 
-RF25: O sistema deve atualizar o estoque dos produtos após a finalização de um pedido.
+~~RF25: O sistema deve atualizar o estoque dos produtos após a finalização de um pedido.~~ *Substituído (US-29).*
 
-RF26: O sistema deve impedir a compra de produtos quando a quantidade solicitada for superior ao estoque disponível.
+~~RF26: O sistema deve impedir a compra de produtos quando a quantidade solicitada for superior ao estoque disponível.~~ *Substituído (US-29).*
 
 RF27: O sistema deve exibir produtos em destaque e novidades na página inicial.
 
@@ -238,9 +238,9 @@ RF54: O sistema deve calcular automaticamente o valor total do carrinho.
 
 RF55: O sistema deve validar a disponibilidade dos produtos antes da confirmação da compra.
 
-RF56: O sistema deve validar a quantidade disponível em estoque para cada item do carrinho.
+~~RF56: O sistema deve validar a quantidade disponível em estoque para cada item do carrinho.~~ *Substituído (US-29): vale a regra do RF55, a variante precisa existir e o produto precisa estar ativo.*
 
-RF57: O sistema deve impedir a inclusão de quantidade superior ao estoque disponível.
+~~RF57: O sistema deve impedir a inclusão de quantidade superior ao estoque disponível.~~ *Substituído (US-29).*
 
 RF58: O sistema deve impedir a criação de um pedido quando o carrinho não possuir itens.
 
@@ -316,7 +316,7 @@ RF95: O sistema deve permitir a confirmação do pedido após a validação das 
 
 RF96: O sistema deve criar o pedido após a confirmação da compra.
 
-RF97: O sistema deve atualizar o estoque dos produtos após a confirmação do pedido.
+~~RF97: O sistema deve atualizar o estoque dos produtos após a confirmação do pedido.~~ *Substituído (US-29).*
 
 9) Painel Administrativo
 

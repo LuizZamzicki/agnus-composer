@@ -7,6 +7,36 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Em andamento
 - Integração de pagamento com Mercado Pago (US-25, US-26).
 
+## [3.4.0] — 2026-11-06
+
+### Segurança
+- **Alta:** `POST /orders` deixava qualquer cliente autenticado criar um pedido para si com `valor_total` e `status` escolhidos por ele (ex.: `{"status":"pago","valor_total":0}`). Agora é o lançamento manual da equipe (permissão `pedidos:criar`): o pedido nasce aberto e o valor enviado é ignorado. O cliente compra só por `POST /orders/checkout`.
+- **Alta:** `POST /order-items` deixava o cliente incluir peças no próprio pedido depois do checkout sem atualizar o total. Incluir, alterar e remover itens passou a ser exclusivo da equipe.
+- Nginx limita as tentativas de login a 10 por minuto por IP (rajada de 5); acima disso responde 429.
+- A porta 3000 da API fica presa a `127.0.0.1`: de fora, a API só é acessível pelo Nginx (TLS e cabeçalhos de segurança).
+
+### Adicionado
+- Máquina de estados do pedido: `aguardando_calculo_frete → aguardando_pagamento → pago → enviado → entregue`, com `cancelado` antes do envio. Transição inválida retorna 409 (US-23).
+- `valor_total` sempre recalculado no servidor (itens + frete) quando itens ou frete mudam (conclui a US-22).
+- Itens de pedido só mudam com o pedido em aberto; depois do pagamento a API responde 409.
+- Nginx com upstream e keepalive, timeouts de proxy, gzip e cache longo para os arquivos com hash do build.
+- OpenAPI com itens de pedido, contatos, cores, grades e avaliações, além das respostas 403/409 dos pedidos.
+- Roteiro para validar cada item da rubrica ([docs/validacao-rubrica.md](docs/validacao-rubrica.md)) e script `npm run validar:rubrica`, que confere 16 comportamentos de back-end contra a stack em execução.
+
+### Alterado
+- Rotas da API organizadas em um módulo por bounded context (`agnus-back/src/routes/`); o `app.ts` só monta middlewares, documentação e rotas.
+- A coleção Postman passa a ser gerada a partir de `src/routes/*.routes.ts`.
+- RFs de estoque (RF24–RF26, RF56–RF57, RF97) marcados como substituídos no readme (print on demand, US-29).
+
+### Corrigido
+- CI vermelho na `main` desde a remoção do `node_modules` do Git: o ESLint do front usa o `eslint.config.js` da raiz, cujas dependências (`@eslint/js`, `globals`) não eram instaladas no job. Agora estão declaradas no `package.json` da raiz e o job as instala.
+- O primeiro evento recebido pelo worker depois de cada reinício se perdia (nem auditoria, nem notificação): a conexão de comandos do Redis só abria no primeiro evento e, sem fila offline, o `LPUSH` falhava. O worker agora espera a conexão antes de assinar os canais, e uma falha na auditoria não impede mais a notificação.
+- Criar, editar ou remover cor ou grade não invalidava o cache de produtos (o novo acréscimo de preço podia levar até 5 min para aparecer).
+- Relatórios gerados (`agnus-back/coverage/`, `debug.log`) saíram do versionamento.
+- Documentação alinhada ao código (checkout em `POST /orders/checkout`, número de testes, invariantes do agregado Pedido).
+
+## [3.3.0] — 2026-11-03
+
 ### Alterado — fluxo de compra simplificado
 - Sacola sem exigir conta: o visitante escolhe primeiro e entra só ao finalizar; as peças passam para a conta no login, inclusive quando a sessão vence no meio da compra.
 - Sacola sem caixas de seleção: tudo o que está nela entra no pedido e o total aparece certo desde o início.
@@ -23,8 +53,6 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Acessibilidade: cartões de produto e ações viraram links/botões reais, ícones com rótulo, foco visível na cor do tempo.
 - Área do cliente passa a funcionar no celular (antes estourava a largura da tela).
 - Página 404 com a parábola da ovelha perdida.
-
-## [3.3.0] — 2026-11-02
 
 ### Adicionado
 - Cache distribuído com **Redis** no padrão cache-aside, com TTL por tipo de dado, para produtos (lista, catálogo, mais vendidos, detalhe) e categorias.

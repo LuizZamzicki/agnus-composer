@@ -29,6 +29,8 @@
 | Navegador não abre `https://...` | `docker compose ps nginx` | `docker compose up -d nginx`; se não subir, `docker compose logs nginx` (certificado em `certs/`? `nginx.conf` válido?) |
 | Página abre, mas a API retorna **502** | `docker compose ps backend` | `docker compose logs --tail=100 backend`, depois `docker compose restart backend` |
 | Backend reinicia em loop | logs com `ECONNREFUSED mysql` ou erro de `.env` | Verificar o MySQL (§1.1) e as variáveis em `agnus-back/.env` |
+| Login responde **429** | `docker compose logs nginx \| grep limiting` | Limite de 10 tentativas/min por IP no Nginx (proteção contra força bruta). Aguarde 1 min; se for legítimo (ex.: teste de carga), ajuste `rate` em `limit_req_zone` no `nginx.conf` |
+| `http://<ip>:3000` não responde de outra máquina | `docker compose port backend 3000` → `127.0.0.1:3000` | Comportamento esperado: de fora, a API só passa pelo Nginx em `https://<host>/api` |
 
 ### 1.1 MySQL
 

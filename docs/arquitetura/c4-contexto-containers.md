@@ -28,7 +28,7 @@ C4Context
 
 ## Nível 2 — Containers
 
-Cada caixa é um container do `docker-compose.yml`. A rede `data` é **interna** (sem saída para a internet). Só o Nginx, o backend (porta 3000, para desenvolvimento) e o ngrok expõem portas.
+Cada caixa é um container do `docker-compose.yml`. A rede `data` é **interna** (sem saída para a internet). De fora, só o Nginx (80/443) e o painel do ngrok expõem portas. A porta 3000 do backend fica presa a `127.0.0.1` (debug local), então todo acesso externo à API passa pelo proxy.
 
 ```mermaid
 C4Container
