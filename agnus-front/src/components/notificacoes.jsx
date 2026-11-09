@@ -1,9 +1,18 @@
-import { Bell } from "lucide-react";
+import { Bell, Clock, CreditCard, PackageCheck, Truck, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiUrl, authHeaders } from "../utils/api";
 
 const INTERVALO_MS = 60 * 1000;
+
+// Os títulos vêm de AVISOS_DE_STATUS, no back. Um título desconhecido fica com o sino.
+const ICONES = {
+    "Pedido aguardando pagamento": Clock,
+    "Pagamento confirmado": CreditCard,
+    "Pedido enviado": Truck,
+    "Pedido entregue": PackageCheck,
+    "Pedido cancelado": XCircle,
+};
 
 function dataCurta(data) {
     return data ? new Date(data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
@@ -106,19 +115,28 @@ function Notificacoes() {
                         <p className="notificacoes-vazio">Nenhuma notificação no momento</p>
                     ) : (
                         <ul>
-                            {lista.map((n) => (
-                                <li key={n.id_notificacao}>
-                                    <button
-                                        type="button"
-                                        data-cy="notificacao"
-                                        onClick={() => abrirNotificacao(n)}
-                                    >
-                                        <strong>{n.titulo}</strong>
-                                        <span>{n.mensagem}</span>
-                                        <small>{dataCurta(n.data_criacao)}</small>
-                                    </button>
-                                </li>
-                            ))}
+                            {lista.map((n) => {
+                                const Icone = ICONES[n.titulo] || Bell;
+
+                                return (
+                                    <li key={n.id_notificacao}>
+                                        <button
+                                            type="button"
+                                            data-cy="notificacao"
+                                            onClick={() => abrirNotificacao(n)}
+                                        >
+                                            <span className="notificacao-icone">
+                                                <Icone size={18} strokeWidth={1.5} aria-hidden="true" />
+                                            </span>
+                                            <span className="notificacao-texto">
+                                                <strong>{n.titulo}</strong>
+                                                <span>{n.mensagem}</span>
+                                                <small>{dataCurta(n.data_criacao)}</small>
+                                            </span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )}
                 </div>
