@@ -1,0 +1,7 @@
+import "dotenv/config";
+import sequelize from "@agnus/comum/config/database";
+import { iniciarServico } from "@agnus/comum/utils/servico";
+import { iniciarConsumidor } from "./worker";
+import app from "./app";
+
+void iniciarServico({ app, banco: sequelize, aoIniciar: iniciarConsumidor });

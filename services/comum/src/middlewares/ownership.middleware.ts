@@ -1,0 +1,98 @@
+import { NextFunction, Request, Response } from "express";
+import type { AuthenticatedResponseLocals } from "./auth.middleware";
+
+type AuthResponse = Response<object, AuthenticatedResponseLocals>;
+
+// Retorna o id do usuario dono do recurso, ou null quando o recurso nao existe.
+export type OwnerResolver = (id: number) => Promise<number | null>;
+
+const parseId = (value: unknown) => {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const isAdmin = (res: AuthResponse) => res.locals.authUser?.tipo === "administrador";
+
+const denyUnauthenticated = (res: AuthResponse) =>
+  res.status(401).json({ message: "Não autenticado." });
+
+const denyForeign = (res: AuthResponse) =>
+  res.status(403).json({ message: "Você só pode acessar os próprios dados." });
+
+/**
+ * Verifica o dono do recurso apontado por um parametro de rota.
+ * Recurso inexistente segue para o controller, que responde 404.
+ */
+export const authorizeOwnerByParam = (paramName: string, resolveOwner: OwnerResolver) =>
+  async (req: Request, res: AuthResponse, next: NextFunction) => {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      return denyUnauthenticated(res);
+    }
+
+    const id = parseId(req.params[paramName]);
+
+    if (isAdmin(res) || !id) {
+      return next();
+    }
+
+    const ownerId = await resolveOwner(id);
+
+    return ownerId !== null && ownerId !== authUser.id_usuario ? denyForeign(res) : next();
+  };
+
+/**
+ * Para campos do corpo que apontam para o dono (ex.: id_usuario) ou para um recurso pai
+ * (ex.: id_carrinho). Sem resolver, o campo deve ser o proprio usuario; quando ausente
+ * numa criacao, e preenchido com o usuario do token.
+ */
+export const authorizeOwnerByBody = (fieldName: string, resolveOwner?: OwnerResolver) =>
+  async (req: Request, res: AuthResponse, next: NextFunction) => {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      return denyUnauthenticated(res);
+    }
+
+    if (isAdmin(res)) {
+      return next();
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+
+    if (body[fieldName] === undefined || body[fieldName] === null || body[fieldName] === "") {
+      if (!resolveOwner && req.method === "POST") {
+        req.body = { ...body, [fieldName]: authUser.id_usuario };
+      }
+
+      return next();
+    }
+
+    const id = parseId(body[fieldName]);
+
+    if (!id) {
+      return next();
+    }
+
+    const ownerId = resolveOwner ? await resolveOwner(id) : id;
+
+    return ownerId !== null && ownerId !== authUser.id_usuario ? denyForeign(res) : next();
+  };
+
+/** Listagens filtradas por usuario: o cliente precisa filtrar pelo proprio id. */
+export const authorizeOwnerByQuery = (fieldName: string) =>
+  (req: Request, res: AuthResponse, next: NextFunction) => {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      return denyUnauthenticated(res);
+    }
+
+    if (isAdmin(res)) {
+      return next();
+    }
+
+    return parseId(req.query[fieldName]) === authUser.id_usuario ? next() : denyForeign(res);
+  };

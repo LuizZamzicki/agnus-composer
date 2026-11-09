@@ -1,0 +1,42 @@
+{
+  "name": "agnus-services",
+  "private": true,
+  "version": "3.5.0",
+  "workspaces": [
+    "comum",
+    "identidade",
+    "catalogo",
+    "busca",
+    "avaliacoes",
+    "carrinho",
+    "pedidos",
+    "notificacoes",
+    "admin"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "pretest": "npm run build -w comum",
+    "test": "npm test --workspaces --if-present",
+    "lint": "eslint .",
+    "validar:rubrica": "node --no-warnings scripts/validar-rubrica.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.5.0",
+    "@types/supertest": "^7.2.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "eslint": "^10.5.0",
+    "globals": "^17.7.0",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.62.0"
+  }
+}
