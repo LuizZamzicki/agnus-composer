@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { formatarReal } from "../../utils/sacola";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 
 const STATUS_PEDIDO = {
@@ -24,6 +24,7 @@ function ClientePedidos() {
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const location = useLocation();
     const pedidoDaNotificacao = Number(searchParams.get("pedido")) || null;
 
     const token = localStorage.getItem("auth_token");
@@ -36,10 +37,13 @@ function ClientePedidos() {
         navigate("/login");
     }
 
-    // Vinda de uma notificação: já abre o pedido avisado.
+    // Vinda de uma notificação: abre o pedido avisado e rola até ele, mesmo que já esteja nesta tela.
     useEffect(() => {
-        if (pedidoDaNotificacao) setOpenPedido(pedidoDaNotificacao);
-    }, [pedidoDaNotificacao]);
+        if (loading || !pedidoDaNotificacao) return;
+
+        setOpenPedido(pedidoDaNotificacao);
+        document.getElementById(`pedido-${pedidoDaNotificacao}`)?.scrollIntoView({ block: "start" });
+    }, [pedidoDaNotificacao, location.key, loading]);
 
     async function carregarMinhaAvaliacao(idProduto) {
         try {
@@ -155,6 +159,7 @@ function ClientePedidos() {
                 pedidos.map((pedido) => (
                     <div
                         data-cy="pedido-card"
+                        id={`pedido-${pedido.id_pedido}`}
                         key={pedido.id_pedido}
                         className="pedido-card"
                     >

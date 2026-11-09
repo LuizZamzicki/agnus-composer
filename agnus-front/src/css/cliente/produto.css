@@ -194,7 +194,33 @@
 
 .star { color: var(--line); fill: var(--line); stroke: none; }
 .star.filled { color: var(--brass); fill: var(--brass); }
-.star.half { color: var(--brass); fill: color-mix(in oklab, var(--brass) 50%, var(--line)); }
+
+.estrela { position: relative; display: inline-flex; }
+
+.estrela-cheia {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow: hidden;
+    display: block;
+}
+
+.estrela-metade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 50%;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.estrela-metade.esquerda { left: 0; }
+.estrela-metade.direita { right: 0; }
+.estrela-metade:focus-visible { outline: 2px solid var(--lit); }
 
 /* Avaliações */
 .avaliacoes-section,
@@ -432,16 +458,6 @@
     color: var(--danger);
     font-size: 16px;
 }
-
-.estrela-botao {
-    padding: 4px;
-    background: none;
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-}
-
-.estrela-botao:focus-visible { outline: 2px solid var(--lit); }
 
 .preview-foto { position: relative; }
 

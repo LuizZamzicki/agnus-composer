@@ -199,7 +199,6 @@
     cursor: pointer;
 }
 
-.notificacoes-painel li button.lida { background: none; color: var(--muted); }
 .notificacoes-painel li button:hover { background: var(--stone-2); }
 .notificacoes-painel li strong { font-family: var(--f-display); font-weight: 400; }
 .notificacoes-painel li small { font-size: 13px; color: var(--muted); }

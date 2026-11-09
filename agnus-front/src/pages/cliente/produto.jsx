@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Check, ChevronLeft, ChevronRight, Star, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import "../../css/cliente/produto.css";
-import AvaliacaoForm from "../../components/avaliacaoForm";
+import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 
@@ -100,34 +100,6 @@ function Produto() {
             setCorSelecionada(Number(cores[0].id_produto_cor));
         }
     }, [tamanhos, cores]);
-
-    function renderStars(media = 0, clickable = false, onClick = null) {
-        const valor = Number(media) || 0;
-
-        return (
-            <div className="rating">
-                {[1, 2, 3, 4, 5].map((i) => {
-                    let className = "star";
-
-                    if (i <= Math.floor(valor)) {
-                        className = "star filled";
-                    } else if (i === Math.floor(valor) + 1 && valor % 1 !== 0) {
-                        className = "star half";
-                    }
-
-                    return (
-                        <Star
-                            key={i}
-                            size={18}
-                            className={className}
-                            onClick={() => clickable && onClick?.(i)}
-                            style={{ cursor: clickable ? "pointer" : "default" }}
-                        />
-                    );
-                })}
-            </div>
-        );
-    }
 
     useEffect(() => {
         const verificarPedido = async () => {
@@ -461,7 +433,7 @@ function Produto() {
 
                     {avaliacaoResumo.total > 0 ? (
                         <>
-                            {renderStars(avaliacaoResumo.media)}
+                            <Estrelas nota={avaliacaoResumo.media} />
                             <small>
                                 {avaliacaoResumo.media.toFixed(1)} de 5.0 — {avaliacaoResumo.total} avaliações
                             </small>
@@ -625,7 +597,7 @@ function Produto() {
 
                         {avaliacaoResumo.total > 0 && (
                             <>
-                                {renderStars(avaliacaoResumo.media)}
+                                <Estrelas nota={avaliacaoResumo.media} />
                                 <small>
                                     {avaliacaoResumo.media.toFixed(1)} de 5 — {avaliacaoResumo.total} avaliações
                                 </small>
@@ -667,7 +639,7 @@ function Produto() {
                                     <strong>{a.titulo?.trim() || "Cliente Agnus"}</strong>
                                 </div>
 
-                                {renderStars(a.nota)}
+                                <Estrelas nota={a.nota} />
                             </div>
 
                             <p>{a.comentario}</p>

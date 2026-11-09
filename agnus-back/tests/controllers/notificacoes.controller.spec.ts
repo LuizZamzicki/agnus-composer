@@ -20,7 +20,7 @@ describe("NotificacoesController", () => {
     model.findAll.mockResolvedValueOnce([{ id_notificacao: 1 }]);
     model.count.mockResolvedValueOnce(1);
     await NotificacoesController.findMine(mockRequest({ query: { id_usuario: "9" } }), response);
-    expect(model.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { id_usuario: 3 } }));
+    expect(model.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { id_usuario: 3, lida: false } }));
     expect(response.json).toHaveBeenCalledWith({ data: [{ id_notificacao: 1 }], naoLidas: 1 });
   });
 

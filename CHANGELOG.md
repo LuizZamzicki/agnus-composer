@@ -13,11 +13,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Pop-up de confirmação ao colocar uma peça na sacola.
 
 ### Alterado
-- Quem já avaliou uma peça vê só "Alterar sua avaliação"; a nota é dada apenas pelas estrelas.
+- Quem já avaliou uma peça vê só "Alterar sua avaliação"; a nota é dada apenas pelas estrelas, com meia estrela.
+- A lupa do cabeçalho abre o catálogo com a busca pronta para digitar.
+- Administrador não vê mais o ícone de sacola.
+- Notificação aberta some da lista e leva direto ao pedido.
 
 ### Corrigido
 - Mensagens da API e textos do site voltam a ter acentos.
 - O nome digitado na avaliação era descartado ao enviar.
+- Ao trocar de página, a tela agora volta ao topo.
 
 ## [3.4.0] — 2026-11-06
 
@@ -28,7 +32,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Conta local criada antes com o mesmo e-mail deixa de manter a senha ao ser vinculada ao Google: o cadastro não comprova o e-mail, e a senha podia ser de outra pessoa.
 - Um link com `/login?token=` não troca mais a sessão: o site só aceita o retorno de um login que o próprio navegador começou.
 - `PUT /users/:id` não aceita mais `senha`; a troca passa só por `PATCH /users/:id/password`, que confere a senha atual e o histórico.
-- Avaliação exige pedido entregue com o produto, uma por produto, nota de 1 a 5 e não muda de produto na edição.
+- Avaliação exige pedido entregue com o produto, uma por produto, nota de 0,5 a 5 (meia estrela) e não muda de produto na edição.
 - Custo e margem saem das respostas públicas de `GET /products` e `GET /products/:id`; continuam disponíveis para administradores.
 - Limite por IP na própria API: 10 logins e 5 cadastros por minuto, inclusive pelo ngrok e em variações da rota. Os e-mails têm tamanho máximo antes da validação, e o upload de fotos de avaliação aceita até 4 arquivos por requisição.
 - Painel do ngrok (porta 4040) só na máquina local.

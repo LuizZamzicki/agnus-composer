@@ -127,7 +127,7 @@ function Header() {
                 </div>
 
                 <nav className="opcoes_header" aria-label="Conta e sacola">
-                    <Link to="/catalogo" aria-label="Buscar peças">
+                    <Link to="/catalogo" state={{ focarBusca: true }} aria-label="Buscar peças">
                         <Search size={20} strokeWidth={1.5} />
                     </Link>
 
@@ -135,14 +135,16 @@ function Header() {
                         <User size={20} strokeWidth={1.5} />
                     </Link>
 
-                    <Link
-                        to="/carrinho"
-                        className="sacola-link"
-                        aria-label={pecas ? `Sacola, ${pecas} ${pecas === 1 ? "peça" : "peças"}` : "Sacola"}
-                    >
-                        <ShoppingBag size={20} strokeWidth={1.5} />
-                        {pecas > 0 && <span data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
-                    </Link>
+                    {!sessaoDeAdmin() && (
+                        <Link
+                            to="/carrinho"
+                            className="sacola-link"
+                            aria-label={pecas ? `Sacola, ${pecas} ${pecas === 1 ? "peça" : "peças"}` : "Sacola"}
+                        >
+                            <ShoppingBag size={20} strokeWidth={1.5} />
+                            {pecas > 0 && <span data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
+                        </Link>
+                    )}
 
                     {token && !sessaoDeAdmin() && <Notificacoes key={token} />}
 

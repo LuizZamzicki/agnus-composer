@@ -92,7 +92,7 @@ describe("AvaliacaoProdutosController", () => {
     const res = mockResponse();
     await AvaliacaoProdutosController.create(mockRequest({ body: { id_produto: 1, id_usuario: 1, nota: 11 } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nota inválida. Use valor entre 1 e 5." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nota inválida. Use de 0,5 a 5, de meia em meia estrela." });
   });
 
   it("create retorna 404 quando o produto não existe", async () => {
@@ -176,7 +176,7 @@ describe("AvaliacaoProdutosController", () => {
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { nota: -1 } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nota inválida. Use valor entre 1 e 5." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nota inválida. Use de 0,5 a 5, de meia em meia estrela." });
   });
 
   it("update retorna 400 para id_produto inválido", async () => {
@@ -268,10 +268,21 @@ describe("AvaliacaoProdutosController", () => {
       expect(avaliacaoProdutosModel.create).not.toHaveBeenCalled();
     });
 
-    it.each([0, 5.5, 10])("create recusa nota %s fora da escala", async (nota) => {
+    it.each([0, 0.3, 4.7, 5.5, 10])("create recusa nota %s fora da escala", async (nota) => {
       const res = mockResponse();
       await AvaliacaoProdutosController.create(mockRequest({ body: { ...body, nota } }), res);
       expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("create aceita meia estrela", async () => {
+      const res = mockResponse();
+      mockReferencias();
+      mockCompraEntregue();
+      avaliacaoProdutosModel.findOne.mockResolvedValueOnce(null);
+      avaliacaoProdutosModel.create.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 9 }));
+      await AvaliacaoProdutosController.create(mockRequest({ body: { ...body, nota: 3.5 } }), res);
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(avaliacaoProdutosModel.create).toHaveBeenCalledWith(expect.objectContaining({ nota: 3.5 }));
     });
 
     it("update não move a avaliação para outro produto", async () => {

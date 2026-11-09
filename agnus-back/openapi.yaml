@@ -772,7 +772,7 @@ paths:
     get:
       operationId: getNotificationsMe
       tags: [ Notificacoes ]
-      summary: Ultimas 30 notificacoes do usuario do token e o total de nao lidas
+      summary: Ultimas 30 notificacoes nao lidas do usuario do token e o total delas
       security: [ { bearerAuth: [] } ]
       responses:
         "200": { description: "{ data, naoLidas }" }
@@ -912,7 +912,7 @@ paths:
               properties:
                 id_usuario: { type: integer }
                 id_produto: { type: integer }
-                nota: { type: number, minimum: 1, maximum: 5 }
+                nota: { type: number, minimum: 0.5, maximum: 5, multipleOf: 0.5 }
                 titulo: { type: string }
                 comentario: { type: string }
       responses:

@@ -1,5 +1,5 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import { ReactNode, useLayoutEffect } from "react";
 
 import Header from "./components/header";
 import Footer from "./components/footer";
@@ -59,6 +59,20 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   return children;
 }
 
+// O navegador só volta ao topo ao carregar a página; voltar no histórico mantém a posição.
+function VoltarAoTopo() {
+  const { pathname } = useLocation();
+  const tipoDeNavegacao = useNavigationType();
+
+  useLayoutEffect(() => {
+    if (tipoDeNavegacao !== "POP") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [pathname, tipoDeNavegacao]);
+
+  return null;
+}
+
 function App() {
   const location = useLocation();
 
@@ -68,6 +82,7 @@ function App() {
 
   return (
     <div className={`app ${hideLayout ? "app--full" : "app--with-header"}`}>
+      <VoltarAoTopo />
       {!hideLayout && <Header />}
 
       <Routes>

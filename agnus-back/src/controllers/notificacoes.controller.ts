@@ -7,12 +7,13 @@ type NotificacaoResponse = Response<object, AuthenticatedResponseLocals>;
 const LIMITE_DA_LISTA = 30;
 
 // O usuario sempre vem do token: ninguem le nem marca a notificacao de outra pessoa.
+// A lista traz so as nao lidas: a notificacao aberta deixa de aparecer.
 class NotificacoesController {
   static async findMine(_req: Request, res: NotificacaoResponse) {
     const id_usuario = res.locals.authUser!.id_usuario;
     const [data, naoLidas] = await Promise.all([
       Notificacoes.findAll({
-        where: { id_usuario },
+        where: { id_usuario, lida: false },
         order: [["id_notificacao", "DESC"]],
         limit: LIMITE_DA_LISTA,
       }),
