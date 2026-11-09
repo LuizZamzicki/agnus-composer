@@ -105,11 +105,7 @@ function ClientePedidos() {
 
                             const itens = (Array.isArray(itensRaw) ? itensRaw : itensRaw?.data || []).map(item => ({
                                 ...item,
-                                img: item.produto?.foto_principal
-                                    ? assetUrl(item.produto.foto_principal)
-                                    : item.produto?.imagem
-                                        ? assetUrl(item.produto.imagem)
-                                        : null
+                                img: item.foto_produto ? assetUrl(item.foto_produto) : null
                             }));
 
                             return { ...pedido, itens };
@@ -224,7 +220,9 @@ function ClientePedidos() {
                                         <div key={item.id_pedido_item} className="item-bloco">
                                             <div className="item">
                                                 <div className="item-info">
-                                                    {item.img && <img src={item.img} alt={item.produto?.nome} className="item-foto" />}
+                                                    {item.img
+                                                        ? <img data-cy="item-foto" src={item.img} alt={item.produto?.nome} className="item-foto" />
+                                                        : <span className="item-foto item-foto-vazia" aria-hidden="true" />}
 
                                                     <div>
                                                         <p data-cy="item-produto">
