@@ -133,7 +133,7 @@ describe("Admin - Usuários", () => {
 
         cy.reload();
 
-        cy.contains("Carregando usuarios...").should("exist");
+        cy.contains("Carregando usuários...").should("exist");
     });
 
     it("deve buscar usuário pelo ID", () => {
@@ -214,7 +214,7 @@ describe("Admin - Usuários", () => {
 
         cy.wait("@semUsuarios");
 
-        cy.contains("Nenhum usuario encontrado").should("exist");
+        cy.contains("Nenhum usuário encontrado").should("exist");
     });
 
     it("deve ir para próxima página", () => {
@@ -228,7 +228,7 @@ describe("Admin - Usuários", () => {
                     data: [
                         {
                             id_usuario: 3,
-                            nome: "Usuario Pagina 2",
+                            nome: "Usuário Página 2",
                             email: "pagina2@email.com",
                             tipo: "cliente"
                         }
@@ -283,7 +283,7 @@ describe("Admin - Usuários", () => {
 
         cy.wait("@pagina2");
 
-        cy.contains("Usuario Pagina 2").should("exist");
+        cy.contains("Usuário Página 2").should("exist");
     });
 
     it("deve formatar tipo corretamente", () => {
@@ -347,10 +347,10 @@ describe("Admin - Usuários", () => {
         cy.get('[data-cy="usuario-paginacao"]')
             .should("exist");
 
-        cy.contains("Pagina 1 de 1")
+        cy.contains("Página 1 de 1")
             .should("exist");
 
-        cy.contains("2 usuario(s) no total")
+        cy.contains("2 usuário(s) no total")
             .should("exist");
     });
 

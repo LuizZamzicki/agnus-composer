@@ -99,7 +99,7 @@ export async function apiFetch(url, options = {}) {
       localStorage.removeItem("auth_token");
       sessionStorage.setItem(
         "auth_redirect_message",
-        "Sessao expirada. Faca login novamente.",
+        "Sessão expirada. Faça login novamente.",
       );
       window.location.assign("/login");
     }
@@ -125,7 +125,7 @@ export function formatarMoeda(valor) {
 export function formatarStatus(status) {
   switch (status) {
     case "aguardando_calculo_frete":
-      return "Aguardando calculo do frete";
+      return "Aguardando cálculo do frete";
     case "aguardando_pagamento":
       return "Aguardando pagamento";
     case "pago":

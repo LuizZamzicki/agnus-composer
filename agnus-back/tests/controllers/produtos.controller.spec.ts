@@ -122,7 +122,7 @@ describe("ProdutosController", () => {
     });
   });
 
-  it("findAll e getById escondem custo e margem de quem nao e da equipe", async () => {
+  it("findAll e getById escondem custo e margem de quem não e da equipe", async () => {
     produtosModel.findAndCountAll.mockResolvedValueOnce({ count: 0, rows: [] });
     produtosModel.findByPk.mockResolvedValueOnce({ id_produto: 2 });
     await ProdutosController.findAll(mockRequest({ query: {} }), mockResponse());
@@ -143,7 +143,7 @@ describe("ProdutosController", () => {
     expect(produtosModel.findByPk).toHaveBeenCalledWith(2, { attributes: undefined });
   });
 
-  it("findAll retorna 400 para categoria invalida", async () => {
+  it("findAll retorna 400 para categoria inválida", async () => {
     const response = mockResponse();
     await ProdutosController.findAll(mockRequest({ query: { id_categoria: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -156,7 +156,7 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
-  it("catalog retorna 400 para categoria invalida", async () => {
+  it("catalog retorna 400 para categoria inválida", async () => {
     const response = mockResponse();
     await ProdutosController.catalog(mockRequest({ query: { id_categoria: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -180,18 +180,18 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
-  it("findAll retorna 503 quando a busca no indice esta indisponivel", async () => {
+  it("findAll retorna 503 quando a busca no indice esta indisponível", async () => {
     const response = mockResponse();
     await ProdutosController.findAll(mockRequest({ query: { q: "camizeta" } }), response);
     expect(response.status).toHaveBeenCalledWith(503);
-    expect(response.json).toHaveBeenCalledWith({ message: "Busca indisponivel no momento." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Busca indisponível no momento." });
   });
 
-  it("catalog retorna 503 quando a busca no indice esta indisponivel", async () => {
+  it("catalog retorna 503 quando a busca no indice esta indisponível", async () => {
     const response = mockResponse();
     await ProdutosController.catalog(mockRequest({ query: { q: "camisa" } }), response);
     expect(response.status).toHaveBeenCalledWith(503);
-    expect(response.json).toHaveBeenCalledWith({ message: "Busca indisponivel no momento." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Busca indisponível no momento." });
   });
 
   it("catalog usa o indice quando a busca responde", async () => {
@@ -209,7 +209,7 @@ describe("ProdutosController", () => {
     });
   });
 
-  it("getById retorna 404 quando o produto nao existe", async () => {
+  it("getById retorna 404 quando o produto não existe", async () => {
     const response = mockResponse();
     produtosModel.findByPk.mockResolvedValueOnce(null);
     await ProdutosController.getById(mockRequest({ params: { id: "1" } }), response);
@@ -223,7 +223,7 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
-  it("create retorna 400 sem body valido", async () => {
+  it("create retorna 400 sem body válido", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -243,31 +243,31 @@ describe("ProdutosController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "O produto precisa ter pelo menos uma cor com foto." });
   });
 
-  it("create retorna 400 para preco_custo invalido", async () => {
+  it("create retorna 400 para preco_custo inválido", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 10, preco_custo: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para categoria invalida", async () => {
+  it("create retorna 400 para categoria inválida", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 10, id_categoria: "abc" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para grades invalidas", async () => {
+  it("create retorna 400 para grades inválidas", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 10, grades: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para cores invalidas", async () => {
+  it("create retorna 400 para cores inválidas", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 10, grades: [], cores: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 404 quando a categoria nao existe", async () => {
+  it("create retorna 404 quando a categoria não existe", async () => {
     const response = mockResponse();
     categoriasModel.findByPk.mockResolvedValueOnce(null);
     await ProdutosController.create(
@@ -298,7 +298,7 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para acrescimo de grade invalido", async () => {
+  it("create retorna 400 para acréscimo de grade inválido", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 20, grades: [{ nome: "M", acrescimo: "x" }], cores: [] } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -310,13 +310,13 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para acrescimo de cor invalido", async () => {
+  it("create retorna 400 para acréscimo de cor inválido", async () => {
     const response = mockResponse();
     await ProdutosController.create(mockRequest({ body: { nome: "A", preco_base: 20, grades: [], cores: [{ nome: "Azul", codigo_rgb: "#00F", acrescimo: "x", fotos: [] }] } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para fotos que nao sao array", async () => {
+  it("create retorna 400 para fotos que não são array", async () => {
     const response = mockResponse(), produto = buildModelInstance({ id_produto: 11, nome: "A", descricao: null, preco_custo: 1, preco_base: 2, ativo: true });
     produtosModel.create.mockResolvedValueOnce(produto);
     coresModel.create.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 20, id_produto: 11, nome: "Azul", codigo_rgb: "#00F", acrescimo: 1 }));
@@ -324,7 +324,7 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 400 para item de foto invalido", async () => {
+  it("create retorna 400 para item de foto inválido", async () => {
     const response = mockResponse(), produto = buildModelInstance({ id_produto: 12, nome: "A", descricao: null, preco_custo: 1, preco_base: 2, ativo: true });
     produtosModel.create.mockResolvedValueOnce(produto);
     coresModel.create.mockResolvedValueOnce(buildModelInstance({ id_produto_cor: 21, id_produto: 12, nome: "Azul", codigo_rgb: "#00F", acrescimo: 1 }));
@@ -332,21 +332,21 @@ describe("ProdutosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("update retorna 404 quando o produto nao existe", async () => {
+  it("update retorna 404 quando o produto não existe", async () => {
     const response = mockResponse();
     produtosModel.findByPk.mockResolvedValueOnce(null);
     await ProdutosController.update(mockRequest({ params: { id: "1" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(404);
   });
 
-  it("update retorna 400 para categoria invalida", async () => {
+  it("update retorna 400 para categoria inválida", async () => {
     const response = mockResponse(), produto = buildModelInstance({ id_produto: 1, id_categoria: 1, nome: "A", descricao: "d", preco_custo: 1, preco_base: 2, ativo: true });
     produtosModel.findByPk.mockResolvedValueOnce(produto);
     await ProdutosController.update(mockRequest({ params: { id: "1" }, body: { id_categoria: "abc" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("update retorna 404 quando a categoria nao existe", async () => {
+  it("update retorna 404 quando a categoria não existe", async () => {
     const response = mockResponse(), produto = buildModelInstance({ id_produto: 1, id_categoria: 1, nome: "A", descricao: "d", preco_custo: 1, preco_base: 2, ativo: true });
     produtosModel.findByPk.mockResolvedValueOnce(produto);
     categoriasModel.findByPk.mockResolvedValueOnce(null);
@@ -404,7 +404,7 @@ describe("ProdutosController", () => {
     expect(produtoSearchService.syncProdutoToSearchIndex).toHaveBeenCalledWith(1);
   });
 
-  it("remove retorna 404 quando o produto nao existe", async () => {
+  it("remove retorna 404 quando o produto não existe", async () => {
     const response = mockResponse();
     produtosModel.findByPk.mockResolvedValueOnce(null);
     await ProdutosController.remove(mockRequest({ params: { id: "1" } }), response);

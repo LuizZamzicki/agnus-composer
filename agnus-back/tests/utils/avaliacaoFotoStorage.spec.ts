@@ -36,7 +36,7 @@ describe("avaliacaoFotoStorage", () => {
     expect(normalizeFotoPath(undefined)).toBe("");
   });
 
-  it("saveAvaliacaoFotoUpload retorna null para base64 invalido", async () => {
+  it("saveAvaliacaoFotoUpload retorna null para base64 inválido", async () => {
     const upload = { upload_index: 0, nome_original: "foto.jpg", tipo_arquivo: "image/jpeg", tamanho_bytes: 0, arquivo_base64: "" };
     await expect(saveAvaliacaoFotoUpload(upload)).resolves.toBeNull();
     expect(fsMock.mkdir).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe("avaliacaoFotoStorage", () => {
     await expect(saveAvaliacaoFotoUpload(rawBase64Upload)).resolves.toBe("avaliacao_fotos/1700000000000-uuid.png");
   });
 
-  it("recusa arquivo que nao e imagem mesmo com extensao e MIME de imagem", async () => {
+  it("recusa arquivo que não e imagem mesmo com extensao e MIME de imagem", async () => {
     const disfarcado = {
       upload_index: 0, nome_original: "foto.png", tipo_arquivo: "image/png", tamanho_bytes: 30,
       arquivo_base64: `data:image/png;base64,${Buffer.from("<html><script>alert(1)</script>").toString("base64")}`,

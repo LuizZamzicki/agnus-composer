@@ -70,19 +70,19 @@ class UsuarioContatosController {
 
   private static getCreateErrorMessage(payload: UsuarioContatoPayload) {
     if (!payload.hasUserField() || !payload.hasValorField()) {
-      return "id_usuario e valor sao obrigatorios.";
+      return "id_usuario e valor são obrigatórios.";
     }
 
     if (!payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (!payload.valor) {
-      return "valor invalido.";
+      return "valor inválido.";
     }
 
     if (payload.hasTipoField() && !payload.tipo) {
-      return "tipo invalido.";
+      return "tipo inválido.";
     }
 
     return null;
@@ -90,15 +90,15 @@ class UsuarioContatosController {
 
   private static getUpdateErrorMessage(payload: UsuarioContatoPayload) {
     if (payload.hasUserField() && !payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (payload.hasValorField() && !payload.valor) {
-      return "valor invalido.";
+      return "valor inválido.";
     }
 
     if (payload.hasTipoField() && !payload.tipo) {
-      return "tipo invalido.";
+      return "tipo inválido.";
     }
 
     return null;
@@ -106,7 +106,7 @@ class UsuarioContatosController {
 
   private static async findUserError(userId?: number | null) {
     return userId && !(await Usuarios.findByPk(userId))
-      ? "Usuario nao encontrado."
+      ? "Usuário não encontrado."
       : null;
   }
 
@@ -123,13 +123,13 @@ class UsuarioContatosController {
     const userId = UsuarioContatosController.parsePositiveId(req.params.id_user);
 
     if (!userId) {
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
     }
 
     const contatos = await UsuarioContatos.findAll({ where: { id_usuario: userId } });
 
     if (!contatos) {
-      return res.status(404).json({ message: "Contato nao encontrado." });
+      return res.status(404).json({ message: "Contato não encontrado." });
     }
 
     return res.status(200).send(contatos);
@@ -164,14 +164,14 @@ class UsuarioContatosController {
     const payload = new UsuarioContatoPayload(req.body);
 
     if (!contactId) {
-      return res.status(400).json({ message: "ID do contato invalido." });
+      return res.status(400).json({ message: "ID do contato inválido." });
     }
 
     const contato = await UsuarioContatos.findByPk(contactId);
     const message = UsuarioContatosController.getUpdateErrorMessage(payload);
 
     if (!contato) {
-      return res.status(404).json({ message: "Contato nao encontrado." });
+      return res.status(404).json({ message: "Contato não encontrado." });
     }
 
     if (message) {
@@ -192,13 +192,13 @@ class UsuarioContatosController {
     const contactId = UsuarioContatosController.parsePositiveId(req.params.id);
 
     if (!contactId) {
-      return res.status(400).json({ message: "ID do contato invalido." });
+      return res.status(400).json({ message: "ID do contato inválido." });
     }
 
     const contato = await UsuarioContatos.findByPk(contactId);
 
     if (!contato) {
-      return res.status(404).json({ message: "Contato nao encontrado." });
+      return res.status(404).json({ message: "Contato não encontrado." });
     }
 
     await contato.destroy();

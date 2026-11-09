@@ -58,17 +58,17 @@ describe("AuthController", () => {
     const response = mockResponse();
     await AuthController.login(mockRequest({ body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "Email e senha sao obrigatorios." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Email e senha são obrigatórios." });
   });
 
-  it("login retorna 400 para email invalido", async () => {
+  it("login retorna 400 para email inválido", async () => {
     const response = mockResponse();
     await AuthController.login(mockRequest({ body: { email: "aaa", senha: "123" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "email invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "email inválido." });
   });
 
-  it("login nao revela que a senha informada ja foi usada", async () => {
+  it("login não revela que a senha informada já foi usada", async () => {
     const response = mockResponse();
     const historySpy = jest.spyOn(UsuarioSenhasHistoricoController, "findByPasswordHash");
 
@@ -77,19 +77,19 @@ describe("AuthController", () => {
     await AuthController.login(mockRequest({ body: { email: "a@a.com", senha: "SenhaAntiga@1" } }), response);
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: "Credenciais invalidas." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Credenciais inválidas." });
     expect(historySpy).not.toHaveBeenCalled();
   });
 
-  it("login retorna 401 com credenciais invalidas", async () => {
+  it("login retorna 401 com credenciais inválidas", async () => {
     const response = mockResponse();
     authService.authenticate.mockResolvedValueOnce(null);
     await AuthController.login(mockRequest({ body: { email: "a@a.com", senha: "123" } }), response);
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: "Credenciais invalidas." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Credenciais inválidas." });
   });
 
-  it("login retorna 200 com token e usuario", async () => {
+  it("login retorna 200 com token e usuário", async () => {
     const response = mockResponse();
     const user = buildPublicUser();
 
@@ -102,23 +102,23 @@ describe("AuthController", () => {
     expect(response.json).toHaveBeenCalledWith({ token: "jwt", user });
   });
 
-  it("me retorna 401 sem autenticacao", async () => {
+  it("me retorna 401 sem autenticação", async () => {
     const response = mockResponse();
     await AuthController.me(mockRequest(), response);
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: "Nao autenticado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Não autenticado." });
   });
 
-  it("me retorna 404 quando o usuario nao existe", async () => {
+  it("me retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     response.locals.authUser = { id_usuario: 1, email: "a@a.com", tipo: "cliente" };
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await AuthController.me(mockRequest(), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("me retorna 200 com o usuario sanitizado", async () => {
+  it("me retorna 200 com o usuário sanitizado", async () => {
     const response = mockResponse();
     const user = buildModelInstance({ ...buildPublicUser(), senha: "hash" });
     const publicUser = buildPublicUser();
@@ -186,13 +186,13 @@ describe("AuthController", () => {
     );
   });
 
-  it("googleCallback redireciona quando os parametros sao invalidos", async () => {
+  it("googleCallback redireciona quando os parametros são inválidos", async () => {
     const response = mockResponse();
 
     await AuthController.googleCallback(mockRequest({ query: { code: 1, state: "a" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith(
-      "http://localhost:3001/login?error=Parametros%20OAuth%20invalidos.",
+      "http://localhost:3001/login?error=Par%C3%A2metros%20OAuth%20inv%C3%A1lidos.",
     );
   });
 
@@ -262,7 +262,7 @@ describe("AuthController", () => {
     "http://localhost@attacker.example/cb",
     "http://localhost:80@attacker.example/cb",
     "https://attacker.example/cb",
-    "nao e url",
+    "não e url",
   ])("googleStart recusa o redirect %s", async (redirect) => {
     authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
     await AuthController.googleStart(mockRequest({ query: { redirect } }), mockResponse());
@@ -278,7 +278,7 @@ describe("AuthController", () => {
     },
   );
 
-  describe("em producao", () => {
+  describe("em produção", () => {
     const nodeEnv = process.env.NODE_ENV;
 
     beforeEach(() => {
@@ -315,7 +315,7 @@ describe("AuthController", () => {
     authService.buildGoogleAuthorizationUrl.mockReset();
   });
 
-  it("login recusa email que nao e texto", async () => {
+  it("login recusa email que não e texto", async () => {
     const response = mockResponse();
     await AuthController.login(mockRequest({ body: { email: ["a@a.com", "b@b.com"], senha: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);

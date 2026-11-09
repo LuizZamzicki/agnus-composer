@@ -45,7 +45,7 @@ class AuthService {
 
   private static ensureGoogleOAuthConfig() {
     if (!AuthService.getGoogleClientId() || !AuthService.getGoogleClientSecret()) {
-      throw new Error("Google OAuth nao configurado. Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.");
+      throw new Error("Google OAuth não configurado. Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.");
     }
   }
 
@@ -181,7 +181,7 @@ class AuthService {
 
   private static ensureValidGoogleState(state: string) {
     if (!AuthService.verifyGoogleState(state)) {
-      throw new Error("Estado OAuth invalido ou expirado.");
+      throw new Error("Estado OAuth inválido ou expirado.");
     }
   }
 

@@ -100,7 +100,7 @@ class ProdutoCatalogService {
     const parsedCategoryId = Number(category);
 
     if (Number.isNaN(parsedCategoryId)) {
-      return "id_categoria invalido.";
+      return "id_categoria inválido.";
     }
 
     whereClauses.push("p.id_categoria = :id_categoria");
@@ -159,7 +159,7 @@ class ProdutoCatalogService {
     const parsedCategoryId = Number(category);
 
     if (Number.isNaN(parsedCategoryId)) {
-      return "id_categoria invalido.";
+      return "id_categoria inválido.";
     }
 
     where.id_categoria = parsedCategoryId;
@@ -272,7 +272,7 @@ class ProdutoCatalogService {
 
     return produto
       ? { data: produto }
-      : { message: "Produto nao encontrado", status: 404 };
+      : { message: "Produto não encontrado", status: 404 };
   }
 
   static async searchFindAll(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
@@ -290,7 +290,7 @@ class ProdutoCatalogService {
       ativo: query.ativo,
     });
 
-    return result ?? { message: "Busca indisponivel no momento.", status: 503 };
+    return result ?? { message: "Busca indisponível no momento.", status: 503 };
   }
 
   static async searchCatalog(
@@ -318,7 +318,7 @@ class ProdutoCatalogService {
       options.preferSales,
     );
 
-    return result ?? { message: "Busca indisponivel no momento.", status: 503 };
+    return result ?? { message: "Busca indisponível no momento.", status: 503 };
   }
 
   static async searchIndex(input: ProdutoIndexSearchInput, stripDecorators = false) {

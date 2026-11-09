@@ -59,15 +59,15 @@ class ProdutoGradesController {
 
   private static getCreateErrorMessage(payload: ProdutoGradePayload) {
     if (!payload.hasProductField() || !payload.hasNameField()) {
-      return "id_produto e nome sao obrigatorios.";
+      return "id_produto e nome são obrigatórios.";
     }
 
     if (!payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (!payload.nome) {
-      return "nome invalido.";
+      return "nome inválido.";
     }
 
     return null;
@@ -75,11 +75,11 @@ class ProdutoGradesController {
 
   private static getUpdateErrorMessage(payload: ProdutoGradePayload) {
     if (payload.hasProductField() && !payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (payload.hasNameField() && !payload.nome) {
-      return "nome invalido.";
+      return "nome inválido.";
     }
 
     return null;
@@ -87,7 +87,7 @@ class ProdutoGradesController {
 
   private static async findProductError(productId?: number | null) {
     return productId && !(await Produtos.findByPk(productId))
-      ? "Produto nao encontrado."
+      ? "Produto não encontrado."
       : null;
   }
 
@@ -103,13 +103,13 @@ class ProdutoGradesController {
     const productId = ProdutoGradesController.parsePositiveId(req.params.id_produto);
 
     if (!productId) {
-      return res.status(400).json({ message: "ID do produto invalido." });
+      return res.status(400).json({ message: "ID do produto inválido." });
     }
 
     const grades = await ProdutoGrades.findAll({ where: { id_produto: productId } });
 
     if (!grades) {
-      return res.status(404).json({ message: "Grade do produto nao encontrada." });
+      return res.status(404).json({ message: "Grade do produto não encontrada." });
     }
 
     return res.status(200).send(grades);
@@ -144,14 +144,14 @@ class ProdutoGradesController {
     const payload = new ProdutoGradePayload(req.body);
 
     if (!gradeId) {
-      return res.status(400).json({ message: "ID da grade invalido." });
+      return res.status(400).json({ message: "ID da grade inválido." });
     }
 
     const grade = await ProdutoGrades.findByPk(gradeId);
     const message = ProdutoGradesController.getUpdateErrorMessage(payload);
 
     if (!grade) {
-      return res.status(404).json({ message: "Grade do produto nao encontrada." });
+      return res.status(404).json({ message: "Grade do produto não encontrada." });
     }
 
     if (message) {
@@ -173,13 +173,13 @@ class ProdutoGradesController {
     const gradeId = ProdutoGradesController.parsePositiveId(req.params.id);
 
     if (!gradeId) {
-      return res.status(400).json({ message: "ID da grade invalido." });
+      return res.status(400).json({ message: "ID da grade inválido." });
     }
 
     const grade = await ProdutoGrades.findByPk(gradeId);
 
     if (!grade) {
-      return res.status(404).json({ message: "Grade do produto nao encontrada." });
+      return res.status(404).json({ message: "Grade do produto não encontrada." });
     }
 
     await grade.destroy();

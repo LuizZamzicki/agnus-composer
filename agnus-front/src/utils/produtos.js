@@ -113,7 +113,7 @@ export function normalizarProduto(item) {
   const grades = gradesOriginais
     .map((grade, index) => ({
       id: grade?.id ?? grade?.id_grade ?? `${id}-grade-${index}`,
-      nome: (grade?.nome ?? grade?.label ?? "").toString().trim() || `Opcao ${index + 1}`,
+      nome: (grade?.nome ?? grade?.label ?? "").toString().trim() || `Opção ${index + 1}`,
       acrescimo: numeroSeguro(grade?.acrescimo, 0),
     }))
     .filter((grade) => grade.nome);

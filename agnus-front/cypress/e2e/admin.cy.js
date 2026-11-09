@@ -72,7 +72,7 @@ describe("Painel Admin", () => {
                     data: [
                         {
                             id_usuario: 1,
-                            nome: "Usuario Teste",
+                            nome: "Usuário Teste",
                             email: "teste@email.com",
                             tipo: "cliente"
                         }
@@ -98,13 +98,13 @@ describe("Painel Admin", () => {
         cy.get('[data-cy="admin-title"]')
             .should(
                 "contain.text",
-                "Usuarios"
+                "Usuários"
             );
 
         cy.get('[data-cy="usuario-tabela"]')
             .should("exist");
 
-        cy.contains("Usuario Teste")
+        cy.contains("Usuário Teste")
             .should("exist");
     });
 

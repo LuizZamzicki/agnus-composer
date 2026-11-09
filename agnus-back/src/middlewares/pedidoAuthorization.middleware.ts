@@ -9,7 +9,7 @@ export const authorizeOrderOwnerOrAdmin = (paramName = "id") =>
     const authUser = res.locals.authUser;
 
     if (!authUser) {
-      return res.status(401).json({ message: "Nao autenticado." });
+      return res.status(401).json({ message: "Não autenticado." });
     }
 
     if (authUser.tipo === "administrador") {
@@ -29,7 +29,7 @@ export const authorizeOrderOwnerOrAdmin = (paramName = "id") =>
     }
 
     if (pedido.get("id_usuario") !== authUser.id_usuario) {
-      return res.status(403).json({ message: "Voce so pode acessar o proprio pedido." });
+      return res.status(403).json({ message: "Você só pode acessar o próprio pedido." });
     }
 
     return next();

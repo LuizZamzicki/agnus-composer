@@ -37,7 +37,7 @@ ProdutoCores.init(
       set(value: unknown) {
         const normalized = normalizeRgbColor(String(value ?? ""));
         if (!normalized) {
-          throw new Error("codigo_rgb invalido. Use formato RGB valido.");
+          throw new Error("codigo_rgb inválido. Use formato RGB válido.");
         }
         this.setDataValue("codigo_rgb", normalized);
       },

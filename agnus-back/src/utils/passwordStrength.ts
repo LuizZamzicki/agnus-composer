@@ -31,17 +31,17 @@ export function evaluatePasswordStrength(password: string): PasswordStrengthResu
     },
     {
       id: "lowercase",
-      label: "Pelo menos uma letra minuscula",
+      label: "Pelo menos uma letra minúscula",
       passed: /[a-z]/.test(normalizedPassword),
     },
     {
       id: "uppercase",
-      label: "Pelo menos uma letra maiuscula",
+      label: "Pelo menos uma letra maiúscula",
       passed: /[A-Z]/.test(normalizedPassword),
     },
     {
       id: "number",
-      label: "Pelo menos um numero",
+      label: "Pelo menos um número",
       passed: /\d/.test(normalizedPassword),
     },
     {

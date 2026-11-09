@@ -140,11 +140,11 @@ class AuthController {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
-      return res.status(400).json({ message: "Email e senha sao obrigatorios." });
+      return res.status(400).json({ message: "Email e senha são obrigatórios." });
     }
 
     if (typeof email !== "string" || !isValidEmail(email)) {
-      return res.status(400).json({ message: "email invalido." });
+      return res.status(400).json({ message: "email inválido." });
     }
 
     const authResult = await AuthService.authenticate(email, senha);
@@ -154,7 +154,7 @@ class AuthController {
     }
 
     return res.status(401).json({
-      message: "Credenciais invalidas.",
+      message: "Credenciais inválidas.",
     });
   }
 
@@ -162,13 +162,13 @@ class AuthController {
     const authUser = res.locals.authUser;
 
     if (!authUser) {
-      return res.status(401).json({ message: "Nao autenticado." });
+      return res.status(401).json({ message: "Não autenticado." });
     }
 
     const user = await Usuarios.findByPk(authUser.id_usuario);
 
     if (!user) {
-      return res.status(404).json({ message: "Usuario nao encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
     return res.status(200).json({ user: AuthService.sanitizeUser(user) });
@@ -198,7 +198,7 @@ class AuthController {
     }
 
     if (!params) {
-      return res.redirect(AuthController.buildLoginErrorRedirect("Parametros OAuth invalidos."));
+      return res.redirect(AuthController.buildLoginErrorRedirect("Parâmetros OAuth inválidos."));
     }
 
     try {

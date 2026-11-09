@@ -70,19 +70,19 @@ class CarrinhoItensController {
 
   private static getCreateErrorMessage(payload: CarrinhoItemPayload) {
     if (!payload.hasCartField() || !payload.hasColorField() || !payload.hasGradeField()) {
-      return "id_carrinho, id_produto_cor e id_produto_grade sao obrigatorios.";
+      return "id_carrinho, id_produto_cor e id_produto_grade são obrigatórios.";
     }
 
     if (!payload.cartId) {
-      return "id_carrinho invalido.";
+      return "id_carrinho inválido.";
     }
 
     if (!payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     if (!payload.gradeId) {
-      return "id_produto_grade invalido.";
+      return "id_produto_grade inválido.";
     }
 
     return null;
@@ -90,15 +90,15 @@ class CarrinhoItensController {
 
   private static getUpdateErrorMessage(payload: CarrinhoItemPayload) {
     if (payload.hasCartField() && !payload.cartId) {
-      return "id_carrinho invalido.";
+      return "id_carrinho inválido.";
     }
 
     if (payload.hasColorField() && !payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     if (payload.hasGradeField() && !payload.gradeId) {
-      return "id_produto_grade invalido.";
+      return "id_produto_grade inválido.";
     }
 
     return null;
@@ -106,7 +106,7 @@ class CarrinhoItensController {
 
   private static async findCartError(payload: CarrinhoItemPayload) {
     return payload.hasCartField() && !(await Carrinhos.findByPk(payload.cartId!))
-      ? "Carrinho nao encontrado."
+      ? "Carrinho não encontrado."
       : null;
   }
 
@@ -122,18 +122,18 @@ class CarrinhoItensController {
     const grade = await ProdutoGrades.findByPk(selection.gradeId);
 
     if (!cor) {
-      return { status: 404, message: "Cor do produto nao encontrada." };
+      return { status: 404, message: "Cor do produto não encontrada." };
     }
 
     if (!grade) {
-      return { status: 404, message: "Grade do produto nao encontrada." };
+      return { status: 404, message: "Grade do produto não encontrada." };
     }
 
     return cor.id_produto === grade.id_produto
       ? null
       : {
           status: 400,
-          message: "A cor e a grade informadas nao pertencem ao mesmo produto.",
+          message: "A cor e a grade informadas não pertencem ao mesmo produto.",
         };
   }
 
@@ -176,7 +176,7 @@ class CarrinhoItensController {
     const cartId = CarrinhoItensController.parsePositiveId(req.params.id_cart);
 
     if (!cartId) {
-      return res.status(400).json({ message: "ID do carrinho invalido." });
+      return res.status(400).json({ message: "ID do carrinho inválido." });
     }
 
     const items = await CarrinhoItens.findAll({ where: { id_carrinho: cartId } });
@@ -208,7 +208,7 @@ class CarrinhoItensController {
     }
 
     if (precoUnitario === null) {
-      return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
+      return res.status(404).json({ message: "Produto vinculado ao item não encontrado." });
     }
 
     return res
@@ -227,14 +227,14 @@ class CarrinhoItensController {
     const payload = new CarrinhoItemPayload(req.body);
 
     if (!itemId) {
-      return res.status(400).json({ message: "ID do item invalido." });
+      return res.status(400).json({ message: "ID do item inválido." });
     }
 
     const item = await CarrinhoItens.findByPk(itemId);
     const message = CarrinhoItensController.getUpdateErrorMessage(payload);
 
     if (!item) {
-      return res.status(404).json({ message: "Item do carrinho nao encontrado." });
+      return res.status(404).json({ message: "Item do carrinho não encontrado." });
     }
 
     if (message) {
@@ -257,7 +257,7 @@ class CarrinhoItensController {
     }
 
     if (precoUnitario === null) {
-      return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
+      return res.status(404).json({ message: "Produto vinculado ao item não encontrado." });
     }
 
     await item.update(
@@ -276,13 +276,13 @@ class CarrinhoItensController {
     const itemId = CarrinhoItensController.parsePositiveId(req.params.id);
 
     if (!itemId) {
-      return res.status(400).json({ message: "ID do item invalido." });
+      return res.status(400).json({ message: "ID do item inválido." });
     }
 
     const item = await CarrinhoItens.findByPk(itemId);
 
     if (!item) {
-      return res.status(404).json({ message: "Item do carrinho nao encontrado." });
+      return res.status(404).json({ message: "Item do carrinho não encontrado." });
     }
 
     await item.destroy();

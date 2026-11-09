@@ -173,7 +173,7 @@ function AdminPedidoLista() {
             onChange={(e) => setPedidosStatusFiltro(e.target.value)}
           >
             <option value="todos">Todos os status</option>
-            <option value="aguardando_calculo_frete">Aguardando calculo do frete</option>
+            <option value="aguardando_calculo_frete">Aguardando cálculo do frete</option>
             <option value="aguardando_pagamento">Aguardando pagamento</option>
             <option value="pago">Pago</option>
             <option value="enviado">Enviado</option>
@@ -185,9 +185,9 @@ function AdminPedidoLista() {
             value={pedidosPageSize}
             onChange={(e) => setPedidosPageSize(Number(e.target.value))}
           >
-            <option value={5}>5 por pagina</option>
-            <option value={10}>10 por pagina</option>
-            <option value={20}>20 por pagina</option>
+            <option value={5}>5 por página</option>
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
           </select>
         </div>
       </div>
@@ -298,7 +298,7 @@ function AdminPedidoLista() {
           <div className="admin-products-header">
             <div className="admin-list-filters admin-list-filters--single">
               <div className="admin-form-input">
-                Pagina {pedidosPageSafe} de {pedidosTotalPaginas}
+                Página {pedidosPageSafe} de {pedidosTotalPaginas}
               </div>
             </div>
 

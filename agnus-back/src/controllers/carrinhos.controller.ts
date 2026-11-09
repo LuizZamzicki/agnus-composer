@@ -31,11 +31,11 @@ class CarrinhosController {
 
   private static getCreateErrorMessage(payload: CarrinhoPayload) {
     if (!payload.hasUserField()) {
-      return "id_usuario e obrigatorio.";
+      return "id_usuario e obrigatório.";
     }
 
     if (!payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     return null;
@@ -43,13 +43,13 @@ class CarrinhosController {
 
   private static getUpdateErrorMessage(payload: CarrinhoPayload) {
     return payload.hasUserField() && !payload.userId
-      ? "id_usuario invalido."
+      ? "id_usuario inválido."
       : null;
   }
 
   private static async findMissingUserMessage(userId?: number | null) {
     return userId && !(await Usuarios.findByPk(userId))
-      ? "Usuario nao encontrado."
+      ? "Usuário não encontrado."
       : null;
   }
 
@@ -65,7 +65,7 @@ class CarrinhosController {
       : CarrinhosController.parsePositiveId(req.query.id_usuario);
 
     if (req.query.id_usuario !== undefined && !userId) {
-      return res.status(400).json({ message: "id_usuario invalido." });
+      return res.status(400).json({ message: "id_usuario inválido." });
     }
 
     return res
@@ -77,13 +77,13 @@ class CarrinhosController {
     const cartId = CarrinhosController.parsePositiveId(req.params.id);
 
     if (!cartId) {
-      return res.status(400).json({ message: "ID do carrinho invalido." });
+      return res.status(400).json({ message: "ID do carrinho inválido." });
     }
 
     const carrinho = await Carrinhos.findByPk(cartId);
 
     if (!carrinho) {
-      return res.status(404).json({ message: "Carrinho nao encontrado." });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     }
 
     return res.status(200).send(carrinho);
@@ -111,14 +111,14 @@ class CarrinhosController {
     const payload = new CarrinhoPayload(req.body);
 
     if (!cartId) {
-      return res.status(400).json({ message: "ID do carrinho invalido." });
+      return res.status(400).json({ message: "ID do carrinho inválido." });
     }
 
     const carrinho = await Carrinhos.findByPk(cartId);
     const message = CarrinhosController.getUpdateErrorMessage(payload);
 
     if (!carrinho) {
-      return res.status(404).json({ message: "Carrinho nao encontrado." });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     }
 
     if (message) {
@@ -139,13 +139,13 @@ class CarrinhosController {
     const cartId = CarrinhosController.parsePositiveId(req.params.id);
 
     if (!cartId) {
-      return res.status(400).json({ message: "ID do carrinho invalido." });
+      return res.status(400).json({ message: "ID do carrinho inválido." });
     }
 
     const carrinho = await Carrinhos.findByPk(cartId);
 
     if (!carrinho) {
-      return res.status(404).json({ message: "Carrinho nao encontrado." });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     }
 
     await carrinho.destroy();

@@ -47,7 +47,7 @@ describe("logger", () => {
     expect(logSpy).toHaveBeenCalledTimes(2);
   });
 
-  it("respeita o nivel minimo configurado", () => {
+  it("respeita o nivel mínimo configurado", () => {
     process.env.LOG_LEVEL = "warn";
     logger.info("ignorado");
     logger.warn("exibido");
@@ -106,8 +106,8 @@ describe("requestLogger middleware", () => {
     expect(res.body.requestId).toBe("abc-123");
   });
 
-  it("gera um id novo quando o recebido e invalido", async () => {
-    const res = await request(buildApp()).get("/id").set("X-Request-Id", "invalido com espaco");
+  it("gera um id novo quando o recebido e inválido", async () => {
+    const res = await request(buildApp()).get("/id").set("X-Request-Id", "inválido com espaco");
 
     expect(res.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
   });

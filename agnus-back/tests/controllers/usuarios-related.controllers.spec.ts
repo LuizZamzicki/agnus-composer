@@ -49,7 +49,7 @@ const historicoModel = UsuarioSenhasHistorico as typeof UsuarioSenhasHistorico &
 const argon2Mock = argon2 as typeof argon2 & Argon2Mock;
 
 describe("UsuariosController", () => {
-  it("findAll retorna usuarios paginados", async () => {
+  it("findAll retorna usuários paginados", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 1, nome: "A", email: "a@a.com", senha: "hash", tipo: "cliente" });
     usuariosModel.findAndCountAll.mockResolvedValueOnce({ count: 1, rows: [user] });
     await UsuariosController.findAll(mockRequest(), response);
@@ -66,29 +66,29 @@ describe("UsuariosController", () => {
     });
   });
 
-  it("getById retorna 400 para id invalido", async () => {
+  it("getById retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuariosController.getById(mockRequest({ params: { id: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("getById retorna 404 quando o usuario nao existe", async () => {
+  it("getById retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuariosController.getById(mockRequest({ params: { id: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("getById retorna 200 com o usuario", async () => {
+  it("getById retorna 200 com o usuário", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 1, nome: "A", email: "a@a.com", senha: "hash", tipo: "cliente" });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.getById(mockRequest({ params: { id: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
-  it("create retorna 400 sem campos obrigatorios", async () => {
+  it("create retorna 400 sem campos obrigatórios", async () => {
     const response = mockResponse();
     await UsuariosController.create(mockRequest({ body: { nome: "A" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -106,18 +106,18 @@ describe("UsuariosController", () => {
     historicoSpy.mockRestore();
   });
 
-  it("create retorna 400 para cpf invalido", async () => {
+  it("create retorna 400 para cpf inválido", async () => {
     const response = mockResponse();
     await UsuariosController.create(mockRequest({ body: { nome: "A", cpf: "111.111.111-11", email: "a@a.com", senha: "Senha123!" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "cpf invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "cpf inválido." });
   });
 
-  it("create retorna 400 para email invalido", async () => {
+  it("create retorna 400 para email inválido", async () => {
     const response = mockResponse();
     await UsuariosController.create(mockRequest({ body: { nome: "A", cpf: "529.982.247-25", email: "aaa", senha: "Senha123!" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "email invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "email inválido." });
   });
 
   it("create retorna 400 para senha fraca", async () => {
@@ -125,7 +125,7 @@ describe("UsuariosController", () => {
     await UsuariosController.create(mockRequest({ body: { nome: "A", cpf: "529.982.247-25", email: "a@a.com", senha: "123Abc" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({
-      message: "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.",
+      message: "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiúscula, minúscula, número e simbolo.",
       passwordStrength: evaluatePasswordStrength("123Abc"),
     });
   });
@@ -137,7 +137,7 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("create retorna 201 com o usuario criado", async () => {
+  it("create retorna 201 com o usuário criado", async () => {
     const response = mockResponse(), created = buildModelInstance({ id_usuario: 2, nome: "B", cpf: "529.982.247-25", email: "b@b.com", senha: "hash2", tipo: "cliente" });
     usuariosModel.findOne.mockResolvedValueOnce(null);
     argon2Mock.hash.mockResolvedValueOnce("hashed");
@@ -149,21 +149,21 @@ describe("UsuariosController", () => {
     historicoSpy.mockRestore();
   });
 
-  it("remove retorna 400 para id invalido", async () => {
+  it("remove retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuariosController.remove(mockRequest({ params: { id: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("remove retorna 404 quando o usuario nao existe", async () => {
+  it("remove retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuariosController.remove(mockRequest({ params: { id: "2" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
   });
 
-  it("remove retorna 204 quando exclui o usuario", async () => {
+  it("remove retorna 204 quando exclui o usuário", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2 });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.remove(mockRequest({ params: { id: "2" } }), response);
@@ -171,35 +171,35 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(204);
   });
 
-  it("update retorna 400 para id invalido", async () => {
+  it("update retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuariosController.update(mockRequest({ params: { id: "x" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("update retorna 404 quando o usuario nao existe", async () => {
+  it("update retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("update retorna 400 para cpf invalido", async () => {
+  it("update retorna 400 para cpf inválido", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { cpf: "111.111.111-11" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "cpf invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "cpf inválido." });
   });
 
-  it("update retorna 400 para email invalido", async () => {
+  it("update retorna 400 para email inválido", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { email: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "email invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "email inválido." });
   });
 
   it("update retorna 400 quando tenta alterar o email", async () => {
@@ -207,19 +207,19 @@ describe("UsuariosController", () => {
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { email: "x@x.com" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "email nao pode ser alterado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "email não pode ser alterado." });
   });
 
-  it("update retorna 403 quando um usuario nao administrador tenta alterar o tipo", async () => {
+  it("update retorna 403 quando um usuário não administrador tenta alterar o tipo", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { tipo: "administrador" } }), response);
     expect(response.status).toHaveBeenCalledWith(403);
-    expect(response.json).toHaveBeenCalledWith({ message: "Apenas administradores podem alterar o tipo de usuario." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Apenas administradores podem alterar o tipo de usuário." });
     expect(user.update).not.toHaveBeenCalled();
   });
 
-  it("update retorna 400 para tipo invalido quando um administrador faz a chamada", async () => {
+  it("update retorna 400 para tipo inválido quando um administrador faz a chamada", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
     response.locals.authUser = { id_usuario: 1, email: "admin@a.com", tipo: "administrador" };
     usuariosModel.findByPk.mockResolvedValueOnce(user);
@@ -227,7 +227,7 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("update permite que um administrador altere o tipo de outro usuario", async () => {
+  it("update permite que um administrador altere o tipo de outro usuário", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: null, email: "b@b.com", senha: "hash2", tipo: "cliente" });
     response.locals.authUser = { id_usuario: 1, email: "admin@a.com", tipo: "administrador" };
     usuariosModel.findByPk.mockResolvedValueOnce(user);
@@ -260,20 +260,20 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
-  it("updatePassword retorna 400 sem corpo valido", async () => {
+  it("updatePassword retorna 400 sem corpo válido", async () => {
     const response = mockResponse();
     await UsuariosController.updatePassword(mockRequest({ params: { id: "2" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("updatePassword retorna 400 para id invalido", async () => {
+  it("updatePassword retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuariosController.updatePassword(mockRequest({ params: { id: "x" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("updatePassword retorna 400 quando a confirmacao diverge", async () => {
+  it("updatePassword retorna 400 quando a confirmação diverge", async () => {
     const response = mockResponse();
     await UsuariosController.updatePassword(mockRequest({ params: { id: "2" }, body: { senha_atual: "123", confirmacao_senha_atual: "321", nova_senha: "Senha456!" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
@@ -284,20 +284,20 @@ describe("UsuariosController", () => {
     await UsuariosController.updatePassword(mockRequest({ params: { id: "2" }, body: { senha_atual: "123", confirmacao_senha_atual: "123", nova_senha: "456" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({
-      message: "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.",
+      message: "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiúscula, minúscula, número e simbolo.",
       passwordStrength: evaluatePasswordStrength("456"),
     });
   });
 
-  it("updatePassword retorna 404 quando o usuario nao existe", async () => {
+  it("updatePassword retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuariosController.updatePassword(mockRequest({ params: { id: "2" }, body: { senha_atual: "123", confirmacao_senha_atual: "123", nova_senha: "Senha456!" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("updatePassword retorna 400 quando a senha atual e invalida", async () => {
+  it("updatePassword retorna 400 quando a senha atual e inválida", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, senha: "old" });
     usuariosModel.findByPk.mockResolvedValueOnce(user);
     argon2Mock.verify.mockResolvedValueOnce(false);
@@ -313,7 +313,7 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("updatePassword retorna 400 quando a nova senha ja foi usada", async () => {
+  it("updatePassword retorna 400 quando a nova senha já foi usada", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, senha: "old" });
     const reusedSpy = jest.spyOn(UsuarioSenhasHistoricoController, "findByUserIdAndPassword").mockResolvedValueOnce(new Date("2026-01-01"));
     usuariosModel.findByPk.mockResolvedValueOnce(user);
@@ -342,19 +342,19 @@ describe("UsuariosController", () => {
 });
 
 describe("UsuarioEnderecosController", () => {
-  it("getByIdUser retorna 400 para id invalido", async () => {
+  it("getByIdUser retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.getByIdUser(mockRequest({ params: { id_user: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("getByIdUser retorna 404 quando nao encontra enderecos", async () => {
+  it("getByIdUser retorna 404 quando não encontra endereços", async () => {
     const response = mockResponse();
     enderecosModel.findAll.mockResolvedValueOnce(null);
     await UsuarioEnderecosController.getByIdUser(mockRequest({ params: { id_user: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Endereco nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Endereço não encontrado." });
   });
 
   it("getByIdUser retorna 200 com lista vazia", async () => {
@@ -365,43 +365,43 @@ describe("UsuarioEnderecosController", () => {
     expect(response.send).toHaveBeenCalledWith([]);
   });
 
-  it("create retorna 400 sem campos obrigatorios", async () => {
+  it("create retorna 400 sem campos obrigatórios", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.create(mockRequest({ body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario, cep e logradouro sao obrigatorios." });
+    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario, cep e logradouro são obrigatórios." });
   });
 
-  it("create retorna 400 para id_usuario invalido", async () => {
+  it("create retorna 400 para id_usuario inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.create(mockRequest({ body: { id_usuario: "x", cep: "1", logradouro: "Rua" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario inválido." });
   });
 
-  it("create retorna 400 para cep invalido", async () => {
+  it("create retorna 400 para cep inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.create(mockRequest({ body: { id_usuario: 1, cep: " ", logradouro: "Rua" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "cep invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "cep inválido." });
   });
 
-  it("create retorna 400 para logradouro invalido", async () => {
+  it("create retorna 400 para logradouro inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.create(mockRequest({ body: { id_usuario: 1, cep: "1", logradouro: " " } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "logradouro invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "logradouro inválido." });
   });
 
-  it("create retorna 404 quando o usuario nao existe", async () => {
+  it("create retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioEnderecosController.create(mockRequest({ body: { id_usuario: 1, cep: "1", logradouro: "Rua" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("create retorna 201 com o endereco criado", async () => {
+  it("create retorna 201 com o endereço criado", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua" });
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
     enderecosModel.create.mockResolvedValueOnce(endereco);
@@ -423,39 +423,39 @@ describe("UsuarioEnderecosController", () => {
     expect(response.send).toHaveBeenCalledWith(endereco);
   });
 
-  it("update retorna 400 para id invalido", async () => {
+  it("update retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "x" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do endereco invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do endereço inválido." });
   });
 
-  it("update retorna 404 quando o endereco nao existe", async () => {
+  it("update retorna 404 quando o endereço não existe", async () => {
     const response = mockResponse();
     enderecosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "1" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Endereco nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Endereço não encontrado." });
   });
 
-  it("update retorna 404 quando o usuario informado nao existe", async () => {
+  it("update retorna 404 quando o usuário informado não existe", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua", numero: null, complemento: null, bairro: null, cidade: null, estado: null, pais: "Brasil", principal: false, ativo: true });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "1" }, body: { id_usuario: 2 } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("update retorna 400 para cep invalido", async () => {
+  it("update retorna 400 para cep inválido", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua", numero: null, complemento: null, bairro: null, cidade: null, estado: null, pais: "Brasil", principal: false, ativo: true });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
     await UsuarioEnderecosController.update(mockRequest({ params: { id: "1" }, body: { cep: " " } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "cep invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "cep inválido." });
   });
 
-  it("update retorna 200 com o endereco atualizado", async () => {
+  it("update retorna 200 com o endereço atualizado", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1, cep: "1", logradouro: "Rua", numero: null, complemento: null, bairro: null, cidade: null, estado: null, pais: "Brasil", principal: false, ativo: true });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
@@ -477,22 +477,22 @@ describe("UsuarioEnderecosController", () => {
     expect(response.send).toHaveBeenCalledWith(endereco);
   });
 
-  it("remove retorna 400 para id invalido", async () => {
+  it("remove retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioEnderecosController.remove(mockRequest({ params: { id: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do endereco invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do endereço inválido." });
   });
 
-  it("remove retorna 404 quando o endereco nao existe", async () => {
+  it("remove retorna 404 quando o endereço não existe", async () => {
     const response = mockResponse();
     enderecosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioEnderecosController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Endereco nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Endereço não encontrado." });
   });
 
-  it("remove retorna 204 quando exclui o endereco", async () => {
+  it("remove retorna 204 quando exclui o endereço", async () => {
     const response = mockResponse(), endereco = buildModelInstance({ id_usuario_endereco: 1 });
     enderecosModel.findByPk.mockResolvedValueOnce(endereco);
     await UsuarioEnderecosController.remove(mockRequest({ params: { id: "1" } }), response);
@@ -502,19 +502,19 @@ describe("UsuarioEnderecosController", () => {
 });
 
 describe("UsuarioContatosController", () => {
-  it("getByIdUser retorna 400 para id invalido", async () => {
+  it("getByIdUser retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.getByIdUser(mockRequest({ params: { id_user: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do usuário inválido." });
   });
 
-  it("getByIdUser retorna 404 quando nao encontra contatos", async () => {
+  it("getByIdUser retorna 404 quando não encontra contatos", async () => {
     const response = mockResponse();
     contatosModel.findAll.mockResolvedValueOnce(null);
     await UsuarioContatosController.getByIdUser(mockRequest({ params: { id_user: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Contato nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Contato não encontrado." });
   });
 
   it("getByIdUser retorna 200 com lista vazia", async () => {
@@ -525,40 +525,40 @@ describe("UsuarioContatosController", () => {
     expect(response.send).toHaveBeenCalledWith([]);
   });
 
-  it("create retorna 400 sem campos obrigatorios", async () => {
+  it("create retorna 400 sem campos obrigatórios", async () => {
     const response = mockResponse();
     await UsuarioContatosController.create(mockRequest({ body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario e valor sao obrigatorios." });
+    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario e valor são obrigatórios." });
   });
 
-  it("create retorna 400 para id_usuario invalido", async () => {
+  it("create retorna 400 para id_usuario inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.create(mockRequest({ body: { id_usuario: "x", valor: "v", tipo: "email" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "id_usuario inválido." });
   });
 
-  it("create retorna 400 para tipo invalido", async () => {
+  it("create retorna 400 para tipo inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.create(mockRequest({ body: { id_usuario: 1, valor: "v", tipo: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "tipo invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "tipo inválido." });
   });
 
-  it("create retorna 400 para valor invalido", async () => {
+  it("create retorna 400 para valor inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.create(mockRequest({ body: { id_usuario: 1, valor: "   ", tipo: "email" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "valor invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "valor inválido." });
   });
 
-  it("create retorna 404 quando o usuario nao existe", async () => {
+  it("create retorna 404 quando o usuário não existe", async () => {
     const response = mockResponse();
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioContatosController.create(mockRequest({ body: { id_usuario: 1, valor: "v", tipo: "email" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
   it("create retorna 201 com o contato criado", async () => {
@@ -571,44 +571,44 @@ describe("UsuarioContatosController", () => {
     expect(response.send).toHaveBeenCalledWith(contato);
   });
 
-  it("update retorna 400 para id invalido", async () => {
+  it("update retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.update(mockRequest({ params: { id: "x" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do contato invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do contato inválido." });
   });
 
-  it("update retorna 404 quando o contato nao existe", async () => {
+  it("update retorna 404 quando o contato não existe", async () => {
     const response = mockResponse();
     contatosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioContatosController.update(mockRequest({ params: { id: "1" }, body: {} }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Contato nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Contato não encontrado." });
   });
 
-  it("update retorna 404 quando o usuario informado nao existe", async () => {
+  it("update retorna 404 quando o usuário informado não existe", async () => {
     const response = mockResponse(), contato = buildModelInstance({ id_usuario_contato: 1, id_usuario: 1, tipo: "email", valor: "a@a.com", principal: false });
     contatosModel.findByPk.mockResolvedValueOnce(contato);
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioContatosController.update(mockRequest({ params: { id: "1" }, body: { id_usuario: 2 } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Usuario nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Usuário não encontrado." });
   });
 
-  it("update retorna 400 para tipo invalido", async () => {
+  it("update retorna 400 para tipo inválido", async () => {
     const response = mockResponse(), contato = buildModelInstance({ id_usuario_contato: 1, id_usuario: 1, tipo: "email", valor: "a@a.com", principal: false });
     contatosModel.findByPk.mockResolvedValueOnce(contato);
     await UsuarioContatosController.update(mockRequest({ params: { id: "1" }, body: { tipo: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "tipo invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "tipo inválido." });
   });
 
-  it("update retorna 400 para valor invalido", async () => {
+  it("update retorna 400 para valor inválido", async () => {
     const response = mockResponse(), contato = buildModelInstance({ id_usuario_contato: 1, id_usuario: 1, tipo: "email", valor: "a@a.com", principal: false });
     contatosModel.findByPk.mockResolvedValueOnce(contato);
     await UsuarioContatosController.update(mockRequest({ params: { id: "1" }, body: { valor: "   " } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "valor invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "valor inválido." });
   });
 
   it("update retorna 200 com o contato atualizado", async () => {
@@ -621,19 +621,19 @@ describe("UsuarioContatosController", () => {
     expect(response.send).toHaveBeenCalledWith(contato);
   });
 
-  it("remove retorna 400 para id invalido", async () => {
+  it("remove retorna 400 para id inválido", async () => {
     const response = mockResponse();
     await UsuarioContatosController.remove(mockRequest({ params: { id: "x" } }), response);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "ID do contato invalido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "ID do contato inválido." });
   });
 
-  it("remove retorna 404 quando o contato nao existe", async () => {
+  it("remove retorna 404 quando o contato não existe", async () => {
     const response = mockResponse();
     contatosModel.findByPk.mockResolvedValueOnce(null);
     await UsuarioContatosController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Contato nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Contato não encontrado." });
   });
 
   it("remove retorna 204 quando exclui o contato", async () => {
@@ -655,12 +655,12 @@ describe("UsuarioSenhasHistoricoController", () => {
     await expect(UsuarioSenhasHistoricoController.findByUserIdAndPassword(1, "abc")).resolves.toEqual(new Date("2026-01-02"));
   });
 
-  it("findByPasswordHash retorna null quando nao encontra usuario", async () => {
+  it("findByPasswordHash retorna null quando não encontra usuário", async () => {
     usuariosModel.findOne.mockResolvedValueOnce(null);
     await expect(UsuarioSenhasHistoricoController.findByPasswordHash("a@a.com", "x")).resolves.toBeNull();
   });
 
-  it("findByPasswordHash retorna data quando encontra historico", async () => {
+  it("findByPasswordHash retorna data quando encontra histórico", async () => {
     const user = buildModelInstance({ id_usuario: 1, email: "a@a.com" });
     usuariosModel.findOne.mockResolvedValueOnce(user);
     historicoModel.findAll.mockResolvedValueOnce([
@@ -679,12 +679,12 @@ describe("UsuarioSenhasHistoricoController", () => {
     await expect(UsuarioSenhasHistoricoController.findByPasswordHash("a@a.com", "nope")).resolves.toBeNull();
   });
 
-  it("create retorna false quando o usuario nao existe", async () => {
+  it("create retorna false quando o usuário não existe", async () => {
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await expect(UsuarioSenhasHistoricoController.create(10, "hash")).resolves.toBe(false);
   });
 
-  it("create retorna true quando salva no historico", async () => {
+  it("create retorna true quando salva no histórico", async () => {
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 10 }));
     historicoModel.create.mockResolvedValueOnce(buildModelInstance({ id_usuario: 10 }));
     await expect(UsuarioSenhasHistoricoController.create(10, "hash")).resolves.toBe(true);

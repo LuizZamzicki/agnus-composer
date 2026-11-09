@@ -93,19 +93,19 @@ class AvaliacaoProdutosController {
 
   private static getCreateErrorMessage(payload: AvaliacaoProdutoPayload) {
     if (!payload.hasProductField() || !payload.hasUserField()) {
-      return "id_produto e id_usuario sao obrigatorios.";
+      return "id_produto e id_usuario são obrigatórios.";
     }
 
     if (!payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (!payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (!AvaliacaoProdutosController.hasValidNota(payload.nota)) {
-      return "nota invalida. Use valor entre 1 e 5.";
+      return "nota inválida. Use valor entre 1 e 5.";
     }
 
     return null;
@@ -113,18 +113,18 @@ class AvaliacaoProdutosController {
 
   private static getUpdateErrorMessage(payload: AvaliacaoProdutoPayload) {
     if (payload.hasProductField() && !payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (payload.hasUserField() && !payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (
       payload.hasNotaField() &&
       !AvaliacaoProdutosController.hasValidNota(payload.nota)
     ) {
-      return "nota invalida. Use valor entre 1 e 5.";
+      return "nota inválida. Use valor entre 1 e 5.";
     }
 
     return null;
@@ -132,11 +132,11 @@ class AvaliacaoProdutosController {
 
   private static async findMissingReferenceMessage(productId?: number | null, userId?: number | null) {
     if (productId && !(await Produtos.findByPk(productId))) {
-      return "Produto nao encontrado.";
+      return "Produto não encontrado.";
     }
 
     if (userId && !(await Usuarios.findByPk(userId))) {
-      return "Usuario nao encontrado.";
+      return "Usuário não encontrado.";
     }
 
     return null;
@@ -200,13 +200,13 @@ class AvaliacaoProdutosController {
     const productId = AvaliacaoProdutosController.parsePositiveId(req.params.id_produto);
 
     if (!productId) {
-      return res.status(400).json({ message: "ID do produto invalido." });
+      return res.status(400).json({ message: "ID do produto inválido." });
     }
 
     const avaliacoes = await AvaliacaoProdutos.findAll({ where: { id_produto: productId } });
 
     if (!avaliacoes) {
-      return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
+      return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
     return res.status(200).send(avaliacoes);
@@ -230,11 +230,11 @@ class AvaliacaoProdutosController {
     }
 
     if (!(await AvaliacaoProdutosController.hasDeliveredPurchase(payload.userId!, payload.productId!))) {
-      return res.status(403).json({ message: "Somente quem recebeu o produto pode avalia-lo." });
+      return res.status(403).json({ message: "Somente quem recebeu o produto pode avaliá-lo." });
     }
 
     if (await AvaliacaoProdutos.findOne({ where: { id_produto: payload.productId!, id_usuario: payload.userId! } })) {
-      return res.status(409).json({ message: "Voce ja avaliou este produto." });
+      return res.status(409).json({ message: "Você já avaliou este produto." });
     }
 
     return res
@@ -251,14 +251,14 @@ class AvaliacaoProdutosController {
     const payload = new AvaliacaoProdutoPayload(req.body);
 
     if (!reviewId) {
-      return res.status(400).json({ message: "ID da avaliacao invalido." });
+      return res.status(400).json({ message: "ID da avaliação inválido." });
     }
 
     const avaliacao = await AvaliacaoProdutos.findByPk(reviewId);
     const message = AvaliacaoProdutosController.getUpdateErrorMessage(payload);
 
     if (!avaliacao) {
-      return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
+      return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
     if (message) {
@@ -285,13 +285,13 @@ class AvaliacaoProdutosController {
     const reviewId = AvaliacaoProdutosController.parsePositiveId(req.params.id);
 
     if (!reviewId) {
-      return res.status(400).json({ message: "ID da avaliacao invalido." });
+      return res.status(400).json({ message: "ID da avaliação inválido." });
     }
 
     const avaliacao = await AvaliacaoProdutos.findByPk(reviewId);
 
     if (!avaliacao) {
-      return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
+      return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
     await avaliacao.destroy();

@@ -9,14 +9,14 @@ export const checarPermissao = (permissaoNecessaria: Permission) =>
     const authUser = res.locals.authUser;
 
     if (!authUser) {
-      return res.status(401).json({ message: "Nao autenticado." });
+      return res.status(401).json({ message: "Não autenticado." });
     }
 
     const permissoesDoUsuario = getPermissionsForRole(authUser.tipo);
 
     if (!permissoesDoUsuario.includes(permissaoNecessaria)) {
       return res.status(403).json({
-        message: `Acesso negado: permissao "${permissaoNecessaria}" e necessaria.`,
+        message: `Acesso negado: permissão "${permissaoNecessaria}" é necessária.`,
       });
     }
 

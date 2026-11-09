@@ -53,7 +53,7 @@ class ProdutosController {
     const productId = ProdutosController.parsePositiveId(req.params.id);
 
     if (!productId) {
-      return res.status(400).json({ message: "ID do produto invalido." });
+      return res.status(400).json({ message: "ID do produto inválido." });
     }
 
     return ProdutosController.sendResult(
@@ -81,7 +81,7 @@ class ProdutosController {
     const productId = ProdutosController.parsePositiveId(req.params.id);
 
     if (!productId) {
-      return res.status(400).json({ message: "id do produto invalido." });
+      return res.status(400).json({ message: "id do produto inválido." });
     }
 
     return ProdutosController.sendResult(res, await ProdutoMutationService.update(productId, req.body));
@@ -91,7 +91,7 @@ class ProdutosController {
     const productId = ProdutosController.parsePositiveId(req.params.id);
 
     if (!productId) {
-      return res.status(400).json({ message: "id do produto invalido." });
+      return res.status(400).json({ message: "id do produto inválido." });
     }
 
     const result = await ProdutoMutationService.remove(productId);

@@ -1,7 +1,7 @@
 import { isValidEmail } from "../../src/utils/userValidation";
 
 describe("isValidEmail", () => {
-  it("aceita e-mail comum e recusa formato invalido", () => {
+  it("aceita e-mail comum e recusa formato inválido", () => {
     expect(isValidEmail("ana@agnus.fit")).toBe(true);
     expect(isValidEmail("ana@agnus")).toBe(false);
   });

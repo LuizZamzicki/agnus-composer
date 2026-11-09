@@ -44,10 +44,10 @@ export const OWNERS = {
 const isAdmin = (res: AuthResponse) => res.locals.authUser?.tipo === "administrador";
 
 const denyUnauthenticated = (res: AuthResponse) =>
-  res.status(401).json({ message: "Nao autenticado." });
+  res.status(401).json({ message: "Não autenticado." });
 
 const denyForeign = (res: AuthResponse) =>
-  res.status(403).json({ message: "Voce so pode acessar os proprios dados." });
+  res.status(403).json({ message: "Você só pode acessar os próprios dados." });
 
 /**
  * Verifica o dono do recurso apontado por um parametro de rota.
