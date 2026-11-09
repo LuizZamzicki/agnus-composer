@@ -149,6 +149,7 @@ describe("AuthController", () => {
     );
     expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(
       "exp://192.168.0.5:8081/--/auth",
+      undefined,
     );
   });
 
@@ -159,7 +160,7 @@ describe("AuthController", () => {
       mockRequest({ query: { redirect: "https://evil.example/steal" } }),
       response,
     );
-    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined);
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined, undefined);
   });
 
   it("googleStart retorna 500 quando falha", async () => {
@@ -253,5 +254,70 @@ describe("AuthController", () => {
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith("agnusapp://auth?error=invalid");
+  });
+
+  it.each([
+    "http://localhost.attacker.example/cb",
+    "http://127.0.0.1.attacker.example/cb",
+    "http://localhost@attacker.example/cb",
+    "http://localhost:80@attacker.example/cb",
+    "https://attacker.example/cb",
+    "nao e url",
+  ])("googleStart recusa o redirect %s", async (redirect) => {
+    authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+    await AuthController.googleStart(mockRequest({ query: { redirect } }), mockResponse());
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it.each(["http://localhost:19006/cb", "http://127.0.0.1:8081/cb", "agnusapp://login", "exp+agnus://cb"])(
+    "googleStart aceita em desenvolvimento o retorno %s",
+    async (redirect) => {
+      authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+      await AuthController.googleStart(mockRequest({ query: { redirect } }), mockResponse());
+      expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(redirect, undefined);
+    },
+  );
+
+  describe("em producao", () => {
+    const nodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      process.env.NODE_ENV = "production";
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = nodeEnv;
+    });
+
+    it.each(["exp://attacker.example:8081/--/cb", "exp+evil://cb", "http://localhost:4444/cb"])(
+      "googleStart recusa o retorno de desenvolvimento %s",
+      async (redirect) => {
+        authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+        await AuthController.googleStart(mockRequest({ query: { redirect } }), mockResponse());
+        expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith(undefined, undefined);
+      },
+    );
+
+    it("googleStart mantem o esquema do app", async () => {
+      authService.buildGoogleAuthorizationUrl.mockReturnValueOnce("https://google/auth");
+      await AuthController.googleStart(mockRequest({ query: { redirect: "agnusapp://login" } }), mockResponse());
+      expect(authService.buildGoogleAuthorizationUrl).toHaveBeenCalledWith("agnusapp://login", undefined);
+    });
+  });
+
+  it("googleStart repassa o nonce do navegador e descarta um nonce malformado", async () => {
+    const nonce = "123e4567-e89b-12d3-a456-426614174000";
+    authService.buildGoogleAuthorizationUrl.mockReturnValue("https://google/auth");
+    await AuthController.googleStart(mockRequest({ query: { nonce } }), mockResponse());
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenLastCalledWith(undefined, nonce);
+    await AuthController.googleStart(mockRequest({ query: { nonce: "<x>" } }), mockResponse());
+    expect(authService.buildGoogleAuthorizationUrl).toHaveBeenLastCalledWith(undefined, undefined);
+    authService.buildGoogleAuthorizationUrl.mockReset();
+  });
+
+  it("login recusa email que nao e texto", async () => {
+    const response = mockResponse();
+    await AuthController.login(mockRequest({ body: { email: ["a@a.com", "b@b.com"], senha: "x" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
   });
 });

@@ -246,4 +246,30 @@ describe("AuthService", () => {
       .mockResolvedValueOnce(new Response("profile error", { status: 500 }));
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Falha ao obter perfil Google");
   });
+
+  it("authenticateWithGoogle descarta a senha ao vincular conta local pelo e-mail", async () => {
+    const user = buildModelInstance({ ...buildPublicUser("a@a.com"), google_id: null, senha: "hash-do-atacante" });
+    jwtMock.verify.mockReturnValueOnce({ provider: "google" } as never);
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "ga" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "sub-1", name: "A", email: "a@a.com", email_verified: true }), { status: 200 }));
+    usuariosModel.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(user as never as Usuarios);
+    argon2Mock.hash.mockResolvedValueOnce("hash-aleatorio");
+    jwtMock.sign.mockReturnValueOnce("jwt-user");
+    await AuthService.authenticateWithGoogle("code", "state");
+    expect(user.update).toHaveBeenCalledWith({ google_id: "sub-1", senha: "hash-aleatorio" });
+  });
+
+  it("authenticateWithGoogle devolve o nonce do navegador guardado no state", async () => {
+    const user = buildModelInstance({ ...buildPublicUser("a@a.com"), google_id: "sub-1", senha: "hash" });
+    const state = { provider: "google", clientNonce: "nonce-do-navegador" };
+    jwtMock.verify.mockReturnValue(state as never);
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "ga" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "sub-1", name: "A", email: "a@a.com", email_verified: true }), { status: 200 }));
+    usuariosModel.findOne.mockResolvedValueOnce(user as never as Usuarios);
+    jwtMock.sign.mockReturnValueOnce("jwt-user");
+    await expect(AuthService.authenticateWithGoogle("code", "state")).resolves.toMatchObject({ clientNonce: "nonce-do-navegador" });
+    jwtMock.verify.mockReset();
+  });
 });
