@@ -1033,14 +1033,29 @@ button[disabled] {
 .item-acoes { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
 .item-bloco .avaliacao-form { margin-bottom: 0; }
 
+.avaliacao-form .rating {
+    gap: 6px;
+    padding: 8px 0;
+}
+
+/* Anula a regra geral de botões desta área, cuja margem deslocava a área de clique.
+   Cada metade vai além do desenho, sem deixar vão entre as estrelas. */
 .avaliacao-form .rating .estrela-metade {
-    width: 50%;
+    top: -8px;
+    bottom: -8px;
+    width: calc(50% + 3px);
     min-height: 0;
+    margin: 0;
     padding: 0;
     background: none;
     border: none;
     box-shadow: none;
+    transform: none;
+    transition: none;
 }
+
+.avaliacao-form .rating .estrela-metade.esquerda { left: -3px; }
+.avaliacao-form .rating .estrela-metade.direita { right: -3px; }
 
 .avaliacao-form .preview-foto button {
     width: auto;

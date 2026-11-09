@@ -5,15 +5,27 @@ import { apiUrl, assetUrl, authHeaders } from "../utils/api";
 const MAX_FOTOS = 4;
 
 export function Estrelas({ nota = 0, onEscolher = null, tamanho = 18 }) {
-    const valor = Math.round((Number(nota) || 0) * 2) / 2;
+    const [previa, setPrevia] = useState(null);
+    const [marcada, setMarcada] = useState(null);
+    const notaAtual = Math.round((Number(nota) || 0) * 2) / 2;
+    const valor = previa ?? notaAtual;
 
     return (
-        <div className="rating" role={onEscolher ? "group" : undefined} aria-label={onEscolher ? "Nota" : undefined}>
+        <div
+            className="rating"
+            role={onEscolher ? "group" : undefined}
+            aria-label={onEscolher ? "Nota" : undefined}
+            onPointerLeave={onEscolher ? () => setPrevia(null) : undefined}
+        >
             {[1, 2, 3, 4, 5].map((n) => {
                 const preenchido = valor >= n ? 100 : valor >= n - 0.5 ? 50 : 0;
 
                 return (
-                    <span key={n} className="estrela">
+                    <span
+                        key={n}
+                        className={`estrela${marcada === n ? " marcada" : ""}`}
+                        onAnimationEnd={() => setMarcada(null)}
+                    >
                         <Star size={tamanho} className="star" aria-hidden="true" />
 
                         {preenchido > 0 && (
@@ -30,8 +42,15 @@ export function Estrelas({ nota = 0, onEscolher = null, tamanho = 18 }) {
                                 data-cy={`estrela-${opcao}`}
                                 className={`estrela-metade ${opcao === n ? "direita" : "esquerda"}`}
                                 aria-label={`${String(opcao).replace(".", ",")} de 5 estrelas`}
-                                aria-pressed={opcao === valor}
-                                onClick={() => onEscolher(opcao)}
+                                aria-pressed={opcao === notaAtual}
+                                onPointerEnter={(e) => {
+                                    // No toque não há "passar por cima": a prévia ficaria presa.
+                                    if (e.pointerType === "mouse") setPrevia(opcao);
+                                }}
+                                onClick={() => {
+                                    onEscolher(opcao);
+                                    setMarcada(n);
+                                }}
                             />
                         ))}
                     </span>
@@ -180,7 +199,7 @@ function AvaliacaoForm({ idProduto, idUsuario, avaliacao = null, onConcluir, onC
             />
 
             <span>Nota</span>
-            <Estrelas nota={nota} onEscolher={setNota} tamanho={26} />
+            <Estrelas nota={nota} onEscolher={setNota} tamanho={32} />
 
             <textarea
                 data-cy="comentario-avaliacao"
