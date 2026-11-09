@@ -105,7 +105,8 @@ services:
       - "--url=${NGROK_DOMAIN}"
       - "backend:3000"
     ports:
-      - "4040:4040"
+      # Painel do ngrok mostra senhas e tokens que passam pelo tunel: so na maquina local.
+      - "127.0.0.1:4040:4040"
     depends_on:
       backend:
         condition: service_healthy
