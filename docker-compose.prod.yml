@@ -1,0 +1,23 @@
+# Producao: usa as imagens versionadas do GHCR, sem build local.
+# Uso: AGNUS_VERSION=v3.5.0 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+services:
+  identidade:
+    image: ghcr.io/luizzamzicki/agnus-identidade:${AGNUS_VERSION}
+  catalogo:
+    image: ghcr.io/luizzamzicki/agnus-catalogo:${AGNUS_VERSION}
+  busca:
+    image: ghcr.io/luizzamzicki/agnus-busca:${AGNUS_VERSION}
+  avaliacoes:
+    image: ghcr.io/luizzamzicki/agnus-avaliacoes:${AGNUS_VERSION}
+  carrinho:
+    image: ghcr.io/luizzamzicki/agnus-carrinho:${AGNUS_VERSION}
+  pedidos:
+    image: ghcr.io/luizzamzicki/agnus-pedidos:${AGNUS_VERSION}
+  notificacoes:
+    image: ghcr.io/luizzamzicki/agnus-notificacoes:${AGNUS_VERSION}
+  admin:
+    image: ghcr.io/luizzamzicki/agnus-admin:${AGNUS_VERSION}
+  frontend:
+    image: ghcr.io/luizzamzicki/agnus-frontend:${AGNUS_VERSION}
+  admin-front:
+    image: ghcr.io/luizzamzicki/agnus-admin-frontend:${AGNUS_VERSION}
