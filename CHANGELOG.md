@@ -12,6 +12,14 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Segurança
 - **Alta:** `POST /orders` deixava qualquer cliente autenticado criar um pedido para si com `valor_total` e `status` escolhidos por ele (ex.: `{"status":"pago","valor_total":0}`). Agora é o lançamento manual da equipe (permissão `pedidos:criar`): o pedido nasce aberto e o valor enviado é ignorado. O cliente compra só por `POST /orders/checkout`.
 - **Alta:** `POST /order-items` deixava o cliente incluir peças no próprio pedido depois do checkout sem atualizar o total. Incluir, alterar e remover itens passou a ser exclusivo da equipe.
+- **Alta:** o retorno do login Google comparava só o início do texto, então `http://localhost.atacante.com` recebia o token da vítima. A URL agora é interpretada antes da decisão, e Expo e localhost só valem fora de produção (`NODE_ENV=production`).
+- Conta local criada antes com o mesmo e-mail deixa de manter a senha ao ser vinculada ao Google: o cadastro não comprova o e-mail, e a senha podia ser de outra pessoa.
+- Um link com `/login?token=` não troca mais a sessão: o site só aceita o retorno de um login que o próprio navegador começou.
+- `PUT /users/:id` não aceita mais `senha`; a troca passa só por `PATCH /users/:id/password`, que confere a senha atual e o histórico.
+- Avaliação exige pedido entregue com o produto, uma por produto, nota de 1 a 5 e não muda de produto na edição.
+- Custo e margem saem das respostas públicas de `GET /products` e `GET /products/:id`; continuam disponíveis para administradores.
+- Limite por IP na própria API: 10 logins e 5 cadastros por minuto, inclusive pelo ngrok e em variações da rota. Os e-mails têm tamanho máximo antes da validação, e o upload de fotos de avaliação aceita até 4 arquivos por requisição.
+- Painel do ngrok (porta 4040) só na máquina local.
 - Nginx limita as tentativas de login a 10 por minuto por IP (rajada de 5); acima disso responde 429.
 - A porta 3000 da API fica presa a `127.0.0.1`: de fora, a API só é acessível pelo Nginx (TLS e cabeçalhos de segurança).
 
@@ -31,6 +39,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Corrigido
 - CI vermelho na `main` desde a remoção do `node_modules` do Git: o ESLint do front usa o `eslint.config.js` da raiz, cujas dependências (`@eslint/js`, `globals`) não eram instaladas no job. Agora estão declaradas no `package.json` da raiz e o job as instala.
 - O primeiro evento recebido pelo worker depois de cada reinício se perdia (nem auditoria, nem notificação): a conexão de comandos do Redis só abria no primeiro evento e, sem fila offline, o `LPUSH` falhava. O worker agora espera a conexão antes de assinar os canais, e uma falha na auditoria não impede mais a notificação.
+- Fotos de avaliação não ficam mais órfãs no disco: o arquivo só é gravado depois das validações e é apagado ao trocar ou remover a foto.
+- A chave de cache codifica nomes e valores da URL, evitando que uma consulta forjada ocupe a chave de outra.
+- O redirect após o login só aceita caminhos do próprio site.
 - Criar, editar ou remover cor ou grade não invalidava o cache de produtos (o novo acréscimo de preço podia levar até 5 min para aparecer).
 - Relatórios gerados (`agnus-back/coverage/`, `debug.log`) saíram do versionamento.
 - Documentação alinhada ao código (checkout em `POST /orders/checkout`, número de testes, invariantes do agregado Pedido).

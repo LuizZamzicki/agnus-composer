@@ -90,6 +90,8 @@ paths:
                   user: { $ref: "#/components/schemas/Usuario" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "429":
+          description: Muitas tentativas por IP; aguarde um minuto
       security: []
   /auth/me:
     get:
@@ -116,7 +118,11 @@ paths:
         - in: query
           name: redirect
           schema: { type: string }
-          description: URL de retorno do app mobile (precisa estar na allowlist)
+          description: URL de retorno do app mobile. Em producao so o esquema agnusapp:// e aceito; Expo e localhost valem apenas em desenvolvimento
+        - in: query
+          name: nonce
+          schema: { type: string }
+          description: Valor gerado pelo site e devolvido no retorno, para o navegador so aceitar um login que ele mesmo comecou
       responses:
         "302": { description: Redireciona para accounts.google.com }
       security: []
@@ -150,6 +156,8 @@ paths:
               schema: { $ref: "#/components/schemas/Usuario" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "409": { $ref: "#/components/responses/Conflict" }
+        "429":
+          description: Muitas tentativas por IP; aguarde um minuto
       security: []
     get:
       operationId: getUsers
@@ -190,6 +198,7 @@ paths:
       operationId: putUsersPorId
       tags: [ Usuarios ]
       summary: Atualiza dados do usuario (proprio usuario ou admin)
+      description: O campo senha e recusado com 400; a troca de senha usa PATCH /users/{id}/password, que confere a senha atual.
       security: [ { bearerAuth: [] } ]
       requestBody:
         content:
@@ -860,7 +869,7 @@ paths:
     post:
       operationId: postProductReviews
       tags: [ Avaliacoes ]
-      summary: Avalia um produto (autor = usuario do token)
+      summary: Avalia um produto entregue ao usuario do token (uma avaliacao por produto)
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -872,13 +881,18 @@ paths:
               properties:
                 id_usuario: { type: integer }
                 id_produto: { type: integer }
-                nota: { type: integer, minimum: 1, maximum: 5 }
+                nota: { type: number, minimum: 1, maximum: 5 }
                 titulo: { type: string }
                 comentario: { type: string }
       responses:
         "201": { description: Avaliacao criada }
         "400": { $ref: "#/components/responses/BadRequest" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+        "403":
+          description: Sem pedido entregue contendo o produto, ou id_usuario de outra pessoa
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409": { $ref: "#/components/responses/Conflict" }
   /product-reviews/{id_produto}:
     get:
       operationId: getProductReviewsPorIdProduto

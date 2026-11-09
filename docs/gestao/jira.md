@@ -13,7 +13,7 @@
 
 ## Importar o backlog
 
-O arquivo [`jira-import.csv`](jira-import.csv) traz **8 épicos, 30 histórias, 17 tasks e 12 bugs** (6 deles de segurança), com hierarquia, prioridade, pontos, status, versão, **responsável** e a **sprint atual**.
+O arquivo [`jira-import.csv`](jira-import.csv) traz **8 épicos, 30 histórias, 17 tasks e 20 bugs** (12 deles de segurança), com hierarquia, prioridade, pontos, status, versão, **responsável** e a **sprint atual**.
 
 ### Antes de importar (5 min)
 
@@ -41,7 +41,7 @@ O arquivo [`jira-import.csv`](jira-import.csv) traz **8 épicos, 30 histórias, 
    | Assignee | Assignee | Na etapa **Mapear valores**, ligue `Luiz Zamzicki` e `Bruno Medeiros` às contas de vocês |
    | Sprint | Sprint | Liga 6 itens à `AGNUS Sprint 1` |
 
-3. Confira: o backlog deve mostrar 67 issues, e a sprint, US-25, US-26, US-24, TS-09, TS-16 e TS-17.
+3. Confira: o backlog deve mostrar 75 issues, e a sprint, US-25, US-26, US-24, TS-09, TS-16 e TS-17.
 
 ### Depois de importar (é o que a rubrica avalia: uso real)
 
