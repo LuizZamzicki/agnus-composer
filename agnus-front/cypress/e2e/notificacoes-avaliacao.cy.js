@@ -74,6 +74,41 @@ describe('Notificações, avaliação no pedido e sacola', () => {
         cy.wait('@avaliar').its('request.body').should('include', { nota: 3.5 });
     });
 
+    it('a área de clique das estrelas fica sobre o desenho, na tela de pedidos', () => {
+        mockPedidos();
+        cy.visit('/cliente/pedidos');
+        cy.get('[data-cy="ver-pecas"]').click();
+        cy.get('[data-cy="avaliar-peca"]').click();
+        cy.get('.avaliacao-form .estrela').should('have.length', 5).eq(3).then(($estrela) => {
+            const caixa = $estrela[0].getBoundingClientRect();
+            const y = caixa.top + caixa.height / 2;
+            const noPonto = (x) => $estrela[0].ownerDocument.elementFromPoint(x, y).getAttribute('data-cy');
+            expect(caixa.width).to.be.at.least(32);
+            expect(noPonto(caixa.left + caixa.width * 0.25)).to.eq('estrela-3.5');
+            expect(noPonto(caixa.left + caixa.width * 0.75)).to.eq('estrela-4');
+        });
+    });
+
+    it('não diz que faltam peças enquanto o catálogo ainda carrega', () => {
+        cy.intercept('GET', '**/products/catalog*', (req) => {
+            req.reply({ delay: 800, body: { data: [], pagination: { totalPages: 1 } } });
+        }).as('catalogo');
+        cy.visit('/catalogo');
+        cy.get('[data-cy="esqueleto-cartao"]').should('exist');
+        cy.contains('Nenhuma peça encontrada').should('not.exist');
+        cy.wait('@catalogo');
+        cy.contains('Nenhuma peça encontrada').should('exist');
+        cy.get('[data-cy="esqueleto-cartao"]').should('not.exist');
+    });
+
+    it('espera parar de digitar para buscar', () => {
+        cy.intercept('GET', '**/products/catalog*search=*', { body: { data: [], pagination: { totalPages: 1 } } }).as('busca');
+        cy.visit('/catalogo');
+        cy.get('[data-cy="buscar-produto"]').type('camisa', { delay: 10 });
+        cy.wait('@busca').its('request.url').should('include', 'search=camisa');
+        cy.get('@busca.all').should('have.length', 1);
+    });
+
     it('a lupa abre o catálogo com a busca pronta para digitar', () => {
         cy.visit('/');
         cy.get('[aria-label="Buscar peças"]').click();
