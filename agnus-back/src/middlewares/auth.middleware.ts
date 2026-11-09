@@ -59,6 +59,19 @@ const authenticateToken = async (req: Request, res: AuthResponse, next: NextFunc
   return next();
 };
 
+// Rotas publicas que mostram mais para a equipe: identifica quem tem token valido, sem exigir um.
+export const identifyOptionalUser = async (req: Request, res: AuthResponse, next: NextFunction) => {
+  const token = getBearerToken(req);
+  const tokenPayload = token ? AuthService.verifyToken(token) : null;
+  const authUser = tokenPayload ? await buildAuthUser(tokenPayload.id_usuario) : null;
+
+  if (tokenPayload && authUser && isCurrentToken(tokenPayload, authUser)) {
+    res.locals.authUser = authUser;
+  }
+
+  return next();
+};
+
 export const authorizeRoles = (...allowedRoles: UserRole[]) => (req: Request, res: AuthResponse, next: NextFunction) => {
   const authUser = res.locals.authUser;
 

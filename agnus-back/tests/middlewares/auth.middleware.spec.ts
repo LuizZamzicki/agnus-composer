@@ -1,4 +1,5 @@
 import authenticateToken, {
+  identifyOptionalUser,
   authorizeRoles,
   authorizeSelfOrAdmin,
 } from "../../src/middlewares/auth.middleware";
@@ -121,5 +122,41 @@ describe("auth.middleware", () => {
     response.locals.authUser = { id_usuario: 2, email: "b@b.com", tipo: "cliente" };
     middleware(mockRequest({ params: { id: "2" } }), response, next);
     expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  describe("identifyOptionalUser", () => {
+    const req = mockRequest({ headers: { authorization: "Bearer token" } });
+    const payload = { id_usuario: 1, email: "a@a.com", tipo: "administrador" as const };
+
+    it("segue sem usuario quando nao ha token", async () => {
+      const next = jest.fn(), response = mockResponse();
+      await identifyOptionalUser(mockRequest(), response, next);
+      expect(response.locals.authUser).toBeUndefined();
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it("segue como anonimo quando o token e invalido", async () => {
+      const next = jest.fn(), response = mockResponse();
+      authService.verifyToken.mockReturnValueOnce(null);
+      await identifyOptionalUser(req, response, next);
+      expect(response.locals.authUser).toBeUndefined();
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignora token cujo cargo mudou no banco", async () => {
+      const next = jest.fn(), response = mockResponse();
+      authService.verifyToken.mockReturnValueOnce(payload);
+      usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ ...payload, tipo: "cliente" }));
+      await identifyOptionalUser(req, response, next);
+      expect(response.locals.authUser).toBeUndefined();
+    });
+
+    it("identifica o usuario de um token valido", async () => {
+      const next = jest.fn(), response = mockResponse();
+      authService.verifyToken.mockReturnValueOnce(payload);
+      usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance(payload));
+      await identifyOptionalUser(req, response, next);
+      expect(response.locals.authUser).toEqual(payload);
+    });
   });
 });

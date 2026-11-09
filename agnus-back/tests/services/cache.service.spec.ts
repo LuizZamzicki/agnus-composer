@@ -34,6 +34,8 @@ describe("cache.service", () => {
     expect(CacheService.buildKey("produtos", "lista", { page: "2", ativo: "true", q: "" }))
       .toBe("produtos:lista:ativo=true&page=2");
     expect(CacheService.buildKey("produtos", "lista", {})).toBe("produtos:lista:all");
+    expect(CacheService.buildKey("produtos", "lista", { "id_categoria=3&limit": "12", page: "1" }))
+      .not.toBe(CacheService.buildKey("produtos", "lista", { id_categoria: "3", limit: "12", page: "1" }));
     expect(CacheService.buildKey("produtos", "lista", { q: "x".repeat(300) })).toMatch(/^produtos:lista:[a-f0-9]{40}$/);
   });
 

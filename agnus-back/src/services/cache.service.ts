@@ -19,7 +19,8 @@ class CacheService {
     const serialized = Object.keys(params)
       .filter((key) => params[key] !== undefined && params[key] !== "")
       .sort()
-      .map((key) => `${key}=${typeof params[key] === "string" ? params[key] : JSON.stringify(params[key])}`)
+      // Nomes e valores vem da URL: sem codificar, "a=1&b" colidiria com a chave de duas consultas.
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(typeof params[key] === "string" ? params[key] : JSON.stringify(params[key]))}`)
       .join("&");
     const suffix = serialized.length > MAX_READABLE_KEY_LENGTH
       ? createHash("sha1").update(serialized).digest("hex")

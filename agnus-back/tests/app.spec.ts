@@ -46,6 +46,7 @@ jest.mock("../src/middlewares/auth.middleware", () => ({
   default: middleware,
   authorizeRoles: () => middleware,
   authorizeSelfOrAdmin: () => middleware,
+  identifyOptionalUser: middleware,
 }));
 
 import app from "../src/app";

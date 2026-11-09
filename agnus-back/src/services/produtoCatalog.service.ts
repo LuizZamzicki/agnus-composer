@@ -166,16 +166,21 @@ class ProdutoCatalogService {
     return null;
   }
 
-  static async findAll(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
+  // Custo e margem sao internos. A equipe tem chave de cache propria para nao misturar com a publica.
+  private static productAttributes(includeCosts: boolean) {
+    return includeCosts ? undefined : { exclude: ["preco_custo", "margem_lucro"] };
+  }
+
+  static async findAll(query: ProdutoQuery, includeCosts = false): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
     return CacheService.getOrSet(
-      CacheService.buildKey(CACHE_NAMESPACES.produtos, "lista", query),
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, includeCosts ? "lista-equipe" : "lista", query),
       CACHE_TTL.produtosLista,
-      () => ProdutoCatalogService.loadFindAll(query),
+      () => ProdutoCatalogService.loadFindAll(query, includeCosts),
       isCacheableResult,
     );
   }
 
-  static async loadFindAll(query: ProdutoQuery): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
+  static async loadFindAll(query: ProdutoQuery, includeCosts = false): Promise<ProdutoCatalogResponse | ProdutoControllerError> {
     if (ProdutoCatalogService.parseSearchTerms(query).length) {
       return ProdutoCatalogService.searchFindAll(query);
     }
@@ -189,6 +194,7 @@ class ProdutoCatalogService {
     const where = filters.where;
     const pagination = filters.pagination!;
     const result = await Produtos.findAndCountAll({
+      attributes: ProdutoCatalogService.productAttributes(includeCosts),
       where,
       limit: pagination.limit,
       offset: pagination.offset,
@@ -250,17 +256,19 @@ class ProdutoCatalogService {
     return ProdutoCatalogService.runBestSellerQuery(filters);
   }
 
-  static async findById(productId: number) {
+  static async findById(productId: number, includeCosts = false) {
     return CacheService.getOrSet(
-      CacheService.buildKey(CACHE_NAMESPACES.produtos, "detalhe", { id: productId }),
+      CacheService.buildKey(CACHE_NAMESPACES.produtos, includeCosts ? "detalhe-equipe" : "detalhe", { id: productId }),
       CACHE_TTL.produtoDetalhe,
-      () => ProdutoCatalogService.loadById(productId),
+      () => ProdutoCatalogService.loadById(productId, includeCosts),
       isCacheableResult,
     );
   }
 
-  static async loadById(productId: number) {
-    const produto = await Produtos.findByPk(productId);
+  static async loadById(productId: number, includeCosts = false) {
+    const produto = await Produtos.findByPk(productId, {
+      attributes: ProdutoCatalogService.productAttributes(includeCosts),
+    });
 
     return produto
       ? { data: produto }
