@@ -4,7 +4,7 @@
 
 - **SemVer** `MAJOR.MINOR.PATCH`:
   - **MAJOR**: nova fase do produto ou quebra de contrato da API (ex.: 3.0.0, app mobile; 4.0.0, pagamento).
-  - **MINOR**: funcionalidade nova compatível (ex.: 3.3.0, cache e eventos).
+  - **MINOR**: funcionalidade nova compatível (ex.: 3.3.0, cache e eventos; 3.5.0, microsserviços sem mudança no contrato público).
   - **PATCH**: correção sem funcionalidade nova (ex.: 3.2.1, correção do CI).
 - **Fonte da verdade:** tags anotadas no Git (`v3.3.0`). A mesma versão aparece no Jira (*Fix Version*), no `openapi.yaml` (`info.version`), nas imagens Docker (`agnus-backend:v3.3.0`) e no [CHANGELOG](../../CHANGELOG.md).
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/pt-br/), validados pelo commitlint no hook `commit-msg`. O tipo do commit indica o impacto: `feat` → MINOR, `fix` → PATCH, `feat!`/`BREAKING CHANGE` → MAJOR.
@@ -25,9 +25,9 @@ gitGraph
     merge develop id: "release" tag: "v3.3.0"
 ```
 
-1. `feat/*`, `fix/*`, `chore/*` saem de `develop` (ou de `main` em correções urgentes).
-2. PR com template e CI verde → merge em `develop`.
-3. Fim da sprint → PR `develop → main` → **tag** → o `cd.yml` publica as imagens e faz o deploy.
+1. `feat/*`, `fix/*`, `chore/*` saem de `main`.
+2. PR com template e CI verde → merge em `main`.
+3. Fim da sprint → **tag** → o `cd.yml` publica as imagens e faz o deploy.
 
 ## Como lançar uma versão
 
@@ -66,6 +66,7 @@ Cada versão é uma **tag anotada** no Git com uma **Release** no GitHub (notas 
 | `v3.2.0` | `cbc87c9b` | 2026-09-17 | Upload Multer e controle admin (PR #8) |
 | `v3.2.1` | `7b3d2b39` | 2026-09-17 | ngrok e correção do CI (PR #9) |
 | `v3.3.0` | `ecbb0ac8` | 2026-11-03 | Redis (cache e eventos), observabilidade, nova identidade visual, fluxo de compra, segurança e documentação (PRs #11–#18) |
-| `v3.4.0` | merge do PR de correções | 2026-11-06 | Regras do agregado Pedido, segurança de pedidos, rotas por contexto, Nginx e CI |
+| `v3.4.0` | `b1933d55` | 2026-11-06 | Criada antes do merge das correções: o conteúdo descrito na 3.4.0 entrou de fato na `v3.5.0` |
+| `v3.5.0` | commit de release | 2026-11-09 | Microsserviços com banco por serviço, painel separado, regras do pedido, segurança, notificações e correção do CD |
 
 As tags de `v2.0.0` a `v3.2.1` foram criadas **retroativamente**, nos commits de merge correspondentes do histórico. Elas não disparam o CD, porque o `cd.yml` só existe a partir da 3.3.0. A partir da `v3.3.0`, cada tag dispara o [`cd.yml`](../../.github/workflows/cd.yml), que roda os testes e publica as imagens versionadas no GHCR.

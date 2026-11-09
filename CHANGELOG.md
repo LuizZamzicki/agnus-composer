@@ -7,7 +7,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Em andamento
 - Integração de pagamento com Mercado Pago (US-25, US-26).
 
+## [3.5.0] — 2026-11-09
+
 ### Adicionado
+- Microsserviços: identidade, catálogo, busca, avaliações, carrinho, pedidos, notificações e admin, cada um com banco, imagem e deploy próprios (ADR 0008).
+- Painel administrativo como site separado em `/admin`, com BFF para o dashboard e métricas consolidadas.
+- Checkout como saga com compensação; duas compras simultâneas não geram pedido duplicado.
 - Notificações no site: um sino no cabeçalho avisa o cliente quando o status do pedido muda e leva direto ao pedido.
 - Na tela de pedidos, botão para ver as peças e avaliar cada peça entregue, com foto.
 - Pop-up de confirmação ao colocar uma peça na sacola.
@@ -22,6 +27,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Notificações ganham um ícone conforme o status do pedido.
 
 ### Corrigido
+- CD: nome das imagens em minúsculas, que impedia a publicação no registro.
+- Rollback do deploy agora troca de fato a versão das imagens.
+- Tag `v3.4.0` foi criada antes do merge das correções; esse conteúdo entra nesta versão.
 - Mensagens da API e textos do site voltam a ter acentos.
 - O nome digitado na avaliação era descartado ao enviar.
 - Ao trocar de página, a tela agora volta ao topo.
