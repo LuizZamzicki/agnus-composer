@@ -43,7 +43,7 @@ Cores dos tempos: Tempo Comum `#2f6a46`, Advento `#5b3a86`, Quaresma `#4e2f6e`, 
 - **Botões**: `.btn-agnus` (tinta) e `.btn-agnus-ghost` (contorno); no hover a ação primária ganha a cor do tempo. Cantos de 8px (`--radius`), também em campos e cartões.
 - **Cartões de peça**: sem caixa, sem sombra; imagem 3:4 com cantos `--radius`, nome em Marcellus, preço em versalete. Só as fotos de destaque usam o arco.
 - **Proibido**: rótulo pequeno acima de título, borda colorida grossa na lateral de cartões, degradê decorativo, emoji ou caractere Unicode no lugar de ícone (usar `lucide-react` com traço de 1,5).
-- **Movimento**: uma entrada orquestrada na página inicial (título, filete, foto); demais transições de 0,3s com `--ease-out`; respeita `prefers-reduced-motion`.
+- **Movimento**: uma entrada orquestrada na página inicial (título, filete, foto); demais transições de até 0,3s com `--ease-out`; botões respondem ao pressionar (escala 0,97, sem atraso); páginas, cartões, janelas e painéis entram com um leve fade; carregamento usa lugares reservados que pulsam, nunca texto solto ou brilho em gradiente; nenhuma animação mantém `transform` ao terminar (quebraria `position: fixed`); respeita `prefers-reduced-motion`.
 
 ## Arquivos
 
