@@ -243,16 +243,13 @@ describe("UsuariosController", () => {
     expect(response.status).toHaveBeenCalledWith(400);
   });
 
-  it("update retorna 200 quando atualiza com senha", async () => {
+  it("update recusa troca de senha fora da rota que confere a senha atual", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, nome: "B", cpf: "529.982.247-25", email: "b@b.com", senha: "hash2", tipo: "cliente" });
-    const historicoSpy = jest.spyOn(UsuarioSenhasHistoricoController, "create").mockResolvedValueOnce(true);
     usuariosModel.findByPk.mockResolvedValueOnce(user);
-    argon2Mock.hash.mockResolvedValueOnce("hash3");
-    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { cpf: "529.982.247-25", senha: "NovaSenha123!" } }), response);
-    expect(user.update).toHaveBeenCalled();
-    expect(historicoSpy).toHaveBeenCalled();
-    expect(response.status).toHaveBeenCalledWith(200);
-    historicoSpy.mockRestore();
+    await UsuariosController.update(mockRequest({ params: { id: "2" }, body: { senha: "NovaSenha123!" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: "Use PATCH /users/:id/password para alterar a senha." });
+    expect(user.update).not.toHaveBeenCalled();
   });
 
   it("update retorna 200 quando atualiza sem senha", async () => {
