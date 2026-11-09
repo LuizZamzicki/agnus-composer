@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { ReactNode, useLayoutEffect } from "react";
 
+import "./css/movimento.css";
+
 import Header from "./components/header";
 import Footer from "./components/footer";
 
@@ -80,11 +82,16 @@ function App() {
     location.pathname.startsWith("/admin") ||
     location.pathname === "/login";
 
+  // A inicial já tem a sua entrada orquestrada; subrotas da mesma seção não reanimam a página.
+  const secao = location.pathname.split("/")[1];
+  const animarEntrada = !hideLayout && secao !== "";
+
   return (
     <div className={`app ${hideLayout ? "app--full" : "app--with-header"}`}>
       <VoltarAoTopo />
       {!hideLayout && <Header />}
 
+      <div key={secao} className={animarEntrada ? "pagina-entrada" : undefined}>
       <Routes>
         <Route path="/" element={<Home />} />
 
@@ -117,6 +124,7 @@ function App() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </div>
 
       {!hideLayout && <Footer />}
     </div>

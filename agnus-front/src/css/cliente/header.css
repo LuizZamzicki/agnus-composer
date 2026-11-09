@@ -76,7 +76,7 @@
     border: 0;
     border-radius: 50%;
     cursor: pointer;
-    transition: color 0.3s var(--ease-out), background-color 0.3s var(--ease-out);
+    transition: color 0.3s var(--ease-out), background-color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 .opcoes_header a:hover,

@@ -86,7 +86,7 @@
     font-size: 18px;
     color: var(--ink-2);
     cursor: pointer;
-    transition: border-color 0.3s var(--ease-out), color 0.3s var(--ease-out), background-color 0.3s var(--ease-out);
+    transition: border-color 0.3s var(--ease-out), color 0.3s var(--ease-out), background-color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 .filter-group button:hover { background: var(--stone-2); color: var(--ink); }
@@ -122,6 +122,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
     gap: 44px 28px;
+    transition: opacity 0.2s var(--ease-out);
 }
 
 .catalog-empty {

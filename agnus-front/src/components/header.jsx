@@ -142,7 +142,7 @@ function Header() {
                             aria-label={pecas ? `Sacola, ${pecas} ${pecas === 1 ? "peça" : "peças"}` : "Sacola"}
                         >
                             <ShoppingBag size={20} strokeWidth={1.5} />
-                            {pecas > 0 && <span data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
+                            {pecas > 0 && <span key={pecas} data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
                         </Link>
                     )}
 

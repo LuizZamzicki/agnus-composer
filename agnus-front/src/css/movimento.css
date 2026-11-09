@@ -1,0 +1,57 @@
+/* Resposta ao toque e entradas. A duração cai a quase zero com prefers-reduced-motion
+   (regra global em index.css). Nenhuma animação aqui mantém transform depois de terminar:
+   um transform permanente quebraria os position: fixed de dentro da página. */
+
+/* Troca de página */
+.pagina-entrada { animation: sobe-suave 0.3s var(--ease-out); }
+.aba-entrada { animation: surge 0.25s var(--ease-out); }
+
+/* Cartões de peça, em cascata */
+.cartao-entra {
+    animation: sobe-suave 0.4s var(--ease-out) backwards;
+    animation-delay: calc(var(--i, 0) * 35ms);
+}
+
+.grade-atualizando { opacity: 0.55; }
+
+/* Janela de peça adicionada */
+.sacola-modal-fundo { animation: surge 0.2s var(--ease-out); }
+.sacola-modal { animation: janela-entra 0.28s var(--ease-out); }
+
+/* Painel do sino */
+.notificacoes-painel {
+    transform-origin: top right;
+    animation: painel-entra 0.2s var(--ease-out);
+}
+
+/* Contadores do cabeçalho reagem quando o número muda */
+.sacola-contador { animation: contador-pulo 0.35s var(--ease-out); }
+
+/* Área de pedidos */
+.pedido-itens,
+.avaliacao-form { animation: sobe-suave 0.28s var(--ease-out); }
+
+/* Estrela recém-marcada */
+.estrela.marcada { animation: estrela-marca 0.3s var(--ease-out); }
+
+/* Pressionar */
+.btn-agnus:active:not(:disabled),
+.btn-agnus-ghost:active:not(:disabled),
+.btn-comprar:active:not(:disabled),
+.pagination button:active:not(:disabled),
+.filter-group button:active,
+.perfil-content button:active:not(:disabled):not(.estrela-metade) {
+    transform: scale(0.97);
+    transition-duration: 0.08s;
+}
+
+.opcoes_header a:active,
+.opcoes_header button:active { transform: scale(0.9); }
+.opcoes_header .notificacoes-painel button:active { transform: none; }
+
+@keyframes surge { from { opacity: 0; } }
+@keyframes sobe-suave { from { opacity: 0; transform: translateY(10px); } }
+@keyframes janela-entra { from { opacity: 0; transform: translateY(10px) scale(0.97); } }
+@keyframes painel-entra { from { opacity: 0; transform: translateY(-6px) scale(0.98); } }
+@keyframes contador-pulo { 40% { transform: scale(1.35); } }
+@keyframes estrela-marca { 40% { transform: scale(1.28); } }
