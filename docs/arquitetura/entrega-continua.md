@@ -8,7 +8,7 @@ flowchart LR
         H1["pre-commit<br/>npm run lint"] --> H2["commit-msg<br/>commitlint"] --> H3["pre-push<br/>testes e2e (Cypress)"]
     end
     subgraph CI["CI · ci.yml (PR e push em main)"]
-        B["Backend<br/>lint + 510 testes Jest"]
+        B["Backend<br/>lint + 518 testes Jest"]
         F["Frontend<br/>lint + testes + build"]
         C["docker compose config<br/>valida orquestração"]
     end

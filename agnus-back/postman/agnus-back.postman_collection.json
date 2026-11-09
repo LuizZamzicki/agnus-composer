@@ -1287,6 +1287,78 @@
       ]
     },
     {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "GET /notifications/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Requer Authorization: Bearer {{token}}.\nHandler atual: NotificacoesController.findMine.",
+            "url": "{{baseUrl}}/notifications/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/read-all",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Requer Authorization: Bearer {{token}}.\nHandler atual: NotificacoesController.markAllAsRead.",
+            "url": "{{baseUrl}}/notifications/read-all",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/:id/read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Requer Authorization: Bearer {{token}}.\nHandler atual: NotificacoesController.markAsRead.",
+            "url": "{{baseUrl}}/notifications/{{id}}/read",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Orders",
       "item": [
         {
