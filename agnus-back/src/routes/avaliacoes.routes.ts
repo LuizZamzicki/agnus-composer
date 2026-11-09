@@ -3,7 +3,7 @@ import AvaliacaoFotosController from '../controllers/avaliacaoFotos.controller';
 import AvaliacaoProdutosController from '../controllers/avaliacaoProdutos.controller';
 import authenticateToken from '../middlewares/auth.middleware';
 import { authorizeOwnerByBody, authorizeOwnerByParam, OWNERS } from '../middlewares/ownership.middleware';
-import { uploadAny } from '../middlewares/upload.middleware';
+import { uploadFotosAvaliacao } from '../middlewares/upload.middleware';
 
 // Bounded context Avaliacoes: leitura publica; escrita so pelo autor da avaliacao.
 const router = Router();
@@ -14,9 +14,9 @@ router.put('/product-reviews/:id', authenticateToken, authorizeOwnerByParam('id'
 router.delete('/product-reviews/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacao), AvaliacaoProdutosController.remove);
 
 // Multipart: o corpo so existe depois do Multer, por isso a checagem do corpo vem apos o upload.
-router.post('/product-review-photos', authenticateToken, uploadAny, authorizeOwnerByBody('id_avaliacao_produto', OWNERS.avaliacao), AvaliacaoFotosController.create);
+router.post('/product-review-photos', authenticateToken, uploadFotosAvaliacao, authorizeOwnerByBody('id_avaliacao_produto', OWNERS.avaliacao), AvaliacaoFotosController.create);
 router.get('/product-review-photos/:id_review', AvaliacaoFotosController.getByIdReview);
-router.put('/product-review-photos/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacaoFoto), uploadAny, authorizeOwnerByBody('id_avaliacao_produto', OWNERS.avaliacao), AvaliacaoFotosController.update);
+router.put('/product-review-photos/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacaoFoto), uploadFotosAvaliacao, authorizeOwnerByBody('id_avaliacao_produto', OWNERS.avaliacao), AvaliacaoFotosController.update);
 router.delete('/product-review-photos/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacaoFoto), AvaliacaoFotosController.remove);
 
 export default router;

@@ -12,6 +12,9 @@ import cors from "cors";
 
 const app = express();
 
+// Um proxy na frente (Nginx ou ngrok): o IP real do cliente e o ultimo do X-Forwarded-For.
+app.set('trust proxy', 1);
+
 app.use(requestLogger);
 app.use(cors());
 
