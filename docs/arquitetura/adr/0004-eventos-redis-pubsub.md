@@ -12,7 +12,7 @@ Algumas ações de negócio disparam efeitos colaterais que **não devem atrasar
 - Publicar **eventos de domínio** no Redis Pub/Sub pelo `EventBusService.publish`, um canal por tipo: `agnus.eventos.<tipo>`.
 - Eventos atuais: `produto.criado|atualizado|removido`, `categoria.criada|atualizada|removida`, `pedido.criado|atualizado|removido`.
 - Envelope padrão: `{ id, type, occurredAt, source, requestId, payload }`. O `requestId` liga o evento à requisição HTTP que o originou.
-- Um **worker** (`src/worker.ts`, container `agnus-worker`, mesma imagem da API) assina `agnus.eventos.*` com `PSUBSCRIBE`, grava cada evento na lista `agnus:auditoria:eventos` (últimos 500) e executa os handlers (notificações).
+- Um **worker** (`src/worker.ts`, container `agnus-notificacoes`, mesma imagem da API) assina `agnus.eventos.*` com `PSUBSCRIBE`, grava cada evento na lista `agnus:auditoria:eventos` (últimos 500) e executa os handlers (notificações).
 - Publicação é *best effort*: falha no Redis gera log `evento.falha_publicacao`, mas não falha a operação.
 
 ## Alternativas consideradas

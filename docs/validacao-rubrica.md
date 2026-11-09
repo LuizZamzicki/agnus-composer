@@ -1,21 +1,21 @@
 # Como validar cada item da rubrica
 
-Roteiro para conferir, item por item, que o Agnus atende à rubrica. Para cada item há **onde está**, **como verificar** e **o que esperar**. Os resultados citados vêm de uma execução real em 2026-11-06.
+Roteiro para conferir, item por item, que o Agnus atende à rubrica. Para cada item há **onde está**, **como verificar** e **o que esperar**. Os resultados citados vêm de uma execução real em 2026-11-09, já com os microsserviços.
 
 ## Preparação (uma vez)
 
 ```bash
 git clone https://github.com/LuizZamzicki/agnus-composer && cd agnus-composer
-cp .env.example .env && cp agnus-back/.env.example agnus-back/.env   # preencha as senhas
+cp .env.example .env && cp services/.env.example services/.env   # preencha as senhas
 # certificado local em certs/agnus.pem e certs/agnus-key.pem (ver readme, seção Docker)
 docker compose up -d --build
-docker compose ps            # backend, mysql, redis e nginx "healthy"; worker e meilisearch "Up"
+docker compose ps            # os 8 serviços, mysql, redis e nginx "healthy"; meilisearch "Up"
 ```
 
 **Verificação automática dos itens de back-end** (cria um cliente e um admin de teste, roda os fluxos e os remove):
 
 ```bash
-cd agnus-back && npm run validar:rubrica
+cd services && npm run validar:rubrica
 ```
 
 Saída esperada (execução real):
@@ -36,12 +36,18 @@ OK   [DDD (agregado Pedido)] transição inválida recusada -> 409 Transicao de 
 OK   [DDD (agregado Pedido)] itens não mudam depois do envio -> 409 Itens so podem ser alterados enquanto o pedido nao foi pago.
 OK   [Mensageria Pub/Sub] worker notifica o cliente na mudança de status -> notificacao.cliente statusNovo=enviado
 OK   [Docker Compose + Nginx] rate limit no login -> respostas: 401×4, 429×10
-OK   [Observabilidade] /metrics para admin, 403 para cliente -> p95=123.61ms, cacheHitRatio=0.5, events_published=3
+OK   [Observabilidade] /metrics consolidado para admin, 403 para cliente -> catalogo p95=35.44ms, cacheHitRatio=0.6667, pedidos events_published=3
+OK   [Microsserviços] rota interna não sai pelo gateway -> GET /api/internal/usuarios/1 -> 404
+OK   [Microsserviços] rota interna exige token -> sem token -> 403
+OK   [Microsserviços] cada serviço só enxerga o próprio banco -> GRANT ALL PRIVILEGES ON `agnus_catalogo`.* TO `svc_catalogo`
+OK   [Microsserviços] saga do checkout baixou a sacola em outro banco -> itens restantes: 0
+OK   [Microsserviços] duas compras simultâneas geram um só pedido -> respostas: 201, 409
+OK   [Microsserviços] BFF do admin agrega os serviços -> pedidos=7, usuarios=6
 
-16/16 verificações OK
+22/22 verificações OK
 ```
 
-**Testes automatizados:** `cd agnus-back && npm test` (521 testes) · `cd agnus-front && CI=true npm test -- --watchAll=false` (39 testes). Os mesmos rodam no CI a cada PR.
+**Testes automatizados:** `cd services && npm run build && npm test` (537 testes, em 9 pacotes) · `cd agnus-front && CI=true npm test -- --watchAll=false` (39 testes) · `cd agnus-admin-front && CI=true npm test -- --watchAll=false` (4 testes) · Cypress: 230 testes em 23 specs. Os mesmos rodam no CI a cada PR.
 
 ---
 
@@ -62,17 +68,17 @@ OK   [Observabilidade] /metrics para admin, 403 para cliente -> p95=123.61ms, ca
 | Entregável | Onde | Como verificar | Esperado |
 | --- | --- | --- | --- |
 | Domínios e subdomínios | [ddd.md § Domínio e subdomínios](arquitetura/ddd.md#domínio-e-subdomínios) | Ler a tabela | 8 subdomínios classificados em Core / Supporting / Generic, com justificativa |
-| Bounded Contexts | [ddd.md § Bounded Contexts](arquitetura/ddd.md#bounded-contexts) + [`agnus-back/src/routes/`](../agnus-back/src/routes) | Comparar a tabela com os arquivos de rotas | 9 contextos; os 6 com API têm **um módulo de rotas cada** (`identidade`, `clientes`, `catalogo`, `avaliacoes`, `carrinho`, `pedidos`) |
+| Bounded Contexts | [ddd.md § Bounded Contexts](arquitetura/ddd.md#bounded-contexts) + [`services/`](../services) | Comparar a tabela com os arquivos de rotas | 9 contextos; os 6 com API têm **um módulo de rotas cada** (`identidade`, `clientes`, `catalogo`, `avaliacoes`, `carrinho`, `pedidos`) |
 | Context Map | [ddd.md § Context Map](arquitetura/ddd.md#context-map) | Ver o diagrama e a tabela de padrões | Customer/Supplier, Conformist, Open Host Service, Published Language e Anticorruption Layer, cada um apontando onde aparece no código |
 | Entities, VOs e Aggregates | [ddd.md § Entities, Value Objects e Aggregates](arquitetura/ddd.md#entities-value-objects-e-aggregates) | Ler o diagrama do agregado **Pedido** e a tabela de invariantes | Aggregate Root, Entity e 5 Value Objects; **8 invariantes, todas ✅**, com a máquina de estados desenhada |
 
-**Conferência prática das invariantes** (já coberta pelo `npm run validar:rubrica`): transição `enviado → aguardando_pagamento` retorna **409**, incluir item em pedido enviado retorna **409** e cliente tentando `POST /orders` retorna **403**. O código das regras fica em [`pedidoRegras.service.ts`](../agnus-back/src/services/pedidoRegras.service.ts).
+**Conferência prática das invariantes** (já coberta pelo `npm run validar:rubrica`): transição `enviado → aguardando_pagamento` retorna **409**, incluir item em pedido enviado retorna **409** e cliente tentando `POST /orders` retorna **403**. O código das regras fica em [`pedidoRegras.service.ts`](../services/pedidos/src/services/pedidoRegras.service.ts).
 
 ### Integração, APIs e Dados (0,5)
 
 | Entregável | Onde | Como verificar | Esperado |
 | --- | --- | --- | --- |
-| OpenAPI/Swagger | [`agnus-back/openapi.yaml`](../agnus-back/openapi.yaml) | Abrir <https://localhost/api/docs/> | Swagger UI com 37 caminhos e 50 operações em 13 grupos, autenticação Bearer e respostas de erro documentadas (incluindo 409 de transição de status) |
+| OpenAPI/Swagger | [`services/catalogo/openapi.yaml`](../services/catalogo/openapi.yaml) | Abrir <https://localhost/api/docs/> e escolher o serviço no seletor | Swagger UI com 40 caminhos e 53 operações, um contrato por serviço, autenticação Bearer e respostas de erro documentadas (incluindo 409 de transição de status) |
 | ADR do banco | [ADR 0002](arquitetura/adr/0002-banco-de-dados-mysql.md) | Ler | MySQL justificado contra PostgreSQL, MongoDB e SQLite |
 | Visão de integrações | [integracao-apis-dados.md](arquitetura/integracao-apis-dados.md) | Ler | Convenções (auth, paginação, erros, upload, `X-Request-Id`) e integrações externas com tratamento de falha |
 
@@ -90,10 +96,10 @@ Teste rápido: no Swagger, **Authorize** com um token de admin e execute `GET /o
 
 | Entregável | Onde | Como verificar | Esperado |
 | --- | --- | --- | --- |
-| Pipeline CI/CD | [`ci.yml`](../.github/workflows/ci.yml) e [`cd.yml`](../.github/workflows/cd.yml) | GitHub → **Actions** | CI verde na `main` (lint, testes e build do back e do front, validação do compose); CD executado pela tag `v3.3.0` (testes → imagens no GHCR → deploy, pulado sem segredos) |
+| Pipeline CI/CD | [`ci.yml`](../.github/workflows/ci.yml) e [`cd.yml`](../.github/workflows/cd.yml) | GitHub → **Actions** | CI com lint, testes e build de cada parte e validação do compose. CD: testes → uma imagem por serviço no GHCR → deploy, pulado sem segredos. As execuções das tags `v3.3.0` e `v3.4.0` falharam na publicação (nome de imagem com maiúscula); corrigido na `v3.5.0` |
 | Estratégia de deploy | [entrega-continua.md § 2](arquitetura/entrega-continua.md#2-estratégia-de-deploy) | Ler | *Recreate* com imagens versionadas e **rollback automático** por healthcheck; justificativa de não usar blue/green agora |
 | Runbook | [runbook.md](operacao/runbook.md) | Ler | Primeiros 5 minutos, severidades P1–P3, procedimento por sintoma, rollback, restauração de backup e post-mortem |
-| Versões publicadas | <https://github.com/LuizZamzicki/agnus-composer/releases> e **Packages** do repositório | Abrir | Releases `v2.0.0` a `v3.4.0` com notas do CHANGELOG; imagens `agnus-backend` e `agnus-frontend` publicadas pelo CD |
+| Versões publicadas | <https://github.com/LuizZamzicki/agnus-composer/releases> e **Packages** do repositório | Abrir | Releases `v2.0.0` a `v3.4.0` com notas do CHANGELOG; imagens publicadas pelo CD a partir da `v3.5.0` |
 
 ---
 
@@ -101,33 +107,33 @@ Teste rápido: no Swagger, **Authorize** com um token de admin e execute `GET /o
 
 ### Cache distribuído com Redis (1,0)
 
-Onde: [`cache.service.ts`](../agnus-back/src/services/cache.service.ts), [`config/cache.ts`](../agnus-back/src/config/cache.ts), usos em [`produtoCatalog.service.ts`](../agnus-back/src/services/produtoCatalog.service.ts) e [`categorias.controller.ts`](../agnus-back/src/controllers/categorias.controller.ts). Roteiro completo: [redis-cache-e-eventos.md](backend/redis-cache-e-eventos.md#roteiro-de-demonstração--5-min).
+Onde: [`cache.service.ts`](../services/catalogo/src/services/cache.service.ts), [`config/cache.ts`](../services/catalogo/src/config/cache.ts), usos em [`produtoCatalog.service.ts`](../services/catalogo/src/services/produtoCatalog.service.ts) e [`categorias.controller.ts`](../services/catalogo/src/controllers/categorias.controller.ts). Roteiro completo: [redis-cache-e-eventos.md](backend/redis-cache-e-eventos.md#roteiro-de-demonstração--5-min).
 
 | Requisito | Como verificar | Esperado |
 | --- | --- | --- |
-| Cache-aside | `docker compose logs -f backend \| grep cache.` e chamar `curl -sk 'https://localhost/api/products/catalog?page=1&limit=10'` duas vezes | `cache.miss` e depois `cache.hit` com a mesma `key` |
+| Cache-aside | `docker compose logs -f catalogo \| grep cache.` e chamar `curl -sk 'https://localhost/api/products/catalog?page=1&limit=10'` duas vezes | `cache.miss` e depois `cache.hit` com a mesma `key` |
 | TTL | `docker exec agnus-redis redis-cli TTL 'agnus:cache:produtos:catalogo:limit=10&page=1'` | Número entre 1 e 120 (TTLs em `config/cache.ts`: 60 s a 600 s) |
 | Invalidação em updates | Editar um produto, cor, grade, foto ou categoria no painel (ou `PUT /api/products/1`) e listar `redis-cli --scan --pattern 'agnus:cache:produtos:*'` | Log `cache.invalidado {namespace: produtos, removedKeys: N}`; nenhuma chave restante; a próxima leitura já traz o dado novo |
 
 ### Mensageria e assinatura de eventos (0,5)
 
-Onde: [`eventBus.service.ts`](../agnus-back/src/services/eventBus.service.ts) (publica), [`worker.ts`](../agnus-back/src/worker.ts) (consome, container `worker`).
+Onde: [`eventBus.service.ts`](../services/comum/src/services/eventBus.service.ts) (publica), [`worker.ts`](../services/notificacoes/src/worker.ts) (consome, container `worker`).
 
 | Requisito | Como verificar | Esperado |
 | --- | --- | --- |
-| Publicar e consumir via Pub/Sub | Fazer uma compra na loja (ou mudar o status de um pedido no painel) com `docker compose logs -f backend worker \| grep -E 'evento\.\|notificacao\.'` aberto | API: `evento.publicado {type: pedido.criado, receivers: 1}`; worker: `evento.recebido` com o **mesmo** `requestId` e `notificacao.equipe_vendas` / `notificacao.cliente` |
+| Publicar e consumir via Pub/Sub | Fazer uma compra na loja (ou mudar o status de um pedido no painel) com `docker compose logs -f pedidos notificacoes \| grep -E 'evento\.\|notificacao\.'` aberto | API: `evento.publicado {type: pedido.criado, receivers: 1}`; worker: `evento.recebido` com o **mesmo** `requestId` e `notificacao.equipe_vendas` / `notificacao.cliente` |
 | Prova independente da circulação | `docker exec -it agnus-redis redis-cli PSUBSCRIBE 'agnus.eventos.*'` e repetir a ação | A mensagem JSON aparece no terminal do `redis-cli` |
 | Logs de comprovação | `docker exec agnus-redis redis-cli LRANGE agnus:auditoria:eventos 0 4` | Últimos eventos gravados pelo worker |
 
 ### Docker Compose e Nginx como proxy reverso (1,0)
 
-Onde: [`docker-compose.yml`](../docker-compose.yml), [`nginx.conf`](../agnus-front/nginx.conf), [ADR 0006](arquitetura/adr/0006-nginx-proxy-reverso.md).
+Onde: [`docker-compose.yml`](../docker-compose.yml), [`nginx.conf`](../gateway/nginx.conf), [ADR 0006](arquitetura/adr/0006-nginx-proxy-reverso.md).
 
 | Requisito | Como verificar | Esperado |
 | --- | --- | --- |
-| Orquestração | `docker compose ps` | 8 serviços; healthchecks; `depends_on: service_healthy`; redes `app` e `data` (esta `internal`) |
+| Orquestração | `docker compose ps` | 8 microsserviços e a infraestrutura; healthchecks; `depends_on: service_healthy`; redes `app` e `data` (esta `internal`) |
 | Proxy reverso e TLS | `curl -sI http://localhost` e `curl -sk https://localhost/api/health` | `301` para HTTPS; `{"status":"ok"}` vindo do backend pelo `/api` |
-| Só o Nginx exposto | `docker compose port backend 3000` e `curl -m 3 http://<IP-da-rede>:3000/health` | `127.0.0.1:3000`; conexão recusada pelo IP da rede |
+| Só o Nginx exposto | `docker compose ps` e `curl -m 3 http://<IP-da-rede>:3000/health` | Nenhum serviço publica a porta 3000; conexão recusada pelo IP da rede |
 | Cabeçalhos e rastreio | `curl -skI https://localhost/api/health` | `Strict-Transport-Security`, `X-Frame-Options`, `Content-Security-Policy`, `X-Request-Id` |
 | Rate limit, gzip e cache | 15 tentativas seguidas de `POST /api/auth/login`; `curl -skI -H 'Accept-Encoding: gzip' https://localhost/static/js/main.*.js` | `429` depois da rajada; `Content-Encoding: gzip` e `Cache-Control: max-age=31536000` |
 | Configuração válida | `docker compose exec nginx nginx -t` | `syntax is ok` / `test is successful` |
@@ -136,11 +142,25 @@ Onde: [`docker-compose.yml`](../docker-compose.yml), [`nginx.conf`](../agnus-fro
 
 | Requisito | Onde | Esperado |
 | --- | --- | --- |
-| Módulos | [`src/routes/`](../agnus-back/src/routes) | Um módulo de rotas por bounded context; `app.ts` só monta middlewares, documentação e rotas |
+| Módulos | [`services/`](../services) | Um serviço por bounded context; [`criarApp`](../services/comum/src/utils/servico.ts) monta middlewares, documentação e rotas |
 | Controllers / services / DTOs | `src/controllers`, `src/services`, `src/types` | Controllers validam a entrada e montam a resposta; regras e transações nos services (`checkout`, `pedidoRegras`, `produtoMutation`, `cache`, `eventBus`); contratos `*Body`, `*Query`, `*RouteParams` |
-| Logs claros por fluxo | `docker compose logs backend worker \| grep <X-Request-Id>` | Todas as linhas JSON de uma requisição, da API ao worker |
-| Tratamento de erros | [`error.middleware.ts`](../agnus-back/src/middlewares/error.middleware.ts) | 400/409 para erros de validação e do banco, 500 sem detalhes internos e com `http.erro_nao_tratado` + stack no log. Teste: `curl -sk -X POST https://localhost/api/auth/login -H 'Content-Type: application/json' -d '{x'` → `400` |
-| Testes | `npm test` | 521 testes no back-end, em 30 suítes |
+| Logs claros por fluxo | `docker compose logs catalogo pedidos notificacoes \| grep <X-Request-Id>` | Todas as linhas JSON de uma requisição, da API ao worker |
+| Tratamento de erros | [`error.middleware.ts`](../services/comum/src/middlewares/error.middleware.ts) | 400/409 para erros de validação e do banco, 500 sem detalhes internos e com `http.erro_nao_tratado` + stack no log. Teste: `curl -sk -X POST https://localhost/api/auth/login -H 'Content-Type: application/json' -d '{x'` → `400` |
+| Testes | `cd services && npm test` | 537 testes, em 35 suítes distribuídas por serviço |
+
+---
+
+## Microsserviços (extra)
+
+Onde: [mapa dos serviços](arquitetura/microsservicos.md), [ADR 0008](arquitetura/adr/0008-microsservicos.md), [`services/`](../services).
+
+| Requisito | Como verificar | Esperado |
+| --- | --- | --- |
+| Serviços separados | `docker compose ps` | 8 serviços `healthy`, cada um com imagem própria |
+| Banco por serviço | `docker exec agnus-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "show databases"'` | `agnus_identidade`, `agnus_catalogo`, `agnus_avaliacoes`, `agnus_carrinho`, `agnus_pedidos`, `agnus_notificacoes` |
+| Isolamento de falhas | `docker stop agnus-busca`, depois `curl -sk -o /dev/null -w '%{http_code}\n' 'https://localhost/api/products/catalog?limit=1'` e `docker start agnus-busca` | `200`: a vitrine segue; só a pesquisa responde 503 |
+| Deploy independente | `docker compose up -d --no-build --force-recreate --no-deps catalogo` | Só o catálogo reinicia; o gateway volta a encontrá-lo sozinho |
+| Painel separado | Abrir <https://localhost/admin> | Site próprio, publicado pelo container `admin-front` |
 
 ---
 
@@ -152,11 +172,11 @@ Este item **só se comprova no Jira**. O repositório traz o backlog pronto para
 
 | O que mostrar | Como preparar | Onde está o material |
 | --- | --- | --- |
-| Issues de vários tipos (épico, história, task, bug) | Importar [`jira-import.csv`](gestao/jira-import.csv): 67 issues | [jira.md § Importar o backlog](gestao/jira.md#importar-o-backlog) |
+| Issues de vários tipos (épico, história, task, bug) | Importar [`jira-import.csv`](gestao/jira-import.csv): 101 issues | [jira.md § Importar o backlog](gestao/jira.md#importar-o-backlog) |
 | Atribuições | Coluna `Assignee` já preenchida (Luiz/Bruno); mapear na importação | idem |
 | Atualização de status | Iniciar a `AGNUS Sprint 1` e mover os cards durante o trabalho | [jira.md § Rotina da equipe](gestao/jira.md#rotina-da-equipe) |
 | Rastreabilidade com o código | Instalar *GitHub for Jira* e usar `AGNUS-<n>` em branches, commits e PRs | [jira.md § Ligação entre Jira e GitHub](gestao/jira.md#ligação-entre-jira-e-github) |
-| Releases | Lançar as versões `2.0.0` a `3.4.0` no Jira | [versionamento.md](gestao/versionamento.md) |
+| Releases | Lançar as versões `2.0.0` a `3.5.0` no Jira | [versionamento.md](gestao/versionamento.md) |
 
 **Evidências:** capturas listadas em [jira.md § Evidências](gestao/jira.md#evidências-para-a-avaliação), salvas em `docs/gestao/evidencias/`.
 
@@ -173,7 +193,7 @@ Este item **só se comprova no Jira**. O repositório traz o backlog pronto para
 | Entregável | Onde | Como verificar | Esperado |
 | --- | --- | --- | --- |
 | Product Backlog priorizado | [product-backlog.md](gestao/product-backlog.md) | Ler | Épicos com progresso; histórias *Como… quero… para…* com critérios de aceite *Dado/Quando/Então*; MoSCoW e story points; itens descartados com motivo |
-| Versões parciais padronizadas | [versionamento.md](gestao/versionamento.md), [CHANGELOG](../CHANGELOG.md) | `git tag -l` e a página **Releases** do GitHub | SemVer + Conventional Commits; tags `v2.0.0` a `v3.4.0`, cada uma com Release e notas |
+| Versões parciais padronizadas | [versionamento.md](gestao/versionamento.md), [CHANGELOG](../CHANGELOG.md) | `git tag -l` e a página **Releases** do GitHub | SemVer + Conventional Commits; tags `v2.0.0` a `v3.5.0` |
 | Processo | [cynefin.md § Como o Scrumban é praticado](gestao/cynefin.md#como-o-scrumban-é-praticado) | Ler | Papéis, cerimônias, WIP, Definition of Ready e Definition of Done |
 
 ---

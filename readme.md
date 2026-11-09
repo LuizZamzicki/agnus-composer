@@ -11,7 +11,7 @@ As pastas do front e back devem ficar exatamente assim:
 
 1. Copie os arquivos de exemplo e preencha os valores:
    - `.env.example` → `.env`
-   - `agnus-back/.env.example` → `agnus-back/.env` (a `DB_PASSWORD` deve ser igual à `MYSQL_ROOT_PASSWORD`)
+   - `services/.env.example` → `services/.env` (a `DB_PASSWORD` deve ser igual à `MYSQL_ROOT_PASSWORD`)
    - `agnus-front/.env` com `REACT_APP_API_BASE_URL=/api/`
 2. Gere os certificados e coloque `agnus.pem` e `agnus-key.pem` numa pasta `certs/` na raiz:
 
@@ -21,7 +21,7 @@ As pastas do front e back devem ficar exatamente assim:
    | `mkcert -install` | `mkcert -install` |
    | `mkcert -cert-file certs/agnus.pem -key-file certs/agnus-key.pem agnus localhost 127.0.0.1` | (mesmo comando) |
 
-> ⚠️ Arquivos `.env` criados no Windows podem vir com quebra de linha CRLF, e o `\r` passa a fazer parte das senhas. No macOS/Linux, converta com `sed -i '' 's/\r$//' .env agnus-back/.env agnus-front/.env`.
+> ⚠️ Arquivos `.env` criados no Windows podem vir com quebra de linha CRLF, e o `\r` passa a fazer parte das senhas. No macOS/Linux, converta com `sed -i '' 's/\r$//' .env services/.env agnus-front/.env`.
 >
 > ⚠️ O MySQL só lê `MYSQL_ROOT_PASSWORD` na **primeira** inicialização do volume. Para trocar a senha depois, altere-a dentro do banco ou recrie o volume `agnus_mysql_data` (apaga os dados).
 
@@ -34,14 +34,24 @@ Comandos para subir e derrubar containers:
 
 | Serviço | Função | Acesso |
 | --- | --- | --- |
-| `nginx` | Proxy reverso + TLS, serve o frontend | <https://localhost> |
-| `backend` | API Node/Express (porta 3000 só em `127.0.0.1`, para debug) | <https://localhost/api> · Swagger: <https://localhost/api/docs/> |
-| `worker` | Consome eventos do Redis Pub/Sub | `docker compose logs -f worker` |
-| `mysql` | Banco de dados | rede interna |
+| `nginx` | API Gateway + TLS, serve a loja e o painel | <https://localhost> |
+| `identidade` | Login, usuários, endereços e contatos | <https://localhost/api/auth> |
+| `catalogo` | Produtos, categorias, cache e vendas | <https://localhost/api/products> |
+| `busca` | Índice de pesquisa do catálogo | só interno |
+| `avaliacoes` | Avaliações e fotos | <https://localhost/api/product-reviews> |
+| `carrinho` | Sacola | <https://localhost/api/carts> |
+| `pedidos` | Pedidos e checkout | <https://localhost/api/orders> |
+| `notificacoes` | Sino do site e consumo dos eventos | `docker compose logs -f notificacoes` |
+| `admin` | BFF do painel e Swagger de todos os serviços | <https://localhost/api/docs/> |
+| `admin-front` | Gera o build do painel e encerra | <https://localhost/admin> |
+| `migrador` | Cria os bancos dos serviços e copia os dados antigos, depois encerra | — |
+| `mysql` | Um banco e um usuário por serviço | rede interna |
 | `redis` | Cache + Pub/Sub | rede interna |
 | `meilisearch` | Busca textual | rede interna |
 | `frontend` | Gera o build do React e encerra | — |
 | `ngrok` | Túnel público (opcional, precisa de token) | <http://localhost:4040> |
+
+Arquitetura completa: [mapa dos microsserviços](docs/arquitetura/microsservicos.md).
 
 
 Documentação Agnus
