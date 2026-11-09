@@ -106,6 +106,15 @@ const persistImage = async (parsedImage: ParsedBinaryImage): Promise<string | nu
   return `avaliacao_fotos/${fileName}`;
 };
 
+// So apaga arquivo gerado pelo proprio upload: caminho_url tambem aceita texto livre.
+export const deleteAvaliacaoFotoFile = async (photoPath: string) => {
+  const match = /^avaliacao_fotos\/([\w-]+\.[a-z]+)$/.exec(photoPath);
+
+  if (match) {
+    await fs.rm(path.join(PHOTO_DIR, match[1]), { force: true });
+  }
+};
+
 export const normalizeFotoPath = (value: string | undefined) => {
   return value?.trim() || "";
 };

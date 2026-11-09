@@ -2,20 +2,27 @@ import AvaliacaoFotosController from "../../src/controllers/avaliacaoFotos.contr
 import AvaliacaoProdutosController from "../../src/controllers/avaliacaoProdutos.controller";
 import AvaliacaoFotos from "../../src/models/AvaliacaoFotos";
 import AvaliacaoProdutos from "../../src/models/AvaliacaoProdutos";
+import PedidoItens from "../../src/models/PedidoItens";
+import Pedidos from "../../src/models/Pedidos";
+import ProdutoCores from "../../src/models/ProdutoCores";
 import Produtos from "../../src/models/Produtos";
 import Usuarios from "../../src/models/Usuarios";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 import { JPEG_BYTES, PNG_BYTES } from "../helpers/images";
+import * as fotoStorage from "../../src/utils/avaliacaoFotoStorage";
 import { INVALID_IMAGE_MESSAGE } from "../../src/utils/imageSignature";
 
 jest.mock("../../src/models/AvaliacaoFotos", () => ({
   __esModule: true,
-  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
+  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn(), count: jest.fn() },
 }));
 jest.mock("../../src/models/AvaliacaoProdutos", () => ({
   __esModule: true,
-  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
+  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn(), findOne: jest.fn() },
 }));
+jest.mock("../../src/models/PedidoItens", () => ({ __esModule: true, default: { count: jest.fn() } }));
+jest.mock("../../src/models/Pedidos", () => ({ __esModule: true, default: { findAll: jest.fn() } }));
+jest.mock("../../src/models/ProdutoCores", () => ({ __esModule: true, default: { findAll: jest.fn() } }));
 jest.mock("../../src/models/Produtos", () => ({
   __esModule: true,
   default: { findByPk: jest.fn() },
@@ -25,8 +32,8 @@ jest.mock("../../src/models/Usuarios", () => ({
   default: { findByPk: jest.fn() },
 }));
 
-type AvaliacaoFotosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock };
-type AvaliacaoProdutosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock };
+type AvaliacaoFotosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock; count: jest.Mock };
+type AvaliacaoProdutosModelMock = { findAll: jest.Mock; findByPk: jest.Mock; create: jest.Mock; findOne: jest.Mock };
 type ProdutosModelMock = { findByPk: jest.Mock };
 type UsuariosModelMock = { findByPk: jest.Mock };
 
@@ -34,6 +41,14 @@ const avaliacaoFotosModel = AvaliacaoFotos as typeof AvaliacaoFotos & AvaliacaoF
 const avaliacaoProdutosModel = AvaliacaoProdutos as typeof AvaliacaoProdutos & AvaliacaoProdutosModelMock;
 const produtosModel = Produtos as typeof Produtos & ProdutosModelMock;
 const usuariosModel = Usuarios as typeof Usuarios & UsuariosModelMock;
+const pedidosModel = Pedidos as unknown as { findAll: jest.Mock };
+const coresModel = ProdutoCores as unknown as { findAll: jest.Mock };
+const pedidoItensModel = PedidoItens as unknown as { count: jest.Mock };
+const mockCompraEntregue = (itens = 1) => {
+  pedidosModel.findAll.mockResolvedValueOnce([{ id_pedido: 9 }]);
+  coresModel.findAll.mockResolvedValueOnce([{ id_produto_cor: 3 }]);
+  pedidoItensModel.count.mockResolvedValueOnce(itens);
+};
 
 describe("AvaliacaoProdutosController", () => {
   it("getByIdProduto retorna 400 para id invalido", async () => {
@@ -77,7 +92,7 @@ describe("AvaliacaoProdutosController", () => {
     const res = mockResponse();
     await AvaliacaoProdutosController.create(mockRequest({ body: { id_produto: 1, id_usuario: 1, nota: 11 } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nota invalida. Use valor entre 0 e 10." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nota invalida. Use valor entre 1 e 5." });
   });
 
   it("create retorna 404 quando o produto nao existe", async () => {
@@ -99,12 +114,14 @@ describe("AvaliacaoProdutosController", () => {
 
   it("create retorna 201 com a avaliacao criada", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8 });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4 });
     produtosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto: 1 }));
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
+    mockCompraEntregue();
+    avaliacaoProdutosModel.findOne.mockResolvedValueOnce(null);
     avaliacaoProdutosModel.create.mockResolvedValueOnce(avaliacao);
     await AvaliacaoProdutosController.create(
-      mockRequest({ body: { id_produto: 1, id_usuario: 1, nota: 8, nome: "Ana", comentario: "Boa compra" } }),
+      mockRequest({ body: { id_produto: 1, id_usuario: 1, nota: 4, nome: "Ana", comentario: "Boa compra" } }),
       res,
     );
     expect(res.status).toHaveBeenCalledWith(201);
@@ -113,7 +130,7 @@ describe("AvaliacaoProdutosController", () => {
       id_usuario: 1,
       titulo: "Ana",
       comentario: "Boa compra",
-      nota: 8,
+      nota: 4,
     });
     expect(res.send).toHaveBeenCalledWith(avaliacao);
   });
@@ -135,7 +152,7 @@ describe("AvaliacaoProdutosController", () => {
 
   it("update retorna 404 quando o produto informado nao existe", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8, titulo: null, comentario: null });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     produtosModel.findByPk.mockResolvedValueOnce(null);
     await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { id_produto: 2 } }), res);
@@ -145,7 +162,7 @@ describe("AvaliacaoProdutosController", () => {
 
   it("update retorna 404 quando o usuario informado nao existe", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8, titulo: null, comentario: null });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     usuariosModel.findByPk.mockResolvedValueOnce(null);
     await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { id_usuario: 2 } }), res);
@@ -155,16 +172,16 @@ describe("AvaliacaoProdutosController", () => {
 
   it("update retorna 400 para nota invalida", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8, titulo: null, comentario: null });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { nota: -1 } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nota invalida. Use valor entre 0 e 10." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nota invalida. Use valor entre 1 e 5." });
   });
 
   it("update retorna 400 para id_produto invalido", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8, titulo: null, comentario: null });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { id_produto: "x" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
@@ -173,12 +190,12 @@ describe("AvaliacaoProdutosController", () => {
 
   it("update retorna 200 com a avaliacao atualizada", async () => {
     const res = mockResponse();
-    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 8, titulo: null, comentario: null });
+    const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
     produtosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto: 1 }));
     usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
     await AvaliacaoProdutosController.update(
-      mockRequest({ params: { id: "1" }, body: { id_produto: 1, id_usuario: 1, nota: 9, nome: "Bia", comentario: "Atualizada" } }),
+      mockRequest({ params: { id: "1" }, body: { id_produto: 1, id_usuario: 1, nota: 5, nome: "Bia", comentario: "Atualizada" } }),
       res,
     );
     expect(avaliacao.update).toHaveBeenCalledWith({
@@ -186,7 +203,7 @@ describe("AvaliacaoProdutosController", () => {
       id_usuario: 1,
       titulo: "Bia",
       comentario: "Atualizada",
-      nota: 9,
+      nota: 5,
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(avaliacao);
@@ -214,6 +231,57 @@ describe("AvaliacaoProdutosController", () => {
     await AvaliacaoProdutosController.remove(mockRequest({ params: { id: "1" } }), res);
     expect(avaliacao.destroy).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(204);
+  });
+
+  describe("regras de elegibilidade", () => {
+    const body = { id_produto: 1, id_usuario: 1, nota: 5 };
+    const mockReferencias = () => {
+      produtosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto: 1 }));
+      usuariosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario: 1 }));
+    };
+
+    it("create retorna 403 para quem nao tem pedido entregue", async () => {
+      const res = mockResponse();
+      mockReferencias();
+      pedidosModel.findAll.mockResolvedValueOnce([]);
+      coresModel.findAll.mockResolvedValueOnce([{ id_produto_cor: 3 }]);
+      await AvaliacaoProdutosController.create(mockRequest({ body }), res);
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(avaliacaoProdutosModel.create).not.toHaveBeenCalled();
+    });
+
+    it("create retorna 403 quando os pedidos entregues nao contem o produto", async () => {
+      const res = mockResponse();
+      mockReferencias();
+      mockCompraEntregue(0);
+      await AvaliacaoProdutosController.create(mockRequest({ body }), res);
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("create retorna 409 na segunda avaliacao do mesmo produto", async () => {
+      const res = mockResponse();
+      mockReferencias();
+      mockCompraEntregue();
+      avaliacaoProdutosModel.findOne.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 7 }));
+      await AvaliacaoProdutosController.create(mockRequest({ body }), res);
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(avaliacaoProdutosModel.create).not.toHaveBeenCalled();
+    });
+
+    it.each([0, 5.5, 10])("create recusa nota %s fora da escala", async (nota) => {
+      const res = mockResponse();
+      await AvaliacaoProdutosController.create(mockRequest({ body: { ...body, nota } }), res);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("update nao move a avaliacao para outro produto", async () => {
+      const res = mockResponse();
+      const avaliacao = buildModelInstance({ id_avaliacao_produto: 1, id_produto: 1, id_usuario: 1, nota: 4, titulo: null, comentario: null });
+      avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(avaliacao);
+      produtosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_produto: 2 }));
+      await AvaliacaoProdutosController.update(mockRequest({ params: { id: "1" }, body: { id_produto: 2 } }), res);
+      expect(avaliacao.update).toHaveBeenCalledWith(expect.objectContaining({ id_produto: 1, id_usuario: 1 }));
+    });
   });
 });
 
@@ -424,5 +492,76 @@ describe("AvaliacaoFotosController", () => {
     await AvaliacaoFotosController.remove(mockRequest({ params: { id: "1" } }), res);
     expect(foto.destroy).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(204);
+  });
+
+  describe("ciclo de vida dos arquivos", () => {
+    const file = { buffer: PNG_BYTES, mimetype: "image/png", originalname: "b.png", size: 10 } as Express.Multer.File;
+    const updateReq = (id: string, body = {}) =>
+      ({ ...mockRequest({ params: { id }, body }), files: [file] }) as unknown as Parameters<typeof AvaliacaoFotosController.update>[0];
+    let save: jest.SpyInstance;
+    let remove: jest.SpyInstance;
+
+    beforeEach(() => {
+      save = jest.spyOn(fotoStorage, "saveAvaliacaoFotoFile").mockResolvedValue("avaliacao_fotos/novo.png");
+      remove = jest.spyOn(fotoStorage, "deleteAvaliacaoFotoFile").mockResolvedValue(undefined);
+      avaliacaoFotosModel.count.mockResolvedValue(0);
+    });
+
+    afterEach(() => {
+      save.mockRestore();
+      remove.mockRestore();
+      avaliacaoFotosModel.count.mockReset();
+    });
+
+    it("update nao grava arquivo quando a foto nao existe", async () => {
+      const res = mockResponse();
+      avaliacaoFotosModel.findByPk.mockResolvedValueOnce(null);
+      await AvaliacaoFotosController.update(updateReq("999"), res);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it("update nao grava arquivo quando a avaliacao informada e invalida", async () => {
+      const res = mockResponse();
+      avaliacaoFotosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_foto: 1, caminho_url: "avaliacao_fotos/a.png" }));
+      await AvaliacaoFotosController.update(updateReq("1", { id_avaliacao_produto: "abc" }), res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it("update apaga o arquivo anterior ao trocar a foto", async () => {
+      const res = mockResponse();
+      avaliacaoFotosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/a.png" }));
+      await AvaliacaoFotosController.update(updateReq("1"), res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(remove).toHaveBeenCalledWith("avaliacao_fotos/a.png");
+    });
+
+    it("remove apaga o arquivo da foto excluida", async () => {
+      const foto = buildModelInstance({ id_avaliacao_foto: 1, caminho_url: "avaliacao_fotos/a.png" });
+      avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
+      await AvaliacaoFotosController.remove(mockRequest({ params: { id: "1" } }), mockResponse());
+      expect(remove).toHaveBeenCalledWith("avaliacao_fotos/a.png");
+    });
+
+    it("remove preserva o arquivo que outra foto ainda usa", async () => {
+      const foto = buildModelInstance({ id_avaliacao_foto: 1, caminho_url: "avaliacao_fotos/a.png" });
+      avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
+      avaliacaoFotosModel.count.mockResolvedValueOnce(1);
+      await AvaliacaoFotosController.remove(mockRequest({ params: { id: "1" } }), mockResponse());
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it("create apaga o que ja gravou quando outra foto do lote e invalida", async () => {
+      const res = mockResponse();
+      save.mockResolvedValueOnce("avaliacao_fotos/ok.png").mockResolvedValueOnce(null);
+      avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
+      await AvaliacaoFotosController.create(
+        { ...mockRequest({ body: { id_avaliacao_produto: 1 } }), files: [file, file] } as unknown as Parameters<typeof AvaliacaoFotosController.create>[0],
+        res,
+      );
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(remove).toHaveBeenCalledWith("avaliacao_fotos/ok.png");
+    });
   });
 });
