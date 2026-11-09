@@ -3,9 +3,10 @@ import "../../css/cliente/home.css";
 import hero from "../../img/hero.png";
 import { Brush, ChevronLeft, ChevronRight, Truck, Shield, Star } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
+import { EsqueletoCartoes } from "../../components/esqueleto";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -21,8 +22,13 @@ function Home() {
     const [pagina, setPagina] = useState(1);
     const [totalPaginas, setTotalPaginas] = useState(1);
     const [avaliacoes, setAvaliacoes] = useState({});
+    const [carregando, setCarregando] = useState(true);
+    const ultimaConsulta = useRef(0);
 
     async function carregarProdutos(pag = 1, filtroAtual = filtro) {
+        const consulta = ++ultimaConsulta.current;
+        setCarregando(true);
+
         try {
             let url = apiUrl(`products/catalog?page=${pag}&limit=12`);
 
@@ -32,6 +38,8 @@ function Home() {
 
             const res = await fetch(url);
             const data = await res.json();
+
+            if (consulta !== ultimaConsulta.current) return;
 
             const lista = Array.isArray(data.data) ? data.data : [];
 
@@ -48,6 +56,8 @@ function Home() {
 
         } catch (err) {
             console.error("Erro produtos:", err);
+        } finally {
+            if (consulta === ultimaConsulta.current) setCarregando(false);
         }
     }
 
@@ -76,7 +86,7 @@ function Home() {
                 })
             );
 
-            setAvaliacoes(avaliacoesTemp);
+            setAvaliacoes((atuais) => ({ ...atuais, ...avaliacoesTemp }));
 
         } catch (err) {
             console.error("Erro avaliações:", err);
@@ -141,14 +151,15 @@ function Home() {
     const formatarPreco = (valor) =>
         `R$ ${Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
-    function renderCard(prod, dataCy) {
+    function renderCard(prod, dataCy, indice = null) {
         const imgPadrao = prod.imagens[0] || hero;
         const imgHover = prod.imagens[1] || imgPadrao;
 
         return (
             <Link
                 data-cy={dataCy}
-                className="product-card"
+                className={`product-card${indice === null ? "" : " cartao-entra"}`}
+                style={indice === null ? undefined : { "--i": Math.min(indice, 8) }}
                 key={prod.id_produto}
                 to={`/produto/${prod.id_produto}`}
             >
@@ -267,10 +278,13 @@ function Home() {
                     ))}
                 </div>
 
-                <div className="catalog-grid-home">
-                    {produtos.length > 0 ? (
-                        produtos.map(prod => renderCard(prod, "produto-card-home"))
-                    ) : (
+                <div
+                    className={`catalog-grid-home${carregando && produtos.length > 0 ? " grade-atualizando" : ""}`}
+                    aria-busy={carregando}
+                >
+                    {carregando && produtos.length === 0 && <EsqueletoCartoes />}
+                    {produtos.map((prod, indice) => renderCard(prod, "produto-card-home", indice))}
+                    {!carregando && produtos.length === 0 && (
                         <p className="no-products">Nenhuma peça por aqui ainda.</p>
                     )}
                 </div>

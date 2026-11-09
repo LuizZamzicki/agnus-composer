@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Plus } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import "../../css/cliente/finalizar.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
+import { EsqueletoLinhas } from "../../components/esqueleto";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -275,7 +276,7 @@ function Finalizar() {
     if (loading) {
         return (
             <div className="fin-page">
-                <p className="fin-carregando">Preparando o seu pedido…</p>
+                <EsqueletoLinhas rotulo="Preparando o seu pedido…" />
             </div>
         );
     }

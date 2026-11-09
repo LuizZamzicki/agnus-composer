@@ -3,6 +3,7 @@ import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
+import { EsqueletoLinhas } from "../../components/esqueleto";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -155,7 +156,7 @@ function Carrinho() {
     if (loading) {
         return (
             <div className="cart-empty">
-                <p className="cart-loading">Carregando a sua sacola…</p>
+                <EsqueletoLinhas rotulo="Carregando a sua sacola…" />
             </div>
         );
     }

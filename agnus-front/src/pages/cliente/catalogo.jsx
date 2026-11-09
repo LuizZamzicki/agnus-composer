@@ -4,12 +4,19 @@ import "../../css/cliente/catalogo.css";
 import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
+import { EsqueletoCartoes } from "../../components/esqueleto";
+
+const ESPERA_DA_BUSCA_MS = 250;
+const MAX_ATRASO_CARTAO = 8;
 
 function Catalogo() {
 
     const [produtos, setProdutos] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [busca, setBusca] = useState("");
+    const [buscaAplicada, setBuscaAplicada] = useState("");
+    const [carregando, setCarregando] = useState(true);
+    const ultimaConsulta = useRef(0);
     const location = useLocation();
     const campoBusca = useRef(null);
 
@@ -25,6 +32,10 @@ function Catalogo() {
     const [avaliacoes, setAvaliacoes] = useState({});
 
     async function carregarProdutos(pag = 1) {
+        // Respostas fora de ordem não podem sobrescrever a consulta mais recente.
+        const consulta = ++ultimaConsulta.current;
+        setCarregando(true);
+
         try {
 
             let url = apiUrl(`products/catalog?page=${pag}&limit=12`);
@@ -33,12 +44,14 @@ function Catalogo() {
                 url += `&id_categoria=${categoria}`;
             }
 
-            if (busca) {
-                url += `&search=${encodeURIComponent(busca)}`;
+            if (buscaAplicada) {
+                url += `&search=${encodeURIComponent(buscaAplicada)}`;
             }
 
             const res = await fetch(url);
             const data = await res.json();
+
+            if (consulta !== ultimaConsulta.current) return;
 
             const lista = Array.isArray(data) ? data : data.data || [];
 
@@ -53,6 +66,8 @@ function Catalogo() {
             carregarAvaliacoes(produtosTratados);
         } catch (err) {
             console.error("Erro produtos:", err);
+        } finally {
+            if (consulta === ultimaConsulta.current) setCarregando(false);
         }
     }
 
@@ -80,7 +95,7 @@ function Catalogo() {
                 })
             );
 
-            setAvaliacoes(avaliacoesTemp);
+            setAvaliacoes((atuais) => ({ ...atuais, ...avaliacoesTemp }));
 
         } catch (err) {
             console.error("Erro avaliações:", err);
@@ -116,11 +131,26 @@ function Catalogo() {
 
     useEffect(() => {
         carregarProdutos(pagina);
-    }, [pagina, categoria, busca]);
+    }, [pagina, categoria, buscaAplicada]);
+
+    // Espera o cliente parar de digitar antes de consultar.
+    useEffect(() => {
+        const espera = setTimeout(() => {
+            setBuscaAplicada(busca);
+            setPagina(1);
+        }, ESPERA_DA_BUSCA_MS);
+
+        return () => clearTimeout(espera);
+    }, [busca]);
 
     useEffect(() => {
         carregarCategorias();
     }, []);
+
+    function irParaPagina(numero) {
+        setPagina(numero);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     const produtosOrdenados = [...produtos].sort((a, b) => {
         if (ordem === "menor") return a.preco_base - b.preco_base;
@@ -146,10 +176,7 @@ function Catalogo() {
                             data-cy="buscar-produto"
                             placeholder="Buscar produto..."
                             value={busca}
-                            onChange={(e) => {
-                                setBusca(e.target.value);
-                                setPagina(1);
-                            }}
+                            onChange={(e) => setBusca(e.target.value)}
                         />
                     </label>
 
@@ -199,15 +226,21 @@ function Catalogo() {
                 </aside>
 
                 <section className="catalog-products" aria-label="Peças">
-                    <div className="catalog-grid">
-                        {produtosOrdenados.map(prod => {
+                    <div
+                        className={`catalog-grid${carregando && produtos.length > 0 ? " grade-atualizando" : ""}`}
+                        aria-busy={carregando}
+                    >
+                        {carregando && produtos.length === 0 && <EsqueletoCartoes />}
+
+                        {produtosOrdenados.map((prod, indice) => {
                             const imgPadrao = prod.imagens?.[0];
                             const imgHover = prod.imagens?.[1] || imgPadrao;
 
                             return (
                                 <Link
                                     data-cy={`produto-card-${prod.id_produto}`}
-                                    className="product-card"
+                                    className="product-card cartao-entra"
+                                    style={{ "--i": Math.min(indice, MAX_ATRASO_CARTAO) }}
                                     key={prod.id_produto}
                                     to={`/produto/${prod.id_produto}`}
                                 >
@@ -233,9 +266,9 @@ function Catalogo() {
                             );
                         })}
 
-                        {produtosOrdenados.length === 0 && (
+                        {!carregando && produtosOrdenados.length === 0 && (
                             <p className="catalog-empty">
-                                Nenhuma peça encontrada{busca ? ` para “${busca}”` : ""}.
+                                Nenhuma peça encontrada{buscaAplicada ? ` para “${buscaAplicada}”` : ""}.
                             </p>
                         )}
                     </div>
@@ -243,7 +276,7 @@ function Catalogo() {
                     <nav className="pagination" aria-label="Paginação">
                         <button
                             disabled={pagina === 1}
-                            onClick={() => setPagina(pagina - 1)}
+                            onClick={() => irParaPagina(pagina - 1)}
                             aria-label="Página anterior"
                         >
                             <ChevronLeft size={18} strokeWidth={1.5} />
@@ -253,7 +286,7 @@ function Catalogo() {
 
                         <button
                             disabled={pagina === totalPaginas}
-                            onClick={() => setPagina(pagina + 1)}
+                            onClick={() => irParaPagina(pagina + 1)}
                             aria-label="Próxima página"
                         >
                             <ChevronRight size={18} strokeWidth={1.5} />
