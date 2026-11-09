@@ -6,6 +6,7 @@ import "../css/cliente/app.css";
 import "../css/cliente/header.css";
 import escrita from "../img/marca/escrita.png";
 import simbolo from "../img/marca/simbolo.png";
+import Notificacoes from "./notificacoes";
 import { tempoLiturgico } from "../utils/liturgia";
 import { EVENTO_SACOLA, avisarSacola, contarPecas, sessaoDeAdmin } from "../utils/sacola";
 
@@ -142,6 +143,8 @@ function Header() {
                         <ShoppingBag size={20} strokeWidth={1.5} />
                         {pecas > 0 && <span data-cy="sacola-contador" className="sacola-contador">{pecas > 99 ? "99+" : pecas}</span>}
                     </Link>
+
+                    {token && !sessaoDeAdmin() && <Notificacoes key={token} />}
 
                     {token && (
                         <button type="button" className="logout-icon" onClick={logout} aria-label="Sair">

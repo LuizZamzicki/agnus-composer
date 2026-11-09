@@ -200,9 +200,8 @@ describe('Produto - avaliações', () => {
 
 
 
-        cy.get('[data-cy="nota-avaliacao"]')
-            .clear()
-            .type('5');
+        cy.get('[data-cy="estrela-5"]')
+            .click();
 
 
 
@@ -292,8 +291,8 @@ describe('Produto - avaliações', () => {
 
 
 
-        cy.get('[data-cy="nota-avaliacao"]')
-            .type('5');
+        cy.get('[data-cy="estrela-5"]')
+            .click();
 
 
 

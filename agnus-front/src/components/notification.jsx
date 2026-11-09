@@ -33,12 +33,12 @@ const TYPE_CONFIG = {
   info: {
     className: "info",
     icon: Info,
-    title: "Informacao",
+    title: "Informação",
   },
   warning: {
     className: "warning",
     icon: TriangleAlert,
-    title: "Atencao",
+    title: "Atenção",
   },
 };
 
@@ -76,8 +76,8 @@ export function NotificationProvider({ children }) {
 
       confirmResolverRef.current = resolve;
       setConfirmDialog({
-        title: options.title || "Confirmar acao",
-        message: options.message || "Deseja continuar com esta acao?",
+        title: options.title || "Confirmar ação",
+        message: options.message || "Deseja continuar com esta ação?",
         confirmText: options.confirmText || "Confirmar",
         cancelText: options.cancelText || "Cancelar",
         tone: options.tone === "danger" ? "danger" : "default",
@@ -172,7 +172,7 @@ export function NotificationProvider({ children }) {
                 type="button"
                 className="app-toast__close"
                 onClick={() => removeNotification(notification.id)}
-                aria-label="Fechar notificacao"
+                aria-label="Fechar notificação"
               >
                 <X size={16} />
               </button>

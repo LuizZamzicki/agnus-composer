@@ -1,7 +1,8 @@
 import { ChevronRight } from "lucide-react";
+import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { formatarReal } from "../../utils/sacola";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 
 const STATUS_PEDIDO = {
@@ -18,8 +19,12 @@ function ClientePedidos() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [openPedido, setOpenPedido] = useState(null);
+    const [minhasAvaliacoes, setMinhasAvaliacoes] = useState({});
+    const [itemAvaliando, setItemAvaliando] = useState(null);
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const pedidoDaNotificacao = Number(searchParams.get("pedido")) || null;
 
     const token = localStorage.getItem("auth_token");
     const auth = JSON.parse(localStorage.getItem("auth") || "{}");
@@ -29,6 +34,25 @@ function ClientePedidos() {
         localStorage.removeItem("auth");
         localStorage.removeItem("auth_token");
         navigate("/login");
+    }
+
+    // Vinda de uma notificação: já abre o pedido avisado.
+    useEffect(() => {
+        if (pedidoDaNotificacao) setOpenPedido(pedidoDaNotificacao);
+    }, [pedidoDaNotificacao]);
+
+    async function carregarMinhaAvaliacao(idProduto) {
+        try {
+            const res = await fetch(apiUrl(`product-reviews/${idProduto}`));
+            const lista = res.ok ? await res.json() : [];
+            const minha = (Array.isArray(lista) ? lista : []).find(
+                (avaliacao) => Number(avaliacao.id_usuario) === Number(userId)
+            );
+
+            setMinhasAvaliacoes((atuais) => ({ ...atuais, [idProduto]: minha || null }));
+        } catch {
+            setMinhasAvaliacoes((atuais) => ({ ...atuais, [idProduto]: null }));
+        }
     }
 
     useEffect(() => {
@@ -92,6 +116,15 @@ function ClientePedidos() {
                 );
 
                 setPedidos(pedidosComItens);
+
+                const produtosEntregues = new Set(
+                    pedidosComItens
+                        .filter((pedido) => pedido.status === "entregue")
+                        .flatMap((pedido) => pedido.itens.map((item) => item.produto?.id_produto))
+                        .filter(Boolean)
+                );
+
+                await Promise.all([...produtosEntregues].map(carregarMinhaAvaliacao));
 
             } catch (err) {
                 setError(err.message || "Erro ao conectar com servidor.");
@@ -159,41 +192,79 @@ function ClientePedidos() {
                             <strong className="pedido-valor">
                                 {formatarReal(pedido.valor_total)}
                             </strong>
+
+                            <button
+                                type="button"
+                                data-cy="ver-pecas"
+                                className="pedido-ver-pecas"
+                                aria-expanded={openPedido === pedido.id_pedido}
+                                onClick={() => togglePedido(pedido.id_pedido)}
+                            >
+                                {openPedido === pedido.id_pedido ? "Ocultar peças" : `Ver peças (${pedido.itens.length})`}
+                            </button>
                         </div>
 
                         {openPedido === pedido.id_pedido && (
                             <div data-cy="pedido-itens" className="pedido-itens">
-                                {pedido.itens.map((item) => (
-                                    <div key={item.id_pedido_item} className="item">
-                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                            {item.img && (
-                                                <img
-                                                    src={item.img}
-                                                    alt={item.produto?.nome}
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        objectFit: "cover",
-                                                        borderRadius: 8
+                                {pedido.itens.length === 0 && <p>Não foi possível carregar as peças deste pedido.</p>}
+
+                                {pedido.itens.map((item) => {
+                                    const idProduto = item.produto?.id_produto;
+                                    const minhaAvaliacao = minhasAvaliacoes[idProduto] || null;
+                                    const podeAvaliar = pedido.status === "entregue" && idProduto;
+                                    const avaliando = itemAvaliando === item.id_pedido_item;
+
+                                    return (
+                                        <div key={item.id_pedido_item} className="item-bloco">
+                                            <div className="item">
+                                                <div className="item-info">
+                                                    {item.img && <img src={item.img} alt={item.produto?.nome} className="item-foto" />}
+
+                                                    <div>
+                                                        <p data-cy="item-produto">
+                                                            {idProduto
+                                                                ? <Link to={`/produto/${idProduto}`}>{item.produto?.nome}</Link>
+                                                                : item.produto?.nome || "Produto não encontrado"}
+                                                        </p>
+                                                        <small>Cor: {item.cor?.nome || "—"}</small>
+                                                        <small>Tamanho: {item.grade?.nome || "—"}</small>
+                                                        <small>Quantidade: {item.quantidade}</small>
+                                                    </div>
+                                                </div>
+
+                                                <div className="item-acoes">
+                                                    <strong>{formatarReal(item.subtotal)}</strong>
+
+                                                    {podeAvaliar && (
+                                                        <>
+                                                            {minhaAvaliacao && <Estrelas nota={minhaAvaliacao.nota} />}
+                                                            <button
+                                                                type="button"
+                                                                data-cy="avaliar-peca"
+                                                                className="item-avaliar"
+                                                                onClick={() => setItemAvaliando(avaliando ? null : item.id_pedido_item)}
+                                                            >
+                                                                {avaliando ? "Cancelar" : minhaAvaliacao ? "Alterar avaliação" : "Avaliar peça"}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {avaliando && (
+                                                <AvaliacaoForm
+                                                    idProduto={idProduto}
+                                                    idUsuario={userId}
+                                                    avaliacao={minhaAvaliacao}
+                                                    onConcluir={async () => {
+                                                        await carregarMinhaAvaliacao(idProduto);
+                                                        setItemAvaliando(null);
                                                     }}
                                                 />
                                             )}
-
-                                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                <div>
-                                                    <p data-cy="item-produto">{item.produto?.nome || "Produto não encontrado"}</p>
-                                                    <small>Cor: {item.cor?.nome || "—"}</small>
-                                                    <small>Tamanho: {item.grade?.nome || "—"}</small>
-                                                    <small>Quantidade: {item.quantidade}</small>
-                                                </div>
-                                            </div>
                                         </div>
-
-                                        <strong>
-                                            {formatarReal(item.subtotal)}
-                                        </strong>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
