@@ -21,7 +21,7 @@ describe('Notificações, avaliação no pedido e sacola', () => {
 
     function mockPedidos(avaliacoes = []) {
         cy.intercept('GET', '**/orders/me*', { body: [pedido] }).as('pedidos');
-        cy.intercept('GET', '**/order-items/12', { body: [item] });
+        cy.intercept('GET', '**/order-items/12', { body: [{ ...item, foto_produto: '/produto_fotos/a.jpg' }] });
         cy.intercept('GET', '**/product-reviews/1', { body: avaliacoes }).as('reviews');
         cy.intercept('GET', '**/product-review-photos/*', { body: [] });
     }
@@ -60,6 +60,29 @@ describe('Notificações, avaliação no pedido e sacola', () => {
         cy.get('[data-cy="abrir-notificacoes"]').click();
         cy.get('[data-cy="notificacao"]').should('not.exist');
         cy.get('[data-cy="painel-notificacoes"]').should('contain', 'Nenhuma notificação no momento');
+    });
+
+    it('mostra a foto da peça à esquerda, na tela de pedidos', () => {
+        mockPedidos();
+        cy.visit('/cliente/pedidos');
+        cy.get('[data-cy="ver-pecas"]').click();
+        cy.get('[data-cy="item-foto"]').should('have.attr', 'src').and('include', '/produto_fotos/a.jpg');
+        cy.get('[data-cy="item-foto"]').then(($foto) => {
+            cy.get('[data-cy="item-produto"]').then(($nome) => {
+                expect($foto[0].getBoundingClientRect().right).to.be.at.most($nome[0].getBoundingClientRect().left);
+            });
+        });
+    });
+
+    it('alinha notificações curtas e longas à esquerda, com ícone', () => {
+        const curta = { ...notificacao, id_notificacao: 4, titulo: 'Pedido enviado', mensagem: 'Saiu.' };
+        cy.intercept('GET', '**/notifications/me', { body: { data: [notificacao, curta], naoLidas: 2 } });
+        cy.visit('/');
+        cy.get('[data-cy="abrir-notificacoes"]').click();
+        cy.get('.notificacao-icone svg').should('have.length', 2);
+        cy.get('.notificacao-texto').then(($textos) => {
+            expect($textos[0].getBoundingClientRect().left).to.eq($textos[1].getBoundingClientRect().left);
+        });
     });
 
     it('aceita meia estrela na nota', () => {

@@ -19,6 +19,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Notificação aberta some da lista e leva direto ao pedido.
 - Site com mais resposta ao uso: botões reagem ao pressionar, páginas e cartões entram suavemente, carregamento com lugares reservados, contador da sacola reage e a busca espera o cliente parar de digitar.
 - Estrelas da avaliação maiores, com prévia ao passar o mouse.
+- Notificações ganham um ícone conforme o status do pedido.
 
 ### Corrigido
 - Mensagens da API e textos do site voltam a ter acentos.
@@ -26,6 +27,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Ao trocar de página, a tela agora volta ao topo.
 - A área de clique das estrelas, na tela de pedidos, ficava deslocada para baixo do desenho.
 - O catálogo mostrava "Nenhuma peça encontrada" antes de os dados chegarem.
+- A foto das peças não aparecia na tela de pedidos.
+- Notificações de texto curto ficavam desalinhadas no painel.
 - Uma resposta antiga da busca podia sobrescrever o resultado mais recente.
 
 ## [3.4.0] — 2026-11-06
