@@ -1,7 +1,7 @@
 name: CD
 
-# Esqueleto de entrega continua: build -> test -> publish (imagens) -> deploy -> verify/rollback.
-# Dispara em tags de versao (v3.3.0) ou manualmente. O deploy so roda se o ambiente
+# Entrega continua: test -> publish (uma imagem por servico) -> deploy -> verify/rollback.
+# Dispara em tags de versao (v3.5.0) ou manualmente. O deploy so roda se o ambiente
 # "producao" tiver os segredos DEPLOY_HOST, DEPLOY_USER e DEPLOY_SSH_KEY configurados.
 
 on:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Tag da imagem a publicar (ex.: v3.3.0)"
+        description: "Tag da imagem a publicar (ex.: v3.5.0)"
         required: true
 
 permissions:
@@ -19,31 +19,47 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/agnus
+  # O registro so aceita letras minusculas no nome da imagem.
+  IMAGE_PREFIX: ghcr.io/luizzamzicki/agnus
   VERSION: ${{ github.event.inputs.version || github.ref_name }}
 
 jobs:
   test:
     name: Testes (gate de qualidade)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: agnus-back/package-lock.json
-      - name: Backend - lint e testes
-        working-directory: agnus-back
-        run: |
-          npm ci
-          npm run lint
-          npm test
+          cache-dependency-path: services/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test
 
   build:
-    name: Build e publicacao das imagens
+    name: Imagem ${{ matrix.imagem }}
     needs: test
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { imagem: identidade, contexto: ./services, arquivo: services/identidade/Dockerfile }
+          - { imagem: catalogo, contexto: ./services, arquivo: services/catalogo/Dockerfile }
+          - { imagem: busca, contexto: ./services, arquivo: services/busca/Dockerfile }
+          - { imagem: avaliacoes, contexto: ./services, arquivo: services/avaliacoes/Dockerfile }
+          - { imagem: carrinho, contexto: ./services, arquivo: services/carrinho/Dockerfile }
+          - { imagem: pedidos, contexto: ./services, arquivo: services/pedidos/Dockerfile }
+          - { imagem: notificacoes, contexto: ./services, arquivo: services/notificacoes/Dockerfile }
+          - { imagem: admin, contexto: ./services, arquivo: services/admin/Dockerfile }
+          - { imagem: frontend, contexto: ./agnus-front, arquivo: agnus-front/Dockerfile }
+          - { imagem: admin-frontend, contexto: ./agnus-admin-front, arquivo: agnus-admin-front/Dockerfile }
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -52,22 +68,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Imagem do backend (API + worker)
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
-          context: ./agnus-back
+          context: ${{ matrix.contexto }}
+          file: ${{ matrix.arquivo }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-backend:${{ env.VERSION }}
-            ${{ env.IMAGE_PREFIX }}-backend:latest
-      - name: Imagem do frontend (build estatico)
-        uses: docker/build-push-action@v6
-        with:
-          context: ./agnus-front
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}-frontend:${{ env.VERSION }}
-            ${{ env.IMAGE_PREFIX }}-frontend:latest
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.imagem }}:${{ env.VERSION }}
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.imagem }}:latest
 
   deploy:
     name: Deploy (producao)
@@ -99,10 +107,11 @@ jobs:
           script: |
             set -e
             cd /opt/agnus
+            COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
             PREVIOUS=$(cat .current_version 2>/dev/null || echo latest)
             export AGNUS_VERSION=${{ env.VERSION }}
-            docker compose pull backend worker frontend
-            docker compose up -d --no-build
+            $COMPOSE pull
+            $COMPOSE up -d --no-build
             for i in $(seq 1 30); do
               if curl -fsk https://localhost/api/health > /dev/null; then
                 echo "$AGNUS_VERSION" > .current_version
@@ -113,7 +122,7 @@ jobs:
             done
             echo "Healthcheck falhou. Rollback para $PREVIOUS"
             export AGNUS_VERSION=$PREVIOUS
-            docker compose up -d --no-build
+            $COMPOSE up -d --no-build
             exit 1
 
       - name: Smoke test publico
