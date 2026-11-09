@@ -8,6 +8,8 @@ RUN npm ci --legacy-peer-deps
 
 COPY . .
 
+ENV REACT_APP_API_BASE_URL=/api/
+
 RUN npm run build
 
 # Imagem final apenas publica os estaticos no volume compartilhado com o nginx

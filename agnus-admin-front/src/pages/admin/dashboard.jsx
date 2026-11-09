@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, PackagePlus, ShoppingBag, Tag, UserPlus, Users } from "lucide-react";
-import { fetchJsonPaginado, extrairListaResposta } from "../../utils/pagination";
 import { apiFetch, getAuthHeaders } from "./admin-api";
 
 function isMesmoDia(dataA, dataB) {
@@ -114,48 +113,22 @@ function AdminDashboard() {
 
       try {
         const headers = getAuthHeaders();
-        const [usuariosRes, produtosRes, categoriasRes, pedidosRes] = await Promise.all([
-          fetchJsonPaginado("/users", {
-            page: 1,
-            limit: 10,
-            headers,
-            fetcher: apiFetch,
-          }),
-          fetchJsonPaginado("/products", {
-            page: 1,
-            limit: 10,
-            headers,
-            fetcher: apiFetch,
-          }),
-          fetchJsonPaginado("/categories", {
-            page: 1,
-            limit: 10,
-            headers,
-            fetcher: apiFetch,
-          }),
-          apiFetch("/orders", { method: "GET", headers }),
-        ]);
+        const resposta = await apiFetch("/admin/dashboard", { method: "GET", headers });
+        const painel = await resposta.json().catch(() => ({}));
 
-        const pedidosRaw = await pedidosRes.json().catch(() => []);
-
-        if (!usuariosRes.response.ok || !produtosRes.response.ok || !categoriasRes.response.ok || !pedidosRes.ok) {
-          if (!ativo) return;
-          const message =
-            usuariosRes.payload?.message ||
-            produtosRes.payload?.message ||
-            categoriasRes.payload?.message ||
-            pedidosRaw?.message ||
-            "Erro ao carregar dashboard.";
-          setDashboardError(message);
+        if (!resposta.ok) {
+          if (ativo) setDashboardError(painel?.message || "Erro ao carregar dashboard.");
           return;
         }
 
         if (!ativo) return;
 
-        const usuarios = usuariosRes.data;
-        const produtos = produtosRes.data;
-        const categorias = categoriasRes.data;
-        const pedidos = extrairListaResposta(pedidosRaw);
+        const { usuarios, produtos, categorias, pedidos, totais, indisponiveis } = painel;
+
+        if (indisponiveis.length) {
+          setDashboardError(`Dados parciais: ${indisponiveis.join(", ")} indisponível no momento.`);
+        }
+
         const hoje = new Date();
 
         const pedidosAbertos = pedidos.filter((pedido) => {
@@ -169,9 +142,9 @@ function AdminDashboard() {
         }).length;
 
         setDashboardStats({
-          totalUsuarios: usuariosRes.pagination.total,
-          totalProdutos: produtosRes.pagination.total,
-          totalCategorias: categoriasRes.pagination.total,
+          totalUsuarios: totais.usuarios,
+          totalProdutos: totais.produtos,
+          totalCategorias: totais.categorias,
           pedidosAbertos,
           pedidosHoje,
         });

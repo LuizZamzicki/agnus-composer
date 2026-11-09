@@ -15,6 +15,16 @@ const CHAVE_NONCE = "agnus_nonce_login";
 
 function Login() {
   const navigate = useNavigate();
+
+  // O painel é outro site: só a navegação completa do navegador chega nele.
+  const irParaDestino = (destino) => {
+    if (destino === "/admin") {
+      window.location.replace(destino);
+      return;
+    }
+
+    navigate(destino, { replace: true });
+  };
   const [searchParams] = useSearchParams();
 
   const [modoCadastro, setModoCadastro] = useState(false);
@@ -123,9 +133,7 @@ function Login() {
             ? "/admin"
             : redirect || "/";
 
-        navigate(destino, {
-          replace: true,
-        });
+        irParaDestino(destino);
 
       } catch (err) {
         console.error(err);
@@ -279,12 +287,7 @@ function Login() {
         localStorage.setItem("auth", JSON.stringify(data));
         if (token) localStorage.setItem("auth_token", token);
 
-        navigate(
-          data.tipo === "administrador"
-            ? "/admin"
-            : redirect || "/",
-          { replace: true }
-        );
+        irParaDestino(data.tipo === "administrador" ? "/admin" : redirect || "/");
       }
     } catch {
       setError("Erro ao conectar com servidor.");

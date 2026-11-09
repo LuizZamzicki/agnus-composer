@@ -131,7 +131,7 @@ function Header() {
                         <Search size={20} strokeWidth={1.5} />
                     </Link>
 
-                    <Link to={getUserRoute()} aria-label={token ? "Minha conta" : "Entrar"}>
+                    <Link to={getUserRoute()} reloadDocument={getUserRoute() === "/admin"} aria-label={token ? "Minha conta" : "Entrar"}>
                         <User size={20} strokeWidth={1.5} />
                     </Link>
 

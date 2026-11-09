@@ -4,58 +4,18 @@ describe("Dashboard Admin", () => {
 
         cy.clearLocalStorage();
 
-        cy.intercept("GET", "**/users*", {
+        // O painel fala só com o BFF, que agrega os dados dos demais serviços.
+        cy.intercept("GET", "**/api/admin/dashboard*", {
             statusCode: 200,
             body: {
-                data: [
-                    {
-                        id_usuario: 1,
-                        nome: "Bruno",
-                        created_at: new Date().toISOString()
-                    }
-                ],
-                pagination: {
-                    total: 25
-                }
+                totais: { usuarios: 25, produtos: 150, categorias: 8, pedidos: 0 },
+                usuarios: [{ id_usuario: 1, nome: "Bruno", created_at: new Date().toISOString() }],
+                produtos: [{ id: 1, nome: "Camisa", created_at: new Date().toISOString() }],
+                categorias: [{ id: 1, nome: "Roupas", created_at: new Date().toISOString() }],
+                pedidos: [],
+                indisponiveis: []
             }
-        }).as("users");
-
-        cy.intercept("GET", "**/products*", {
-            statusCode: 200,
-            body: {
-                data: [
-                    {
-                        id: 1,
-                        nome: "Camisa",
-                        created_at: new Date().toISOString()
-                    }
-                ],
-                pagination: {
-                    total: 150
-                }
-            }
-        }).as("products");
-
-        cy.intercept("GET", "**/categories*", {
-            statusCode: 200,
-            body: {
-                data: [
-                    {
-                        id: 1,
-                        nome: "Roupas",
-                        created_at: new Date().toISOString()
-                    }
-                ],
-                pagination: {
-                    total: 8
-                }
-            }
-        }).as("categories");
-
-        cy.intercept("GET", "**/orders*", {
-            statusCode: 200,
-            body: []
-        }).as("orders");
+        }).as("dashboard");
 
         // 🔐 AUTH consistente com seu sistema (igual ao teste de usuários)
         cy.visit("/admin/dashboard", {
@@ -134,7 +94,7 @@ describe("Dashboard Admin", () => {
 
         cy.intercept(
             "GET",
-            "**/users*",
+            "**/api/admin/dashboard*",
             {
                 statusCode: 500,
                 body: {

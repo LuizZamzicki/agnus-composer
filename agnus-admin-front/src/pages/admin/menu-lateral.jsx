@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   FolderOpen,
@@ -84,19 +84,19 @@ function AdminMenuLateral() {
     localStorage.removeItem("token");
     localStorage.removeItem("auth_token");
 
-    navigate("/login", { replace: true });
+    window.location.replace("/login");
   }
 
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar__header">
         <div className="admin-sidebar__logo">
-          <Link
-            to="/"
+          <a
+            href="/"
             className="retorna-Home"
           >
             ←
-          </Link>
+          </a>
         </div>
 
         <img className="admin-sidebar__mark" src={simboloClaro} alt="" />
