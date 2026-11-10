@@ -33,7 +33,7 @@ Cores dos tempos: Tempo Comum `#2f6a46`, Advento `#5b3a86`, Quaresma `#4e2f6e`, 
 
 - **Regra de tamanho**: o desenho detalhado é o normal; a versão simplificada só entra onde o espaço é muito pequeno.
 - Detalhado: `logo-completo.png` (com a escrita, no rodapé e no login) e `emblema.png` (sem a escrita, na página 404).
-- Simplificado: `simbolo.png` com `escrita.png` no cabeçalho; `simbolo-claro.png` no painel, por ter fundo escuro; favicon e ícones `logo192`/`logo512` com fundo `--ink`.
+- Simplificado: desenhado em `docs/marca/agnus-logo-simplificado.png` (AGNUS-209). Dele saem `simbolo.png` (corpo branco, contorno preto) com `escrita.png` no cabeçalho; `simbolo-claro.png` no painel, com fundo escuro (silhueta branca, traços vazados); favicon e ícones `logo192`/`logo512` com fundo `--ink`, na loja e no painel.
 - O nome AGNUS sempre acompanha o símbolo no cabeçalho, para a marca ficar conhecida.
 - **O Cordeiro é sempre branco.** Nunca usar silhueta preta nem inverter o símbolo por CSS.
 
