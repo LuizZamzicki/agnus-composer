@@ -5,6 +5,7 @@ import "../../css/cliente/produto.css";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
+import { EsqueletoProduto } from "../../components/esqueleto";
 
 function Produto() {
     const { id_produto } = useParams();
@@ -383,7 +384,7 @@ function Produto() {
         carregarProduto();
     }, [id_produto]);
 
-    if (loading) return <p>Carregando produto...</p>;
+    if (loading) return <EsqueletoProduto />;
     if (!produto) return <p>Produto não encontrado.</p>;
 
     return (

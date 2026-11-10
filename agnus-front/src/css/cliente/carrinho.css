@@ -221,7 +221,6 @@
 
 .cart-empty-icon { color: var(--lit); }
 
-.cart-loading { color: var(--muted); font-style: italic; }
 
 .empty-btn {
     display: inline-flex;

@@ -90,7 +90,7 @@ function Notificacoes() {
                 onClick={() => setAberto(!aberto)}
             >
                 <Bell size={20} strokeWidth={1.5} />
-                {naoLidas > 0 && <span data-cy="notificacoes-contador" className="sacola-contador">{naoLidas > 99 ? "99+" : naoLidas}</span>}
+                {naoLidas > 0 && <span key={naoLidas} data-cy="notificacoes-contador" className="sacola-contador">{naoLidas > 99 ? "99+" : naoLidas}</span>}
             </button>
 
             {aberto && (

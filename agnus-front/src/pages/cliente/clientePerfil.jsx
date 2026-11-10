@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiUrl } from "../../utils/api";
+import { EsqueletoLinhas } from "../../components/esqueleto";
 
 function ClientePerfil() {
     const [user, setUser] = useState({});
@@ -127,7 +128,7 @@ function ClientePerfil() {
         }
     }
 
-    if (loading) return <p>Carregando...</p>;
+    if (loading) return <EsqueletoLinhas />;
 
     return (
         <>

@@ -106,7 +106,7 @@ code {
   letter-spacing: 0.2em;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 .btn-agnus { background: var(--ink); color: var(--stone); border: 1px solid var(--ink); }

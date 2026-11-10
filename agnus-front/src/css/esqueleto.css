@@ -1,0 +1,36 @@
+/* Lugares reservados durante o carregamento. Só aparecem depois de um instante,
+   para que uma resposta rápida não pisque na tela. */
+.esqueleto-grupo,
+.esqueleto-cartao {
+    animation: esqueleto-surge 0.2s var(--ease-out) 0.12s backwards;
+}
+
+.esqueleto-grupo { display: grid; gap: 14px; width: 100%; align-content: start; }
+.esqueleto-cartao { display: grid; gap: 10px; }
+
+.esqueleto {
+    background: var(--stone-2);
+    border-radius: var(--radius);
+    animation: esqueleto-pulsa 1.4s ease-in-out infinite;
+}
+
+.esqueleto-foto { aspect-ratio: 3 / 4; }
+.esqueleto-titulo { height: 40px; width: 80%; }
+.esqueleto-linha { height: 14px; }
+.esqueleto-linha.curta { width: 45%; }
+.esqueleto-bloco { height: 76px; }
+
+.cart-empty .esqueleto-grupo,
+.fin-page .esqueleto-grupo {
+    max-width: 720px;
+    margin-inline: auto;
+    padding: 48px 16px;
+}
+
+@keyframes esqueleto-surge { from { opacity: 0; } }
+@keyframes esqueleto-pulsa { 50% { opacity: 0.55; } }
+
+/* A regra global encurta a duração, e um ciclo infinito curto viraria pisca-pisca. */
+@media (prefers-reduced-motion: reduce) {
+    .esqueleto { animation: none; }
+}

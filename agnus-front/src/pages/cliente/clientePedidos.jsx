@@ -4,6 +4,7 @@ import { formatarReal } from "../../utils/sacola";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
+import { EsqueletoLinhas } from "../../components/esqueleto";
 
 const STATUS_PEDIDO = {
     aguardando_calculo_frete: "Calculando o frete",
@@ -140,7 +141,7 @@ function ClientePedidos() {
         fetchPedidos();
     }, [token, userId]);
 
-    if (loading) return <p>Carregando pedidos...</p>;
+    if (loading) return <EsqueletoLinhas rotulo="Carregando pedidos…" />;
 
     function togglePedido(id) {
         setOpenPedido(openPedido === id ? null : id);

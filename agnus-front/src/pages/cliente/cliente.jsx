@@ -101,7 +101,9 @@ function Cliente() {
                 </aside>
 
                 <section className="perfil-content">
-                    <Outlet />
+                    <div key={location.pathname} className="aba-entrada">
+                        <Outlet />
+                    </div>
                 </section>
 
             </div>
