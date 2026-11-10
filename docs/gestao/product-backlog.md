@@ -38,6 +38,20 @@ RF93
 - O mesmo webhook recebido duas vezes não duplica efeitos (idempotência pelo id do pagamento).
 - O evento de pagamento usa fila durável (Redis Streams), não Pub/Sub ([ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md)).
 
+### US-31 · Avisar o cliente quando o status do pedido mudar · `Should` · 5 pts · ✅
+**Como** cliente, **quero** ser avisado no site quando meu pedido mudar **para** acompanhar a entrega.
+- ✅ Sino no cabeçalho com o total de não lidas; o aviso leva ao pedido.
+- ✅ Cada cliente só vê e marca as próprias notificações.
+- ✅ Falha ao gravar o aviso não desfaz a mudança de status.
+
+### US-32 · Avaliar as peças pela tela de pedidos · `Should` · 3 pts · ✅
+**Como** cliente, **quero** ver as peças do pedido e avaliá-las ali **para** não ter de procurar cada produto.
+- ✅ Peças visíveis em cada pedido; avaliação liberada só em pedido entregue.
+- ✅ Peça já avaliada oferece apenas alterar a avaliação, e a nota é dada pelas estrelas.
+
+### US-33 · Confirmar visualmente a peça colocada na sacola · `Should` · 1 pt · ✅
+- ✅ Pop-up com a peça, a cor, o tamanho e o preço, com caminho para a sacola.
+
 ### TS-16 · Publicar a loja em um endereço público · `Must` · 5 pts · 📋
 **Como** equipe, **quero** a loja acessível na internet **para** que clientes e avaliadores usem a versão real.
 **Critérios de aceite**

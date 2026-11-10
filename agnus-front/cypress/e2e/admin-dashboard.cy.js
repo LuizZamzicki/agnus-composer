@@ -81,7 +81,7 @@ describe("Dashboard Admin", () => {
 
         cy.get('[data-cy="dashboard-title"]', { timeout: 15000 })
             .should("exist")
-            .and("contain.text", "Ultimas Acoes");
+            .and("contain.text", "Ultimas Ações");
     });
 
     it("deve exibir cards de estatísticas", () => {

@@ -45,7 +45,7 @@ describe("ownership.middleware", () => {
   beforeEach(() => jest.clearAllMocks());
 
   describe("resolvers de dono", () => {
-    it("resolvem o usuario direto e por recursos pais", async () => {
+    it("resolvem o usuário direto e por recursos pais", async () => {
       findByPk(UsuarioEnderecos).mockResolvedValueOnce({ id_usuario: 3 });
       findByPk(UsuarioContatos).mockResolvedValueOnce({ id_usuario: 4 });
       findByPk(Pedidos).mockResolvedValueOnce({ id_usuario: 5 });
@@ -61,7 +61,7 @@ describe("ownership.middleware", () => {
       await expect(OWNERS.carrinhoItem(1)).resolves.toBe(2);
     });
 
-    it("retornam null quando o recurso nao existe", async () => {
+    it("retornam null quando o recurso não existe", async () => {
       findByPk(AvaliacaoFotos).mockResolvedValueOnce(null);
       findByPk(CarrinhoItens).mockResolvedValueOnce(null);
       findByPk(Carrinhos).mockResolvedValueOnce(null);
@@ -77,12 +77,12 @@ describe("ownership.middleware", () => {
   describe("authorizeOwnerByParam", () => {
     const middleware = authorizeOwnerByParam("id", async (id) => (id === 10 ? 1 : id === 20 ? 2 : null));
 
-    it("exige autenticacao", async () => {
+    it("exige autenticação", async () => {
       const { res } = await run(middleware, mockRequest({ params: { id: "10" } }), null);
       expect(res.status).toHaveBeenCalledWith(401);
     });
 
-    it("permite o dono e bloqueia outro usuario com 403", async () => {
+    it("permite o dono e bloqueia outro usuário com 403", async () => {
       expect((await run(middleware, mockRequest({ params: { id: "10" } }))).next).toHaveBeenCalled();
 
       const { res, next } = await run(middleware, mockRequest({ params: { id: "20" } }));
@@ -90,7 +90,7 @@ describe("ownership.middleware", () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it("deixa admin, id invalido e recurso inexistente seguirem para o controller", async () => {
+    it("deixa admin, id inválido e recurso inexistente seguirem para o controller", async () => {
       expect((await run(middleware, mockRequest({ params: { id: "20" } }), admin)).next).toHaveBeenCalled();
       expect((await run(middleware, mockRequest({ params: { id: "abc" } }))).next).toHaveBeenCalled();
       expect((await run(middleware, mockRequest({ params: { id: "99" } }))).next).toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe("ownership.middleware", () => {
       expect(req.body).toEqual({ cep: "1", id_usuario: 1 });
     });
 
-    it("nao preenche em atualizacao e aceita o proprio id", async () => {
+    it("não preenche em atualizacao e aceita o próprio id", async () => {
       const req = mockRequest({ body: {}, method: "PUT" });
       await run(authorizeOwnerByBody("id_usuario"), req);
       expect(req.body).toEqual({});
@@ -123,20 +123,20 @@ describe("ownership.middleware", () => {
       expect(res.status).toHaveBeenCalledWith(403);
     });
 
-    it("libera admin, campo invalido e ausencia de corpo", async () => {
+    it("libera admin, campo inválido e ausencia de corpo", async () => {
       expect((await run(authorizeOwnerByBody("id_usuario"), mockRequest({ body: { id_usuario: 2 } }), admin)).next).toHaveBeenCalled();
       expect((await run(authorizeOwnerByBody("id_usuario"), mockRequest({ body: { id_usuario: "x" } }))).next).toHaveBeenCalled();
       expect((await run(authorizeOwnerByBody("id_carrinho", async () => 2), mockRequest({ body: undefined, method: "POST" }))).next).toHaveBeenCalled();
     });
 
-    it("exige autenticacao", async () => {
+    it("exige autenticação", async () => {
       const { res } = await run(authorizeOwnerByBody("id_usuario"), mockRequest({ body: {} }), null);
       expect(res.status).toHaveBeenCalledWith(401);
     });
   });
 
   describe("authorizeOwnerByQuery", () => {
-    it("cliente so lista filtrando pelo proprio id", async () => {
+    it("cliente só lista filtrando pelo próprio id", async () => {
       expect((await run(authorizeOwnerByQuery("id_usuario"), mockRequest({ query: { id_usuario: "1" } }))).next).toHaveBeenCalled();
       expect((await run(authorizeOwnerByQuery("id_usuario"), mockRequest({ query: {} }))).res.status).toHaveBeenCalledWith(403);
       expect((await run(authorizeOwnerByQuery("id_usuario"), mockRequest({ query: { id_usuario: "2" } }))).res.status).toHaveBeenCalledWith(403);

@@ -38,7 +38,7 @@ describe("detectImageExtension", () => {
   });
 });
 
-describe("saveProdutoFotoBits valida o conteudo", () => {
+describe("saveProdutoFotoBits válida o conteudo", () => {
   const writeFile = fs.writeFile as jest.Mock;
 
   beforeEach(() => jest.clearAllMocks());
@@ -55,7 +55,7 @@ describe("saveProdutoFotoBits valida o conteudo", () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it("grava imagem real com a extensao do conteudo, nao a declarada", async () => {
+  it("grava imagem real com a extensao do conteudo, não a declarada", async () => {
     const file = { fieldname: "foto", buffer: PNG_BYTES, mimetype: "image/jpeg", originalname: "foto.jpg" };
 
     await expect(saveProdutoFotoBits(file)).resolves.toMatch(/^produto_fotos\/\d+-[\w-]+\.png$/);

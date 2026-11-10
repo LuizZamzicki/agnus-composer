@@ -13,7 +13,7 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const fileFilter = (_req: Request, file: Express.Multer.File, callback: FileFilterCallback) => {
   if (!ALLOWED_MIME_TYPES.has(file.mimetype.toLowerCase())) {
-    return callback(new HttpError(400, "Tipo de arquivo nao permitido. Envie apenas imagens (JPEG, PNG, GIF, WEBP, BMP)."));
+    return callback(new HttpError(400, "Tipo de arquivo não permitido. Envie apenas imagens (JPEG, PNG, GIF, WEBP, BMP)."));
   }
 
   return callback(null, true);

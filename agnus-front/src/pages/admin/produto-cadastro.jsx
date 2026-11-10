@@ -316,7 +316,7 @@ function AdminProdutoCadastro() {
         ]);
 
         if (!produtoRes.ok) {
-          notify.error(produtoData?.message || "Erro ao carregar produto para edicao.");
+          notify.error(produtoData?.message || "Erro ao carregar produto para edição.");
           return;
         }
 
@@ -349,7 +349,7 @@ function AdminProdutoCadastro() {
               nome: (grade?.nome ?? grade?.label ?? grade?.descricao ?? grade?.tamanho ?? "")
                 .toString()
                 .trim(),
-              acrescimo:
+              acréscimo:
                 grade?.acrescimo === null || grade?.acrescimo === undefined
                   ? ""
                   : String(grade.acrescimo),
@@ -367,7 +367,7 @@ function AdminProdutoCadastro() {
             id: cor?.id ?? cor?.id_cor ?? cor?.id_produto_cor ?? Date.now() + index + 1000,
             nome: (cor?.nome ?? cor?.label ?? cor?.cor ?? "").toString().trim(),
             tonalidade: extrairTonalidadeCor(cor),
-            acrescimo:
+            acréscimo:
               cor?.acrescimo === null || cor?.acrescimo === undefined ? "" : String(cor.acrescimo),
             fotos: extrairUrlsFotos(cor?.fotos ?? cor?.imagens ?? cor?.images),
           }))
@@ -659,7 +659,7 @@ function AdminProdutoCadastro() {
         </div>
 
         <div className="admin-form-group full">
-          <label className="admin-form-label">Descricao do Produto</label>
+          <label className="admin-form-label">Descrição do Produto</label>
           <textarea
             data-cy="produto-descricao"
             className="admin-form-textarea"
@@ -687,7 +687,7 @@ function AdminProdutoCadastro() {
           </div>
 
           <div className="admin-form-group">
-            <label className="admin-form-label">Preco de Venda</label>
+            <label className="admin-form-label">Preço de Venda</label>
             <div className="admin-form-input-prefix">
               <span>R$</span>
               <input
@@ -737,7 +737,7 @@ function AdminProdutoCadastro() {
         <div className="admin-form-header">
           <div>
             <h3>Grades</h3>
-            <p>Defina grades disponiveis</p>
+            <p>Defina grades disponíveis</p>
           </div>
           <div className="admin-form-section-icon-box">
             <Grid3x3 size={24} className="admin-form-section-icon" />
@@ -755,7 +755,7 @@ function AdminProdutoCadastro() {
                 <div className="admin-grade-card-head">
                   <div className="admin-grade-card-title-wrap">
                     <span className="admin-grade-card-title">{grade.nome}</span>
-                    <span className="admin-grade-card-subtitle">Acrescimo opcional</span>
+                    <span className="admin-grade-card-subtitle">Acréscimo opcional</span>
                   </div>
                   <button
                     data-cy="remover-grade"
@@ -802,7 +802,7 @@ function AdminProdutoCadastro() {
             </div>
 
             <div className="admin-form-group">
-              <label className="admin-form-label">Acrescimo</label>
+              <label className="admin-form-label">Acréscimo</label>
               <div className="admin-form-input-prefix">
                 <span>+</span>
                 <input
@@ -829,7 +829,7 @@ function AdminProdutoCadastro() {
           <div>
             <h3>Cores</h3>
             <p>
-              Cadastre as cores disponiveis para este produto. Cada cor precisa ter pelo menos
+              Cadastre as cores disponíveis para este produto. Cada cor precisa ter pelo menos
               uma foto.
             </p>
           </div>
@@ -877,7 +877,7 @@ function AdminProdutoCadastro() {
                   </div>
 
                   <div className="admin-form-color-field">
-                    <span className="admin-form-label">Acrescimo</span>
+                    <span className="admin-form-label">Acréscimo</span>
                     <div className="admin-form-color-acrescimo">
                       <span>R$</span>
                       <input
@@ -961,7 +961,7 @@ function AdminProdutoCadastro() {
             </div>
 
             <div className="admin-form-group">
-              <label className="admin-form-label">Acrescimo</label>
+              <label className="admin-form-label">Acréscimo</label>
               <div className="admin-form-input-prefix">
                 <span>+</span>
                 <input

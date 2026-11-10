@@ -52,7 +52,7 @@ describe("produtoSearchIndex.service", () => {
     process.env = originalEnv;
   });
 
-  it("retorna false quando o Meilisearch nao esta configurado", async () => {
+  it("retorna false quando o Meilisearch não esta configurado", async () => {
     delete process.env.MEILISEARCH_URL;
     delete process.env.MEILISEARCH_MASTER_KEY;
     const index = buildIndex(), client = buildClient(index), database = buildDatabase();
@@ -63,7 +63,7 @@ describe("produtoSearchIndex.service", () => {
     await expect(service.isProdutoSearchIndexReady()).resolves.toBe(false);
   });
 
-  it("inicializa o indice com configuracao e sinonimos", async () => {
+  it("inicializa o indice com configuração e sinonimos", async () => {
     process.env.MEILISEARCH_URL = "http://localhost:7700";
     process.env.MEILISEARCH_MASTER_KEY = "master-key";
     const index = buildIndex(), client = buildClient(index), database = buildDatabase();
@@ -82,7 +82,7 @@ describe("produtoSearchIndex.service", () => {
     expect(client.tasks.waitForTask).toHaveBeenCalledTimes(3);
   });
 
-  it("remove do indice quando o produto nao existe mais no banco", async () => {
+  it("remove do indice quando o produto não existe mais no banco", async () => {
     process.env.MEILISEARCH_URL = "http://localhost:7700";
     process.env.MEILISEARCH_MASTER_KEY = "master-key";
     const index = buildIndex(), client = buildClient(index), database = buildDatabase();

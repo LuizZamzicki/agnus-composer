@@ -125,15 +125,15 @@ class ProdutoFotosController {
     }
 
     if (!payload.hasProductField() || !payload.hasColorField() || !photoPath) {
-      return "id_produto, id_produto_cor e caminho_url (ou bits) sao obrigatorios.";
+      return "id_produto, id_produto_cor e caminho_url (ou bits) são obrigatórios.";
     }
 
     if (!payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (!payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     return null;
@@ -145,15 +145,15 @@ class ProdutoFotosController {
     }
 
     if (payload.hasProductField() && !payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (payload.hasColorField() && !payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     if (payload.hasPhotoField() && !photoPath) {
-      return "caminho_url invalido.";
+      return "caminho_url inválido.";
     }
 
     return null;
@@ -161,7 +161,7 @@ class ProdutoFotosController {
 
   private static async findProductError(productId?: number | null) {
     return productId && !(await Produtos.findByPk(productId))
-      ? "Produto nao encontrado."
+      ? "Produto não encontrado."
       : null;
   }
 
@@ -169,13 +169,13 @@ class ProdutoFotosController {
     const cor = await ProdutoCores.findByPk(colorId);
 
     if (!cor) {
-      return { message: "Cor do produto nao encontrada.", status: 404 };
+      return { message: "Cor do produto não encontrada.", status: 404 };
     }
 
     return cor.id_produto === productId
       ? cor
       : {
-          message: "A cor informada nao pertence ao produto informado.",
+          message: "A cor informada não pertence ao produto informado.",
           status: 400,
         };
   }
@@ -196,13 +196,13 @@ class ProdutoFotosController {
     const productId = ProdutoFotosController.parsePositiveId(req.params.id_produto);
 
     if (!productId) {
-      return res.status(400).json({ message: "ID do produto invalido." });
+      return res.status(400).json({ message: "ID do produto inválido." });
     }
 
     const fotos = await ProdutoFotos.findAll({ where: { id_produto: productId } });
 
     if (!fotos) {
-      return res.status(404).json({ message: "Foto do produto nao encontrada." });
+      return res.status(404).json({ message: "Foto do produto não encontrada." });
     }
 
     return res.status(200).send(fotos);
@@ -256,7 +256,7 @@ class ProdutoFotosController {
     const payload = new ProdutoFotoPayload(req.body);
 
     if (!photoId) {
-      return res.status(400).json({ message: "ID da foto invalido." });
+      return res.status(400).json({ message: "ID da foto inválido." });
     }
 
     const foto = await ProdutoFotos.findByPk(photoId);
@@ -277,7 +277,7 @@ class ProdutoFotosController {
     );
 
     if (!foto) {
-      return res.status(404).json({ message: "Foto do produto nao encontrada." });
+      return res.status(404).json({ message: "Foto do produto não encontrada." });
     }
 
     if (message) {
@@ -307,13 +307,13 @@ class ProdutoFotosController {
     const photoId = ProdutoFotosController.parsePositiveId(req.params.id);
 
     if (!photoId) {
-      return res.status(400).json({ message: "ID da foto invalido." });
+      return res.status(400).json({ message: "ID da foto inválido." });
     }
 
     const foto = await ProdutoFotos.findByPk(photoId);
 
     if (!foto) {
-      return res.status(404).json({ message: "Foto do produto nao encontrada." });
+      return res.status(404).json({ message: "Foto do produto não encontrada." });
     }
 
     await foto.destroy();

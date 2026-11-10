@@ -28,7 +28,7 @@ const loadService = (
 };
 
 describe("eventBus.service", () => {
-  it("nao publica quando o Redis nao esta configurado", async () => {
+  it("não publica quando o Redis não esta configurado", async () => {
     const { default: EventBusService } = loadService(null);
 
     await expect(EventBusService.publish("produto.criado", { id_produto: 1 })).resolves.toBeNull();
@@ -45,7 +45,7 @@ describe("eventBus.service", () => {
     expect(publisher.publish).toHaveBeenCalledWith(`${EVENT_CHANNEL_PREFIX}pedido.criado`, JSON.stringify(event));
   });
 
-  it("nao propaga falhas de publicacao", async () => {
+  it("não propaga falhas de publicacao", async () => {
     const publisher = { publish: jest.fn(async () => { throw new Error("down"); }) };
     const { default: EventBusService } = loadService(publisher);
 
@@ -58,7 +58,7 @@ describe("eventBus.service", () => {
     await expect(EventBusService.subscribe(jest.fn())).rejects.toThrow("REDIS_URL");
   });
 
-  it("assina o padrao de canais e entrega eventos validos ao handler", async () => {
+  it("assina o padrao de canais e entrega eventos válidos ao handler", async () => {
     const subscriber = buildSubscriber();
     const { default: EventBusService, EVENT_CHANNEL_PREFIX } = loadService(null, subscriber);
     const handler = jest.fn();

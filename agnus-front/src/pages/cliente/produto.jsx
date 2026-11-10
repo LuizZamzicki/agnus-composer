@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Star, X } from "lucide-react";
 import "../../css/cliente/produto.css";
+import AvaliacaoForm from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
-import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, usuarioDaSessao } from "../../utils/sacola";
+import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 
 function Produto() {
     const { id_produto } = useParams();
@@ -38,18 +39,12 @@ function Produto() {
     const [erroCompra, setErroCompra] = useState("");
     const [adicionando, setAdicionando] = useState(false);
     const [adicionado, setAdicionado] = useState(false);
+    const botaoSacola = useRef(null);
 
     const [podeAvaliar, setPodeAvaliar] = useState(false);
 
-    const [fotosAvaliacao, setFotosAvaliacao] = useState([]);
-    const [novaAvaliacao, setNovaAvaliacao] = useState({
-        nome: "",
-        nota: 0,
-        comentario: "",
-        imagens: []
-    });
-
     const [avaliacoes, setAvaliacoes] = useState([]);
+    const [versaoAvaliacoes, setVersaoAvaliacoes] = useState(0);
     const [avaliacaoResumo, setAvaliacaoResumo] = useState({
         media: 0,
         total: 0
@@ -58,6 +53,7 @@ function Produto() {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
     const [lightboxImages, setLightboxImages] = useState([]);
+    const minhaAvaliacao = avaliacoes.find(a => id_usuario && Number(a.id_usuario) === Number(id_usuario)) || null;
     const imagensValidas = imagens.filter(Boolean);
     const imgPadrao = imagensValidas[0] || null;
 
@@ -68,6 +64,19 @@ function Produto() {
         Number(produto?.preco_base ?? produto?.preco ?? 0) +
         Number(corObj?.acrescimo || 0) +
         Number(gradeObj?.acrescimo || 0);
+
+    useEffect(() => {
+        if (!adicionado) return undefined;
+
+        botaoSacola.current?.focus();
+
+        const fecharEsc = (e) => {
+            if (e.key === "Escape") setAdicionado(false);
+        };
+
+        document.addEventListener("keydown", fecharEsc);
+        return () => document.removeEventListener("keydown", fecharEsc);
+    }, [adicionado]);
 
     useEffect(() => {
         if (alerta) {
@@ -119,32 +128,6 @@ function Produto() {
             </div>
         );
     }
-
-    const handleNotaChange = (e) => {
-        let value = e.target.value;
-
-        value = value.replace(",", ".");
-
-        let nota = Number(value);
-
-        if (isNaN(nota)) nota = 0;
-        if (nota < 0) nota = 0;
-        if (nota > 5) nota = 5;
-
-        setNovaAvaliacao({
-            ...novaAvaliacao,
-            nota: nota
-        });
-    };
-
-    const handleFotosChange = (e) => {
-        const files = Array.from(e.target.files || []);
-
-        setFotosAvaliacao((prev) => {
-            const novas = [...prev, ...files];
-            return novas.slice(0, 4);
-        });
-    };
 
     useEffect(() => {
         const verificarPedido = async () => {
@@ -279,86 +262,7 @@ function Produto() {
         }
 
         if (id_produto) carregarAvaliacoes();
-    }, [id_produto]);
-
-    const enviarAvaliacao = async () => {
-        if (!novaAvaliacao.nota) {
-            setAlerta({ tipo: "erro", mensagem: "Selecione uma nota" });
-            return;
-        }
-
-        if (!novaAvaliacao.comentario.trim()) {
-            setAlerta({ tipo: "erro", mensagem: "Digite um comentário" });
-            return;
-        }
-
-        if (!id_produto || !id_usuario) {
-            setAlerta({ tipo: "erro", mensagem: "Produto ou usuário não encontrados." });
-            return;
-        }
-
-        const nomeFinal =
-            novaAvaliacao.nome?.trim() ||
-            auth?.user?.nome ||
-            auth?.nome ||
-            "Usuário";
-
-        const payload = {
-            id_produto,
-            id_usuario,
-            nota: Number(novaAvaliacao.nota),
-            nome: nomeFinal,
-            comentario: novaAvaliacao.comentario.trim()
-        };
-
-        try {
-            const res = await fetch(`${BASE_URL}product-reviews`, {
-                method: "POST",
-                headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.message || "Erro ao enviar avaliação");
-            }
-
-            const id_avaliacao_produto =
-                data.id_avaliacao_produto ||
-                data.id ||
-                data.data?.id_avaliacao_produto;
-
-            if (fotosAvaliacao.length > 0 && id_avaliacao_produto) {
-                const formData = new FormData();
-                formData.append("id_avaliacao_produto", id_avaliacao_produto);
-
-                fotosAvaliacao.forEach((file) => {
-                    formData.append("files", file);
-                });
-
-                await fetch(`${BASE_URL}product-review-photos`, {
-                    method: "POST",
-                    headers: authHeaders(),
-                    body: formData
-                });
-            }
-
-            setAlerta({ tipo: "sucesso", mensagem: "Avaliação enviada!" });
-
-            setMostrarForm(false);
-            setNovaAvaliacao({ nota: 0, nome: "", comentario: "", imagens: [] });
-            setFotosAvaliacao([]);
-
-            const updated = await fetch(`${BASE_URL}product-reviews/${id_produto}`);
-            const lista = await updated.json();
-
-            setAvaliacoes(Array.isArray(lista) ? lista : lista?.data || []);
-
-        } catch (err) {
-            setAlerta({ tipo: "erro", mensagem: "Erro ao enviar avaliação: " + err.message });
-        }
-    };
+    }, [id_produto, versaoAvaliacoes]);
 
     const adicionarCarrinho = async () => {
         setErroCompra("");
@@ -646,31 +550,71 @@ function Produto() {
                         )}
                     </div>
 
-                    {adicionado ? (
-                        <div data-cy="peca-adicionada" className="peca-adicionada" role="status">
-                            <p><Check size={20} strokeWidth={1.5} aria-hidden="true" /> Peça adicionada à sacola</p>
-                            <Link data-cy="ir-para-sacola" to="/carrinho" className="btn-agnus">Ver sacola e finalizar</Link>
-                            <Link to="/catalogo" className="btn-agnus-ghost">Continuar escolhendo</Link>
-                        </div>
-                    ) : (
-                        <button
-                            data-cy="adicionar-carrinho"
-                            className="btn-comprar"
-                            onClick={adicionarCarrinho}
-                            disabled={cores.length === 0 || tamanhos.length === 0 || adicionando}
-                        >
-                            {cores.length === 0 || tamanhos.length === 0
-                                ? "Peça indisponível"
-                                : adicionando
-                                    ? "Adicionando…"
-                                    : "Adicionar à sacola"}
-                        </button>
-                    )}
+                    <button
+                        data-cy="adicionar-carrinho"
+                        className="btn-comprar"
+                        onClick={adicionarCarrinho}
+                        disabled={cores.length === 0 || tamanhos.length === 0 || adicionando}
+                    >
+                        {cores.length === 0 || tamanhos.length === 0
+                            ? "Peça indisponível"
+                            : adicionando
+                                ? "Adicionando…"
+                                : "Adicionar à sacola"}
+                    </button>
 
                     {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
 
                 </div>
             </div>
+
+            {adicionado && (
+                <div className="sacola-modal-fundo" onClick={() => setAdicionado(false)}>
+                    <div
+                        data-cy="peca-adicionada"
+                        className="sacola-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="sacola-modal-titulo"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            data-cy="fechar-peca-adicionada"
+                            className="sacola-modal-fechar"
+                            aria-label="Fechar"
+                            onClick={() => setAdicionado(false)}
+                        >
+                            <X size={20} strokeWidth={1.5} aria-hidden="true" />
+                        </button>
+
+                        <h2 id="sacola-modal-titulo">
+                            <Check size={22} strokeWidth={1.5} aria-hidden="true" /> Peça adicionada à sacola
+                        </h2>
+
+                        <div className="sacola-modal-peca">
+                            {imgPadrao && <img src={imgPadrao} alt="" />}
+                            <div>
+                                <strong>{produto.nome}</strong>
+                                <small>Cor: {corObj?.nome} · Tamanho: {gradeObj?.nome}</small>
+                                <span>{formatarReal(precoFinal)}</span>
+                            </div>
+                        </div>
+
+                        <div className="sacola-modal-acoes">
+                            <Link ref={botaoSacola} data-cy="ir-para-sacola" to="/carrinho" className="btn-agnus">Ver sacola e finalizar</Link>
+                            <button
+                                type="button"
+                                data-cy="continuar-escolhendo"
+                                className="btn-agnus-ghost"
+                                onClick={() => setAdicionado(false)}
+                            >
+                                Continuar escolhendo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="avaliacoes-section">
 
@@ -689,84 +633,24 @@ function Produto() {
                         )}
                     </div>
 
-                    {podeAvaliar && (
+                    {(podeAvaliar || minhaAvaliacao) && (
                         <button data-cy="escrever-avaliacao" onClick={() => setMostrarForm(!mostrarForm)}>
-                            {mostrarForm ? "Cancelar" : "Escrever avaliação"}
+                            {mostrarForm ? "Cancelar" : minhaAvaliacao ? "Alterar sua avaliação" : "Escrever avaliação"}
                         </button>
                     )}
                 </div>
 
                 {mostrarForm && (
-                    <div className="avaliacao-form">
-
-                        <span>Nome</span>
-                        <input
-                            data-cy="nome-avaliacao"
-                            placeholder="Digite seu Nome (Opcional)"
-                            value={novaAvaliacao.titulo}
-                            onChange={(e) =>
-                                setNovaAvaliacao({ ...novaAvaliacao, titulo: e.target.value })
-                            }
-                        />
-
-                        <span>Nota</span>
-                        {renderStars(novaAvaliacao.nota, true, (n) =>
-                            setNovaAvaliacao({ ...novaAvaliacao, nota: n })
-                        )}
-
-                        <input
-                            data-cy="nota-avaliacao"
-                            className="notaValue"
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            max="5"
-                            value={novaAvaliacao.nota}
-                            onChange={handleNotaChange}
-                        />
-
-                        <textarea
-                            data-cy="comentario-avaliacao"
-                            placeholder="Comentário"
-                            value={novaAvaliacao.comentario}
-                            onChange={(e) =>
-                                setNovaAvaliacao({ ...novaAvaliacao, comentario: e.target.value })
-                            }
-                        />
-
-                        <div className="avaliacao-imagens">
-                            <span>Fotos (máx 4)</span>
-
-                            <input
-                                data-cy="foto-avaliacao"
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleFotosChange}
-                                disabled={fotosAvaliacao.length >= 4}
-                            />
-
-                            {fotosAvaliacao.length > 0 && (
-                                <div className="preview-imagens">
-                                    {fotosAvaliacao.map((img, index) => (
-                                        <img
-                                            key={index}
-                                            src={URL.createObjectURL(img)}
-                                            alt={`Imagem ${index + 1}`}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-
-                            {fotosAvaliacao.length >= 4 && (
-                                <small>Você pode adicionar até 4 imagens.</small>
-                            )}
-                        </div>
-
-                        <button data-cy="enviar-avaliacao" onClick={enviarAvaliacao}>
-                            Enviar avaliação
-                        </button>
-                    </div>
+                    <AvaliacaoForm
+                        idProduto={id_produto}
+                        idUsuario={id_usuario}
+                        avaliacao={minhaAvaliacao}
+                        onAviso={setAlerta}
+                        onConcluir={() => {
+                            setMostrarForm(false);
+                            setVersaoAvaliacoes((versao) => versao + 1);
+                        }}
+                    />
                 )}
 
                 {avaliacoes.length === 0 ? (

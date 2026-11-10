@@ -77,19 +77,19 @@ class PedidoItensController {
       !payload.hasGradeField() ||
       !payload.hasQuantityField()
     ) {
-      return "id_pedido, id_produto_cor, id_produto_grade e quantidade sao obrigatorios.";
+      return "id_pedido, id_produto_cor, id_produto_grade e quantidade são obrigatórios.";
     }
 
     if (!payload.orderId) {
-      return "id_pedido invalido.";
+      return "id_pedido inválido.";
     }
 
     if (!payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     if (!payload.gradeId) {
-      return "id_produto_grade invalido.";
+      return "id_produto_grade inválido.";
     }
 
     return null;
@@ -97,21 +97,21 @@ class PedidoItensController {
 
   private static getUpdateErrorMessage(payload: PedidoItemPayload) {
     if (payload.hasOrderField() && !payload.orderId) {
-      return "id_pedido invalido.";
+      return "id_pedido inválido.";
     }
 
     if (payload.hasColorField() && !payload.colorId) {
-      return "id_produto_cor invalido.";
+      return "id_produto_cor inválido.";
     }
 
     if (payload.hasGradeField() && !payload.gradeId) {
-      return "id_produto_grade invalido.";
+      return "id_produto_grade inválido.";
     }
 
     return null;
   }
 
-  private static readonly CLOSED_ORDER_MESSAGE = "Itens so podem ser alterados enquanto o pedido nao foi pago.";
+  private static readonly CLOSED_ORDER_MESSAGE = "Itens só podem ser alterados enquanto o pedido não foi pago.";
 
   private static isClosed(...pedidos: (Pedidos | null)[]) {
     return pedidos.some((pedido) => pedido && !PedidoRegrasService.estaAberto(pedido.status));
@@ -136,18 +136,18 @@ class PedidoItensController {
     const grade = await ProdutoGrades.findByPk(selection.gradeId);
 
     if (!cor) {
-      return { status: 404, message: "Cor do produto nao encontrada." };
+      return { status: 404, message: "Cor do produto não encontrada." };
     }
 
     if (!grade) {
-      return { status: 404, message: "Grade do produto nao encontrada." };
+      return { status: 404, message: "Grade do produto não encontrada." };
     }
 
     return cor.id_produto === grade.id_produto
       ? null
       : {
           status: 400,
-          message: "A cor e a grade informadas nao pertencem ao mesmo produto.",
+          message: "A cor e a grade informadas não pertencem ao mesmo produto.",
         };
   }
 
@@ -197,7 +197,7 @@ class PedidoItensController {
     const orderId = PedidoItensController.parsePositiveId(req.params.id_order);
 
     if (!orderId) {
-      return res.status(400).json({ message: "ID do pedido invalido." });
+      return res.status(400).json({ message: "ID do pedido inválido." });
     }
 
     const items = await PedidoItens.findAll({ where: { id_pedido: orderId } });
@@ -216,7 +216,7 @@ class PedidoItensController {
     const pedido = await Pedidos.findByPk(payload.orderId!);
 
     if (!pedido) {
-      return res.status(404).json({ message: "Pedido nao encontrado." });
+      return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
     if (PedidoItensController.isClosed(pedido)) {
@@ -233,7 +233,7 @@ class PedidoItensController {
     const pricing = await PedidoItensController.resolvePricing(selection, payload.quantidade);
 
     if (!pricing) {
-      return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
+      return res.status(404).json({ message: "Produto vinculado ao item não encontrado." });
     }
 
     const item = await PedidoItens.create(PedidoItensController.buildCreateData(payload, pricing));
@@ -247,14 +247,14 @@ class PedidoItensController {
     const payload = new PedidoItemPayload(req.body);
 
     if (!itemId) {
-      return res.status(400).json({ message: "ID do item invalido." });
+      return res.status(400).json({ message: "ID do item inválido." });
     }
 
     const item = await PedidoItens.findByPk(itemId);
     const message = PedidoItensController.getUpdateErrorMessage(payload);
 
     if (!item) {
-      return res.status(404).json({ message: "Item do pedido nao encontrado." });
+      return res.status(404).json({ message: "Item do pedido não encontrado." });
     }
 
     if (message) {
@@ -267,7 +267,7 @@ class PedidoItensController {
       : pedidoAtual;
 
     if (payload.hasOrderField() && !pedidoDestino) {
-      return res.status(404).json({ message: "Pedido nao encontrado." });
+      return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
     if (PedidoItensController.isClosed(pedidoAtual, pedidoDestino)) {
@@ -287,7 +287,7 @@ class PedidoItensController {
     );
 
     if (!pricing) {
-      return res.status(404).json({ message: "Produto vinculado ao item nao encontrado." });
+      return res.status(404).json({ message: "Produto vinculado ao item não encontrado." });
     }
 
     await item.update(
@@ -307,13 +307,13 @@ class PedidoItensController {
     const itemId = PedidoItensController.parsePositiveId(req.params.id);
 
     if (!itemId) {
-      return res.status(400).json({ message: "ID do item invalido." });
+      return res.status(400).json({ message: "ID do item inválido." });
     }
 
     const item = await PedidoItens.findByPk(itemId);
 
     if (!item) {
-      return res.status(404).json({ message: "Item do pedido nao encontrado." });
+      return res.status(404).json({ message: "Item do pedido não encontrado." });
     }
 
     const pedido = await Pedidos.findByPk(item.id_pedido);

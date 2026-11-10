@@ -61,7 +61,7 @@ function Admin() {
     isDashboard
       ? "Dashboard"
       : isUsuarios
-        ? "Usuarios"
+        ? "Usuários"
         : isCategorias
           ? "Categoria de Produtos"
           : isPedidos

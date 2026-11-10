@@ -38,19 +38,19 @@ describe("CategoriasController", () => {
     });
   });
 
-  it("getById retorna 400 para id invalido", async () => {
+  it("getById retorna 400 para id inválido", async () => {
     const res = mockResponse();
     await CategoriasController.getById(mockRequest({ params: { id: "x" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria invalido." });
+    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria inválido." });
   });
 
-  it("getById retorna 404 quando nao encontra categoria", async () => {
+  it("getById retorna 404 quando não encontra categoria", async () => {
     const res = mockResponse();
     categoriasModel.findByPk.mockResolvedValueOnce(null);
     await CategoriasController.getById(mockRequest({ params: { id: "1" } }), res);
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Categoria nao encontrada." });
+    expect(res.json).toHaveBeenCalledWith({ message: "Categoria não encontrada." });
   });
 
   it("getById retorna 200 com a categoria", async () => {
@@ -65,14 +65,14 @@ describe("CategoriasController", () => {
     const res = mockResponse();
     await CategoriasController.create(mockRequest({ body: {} }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nome e obrigatorio." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nome e obrigatório." });
   });
 
-  it("create retorna 400 para nome invalido", async () => {
+  it("create retorna 400 para nome inválido", async () => {
     const res = mockResponse();
     await CategoriasController.create(mockRequest({ body: { nome: "   " } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nome e obrigatorio." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nome e obrigatório." });
   });
 
   it("create retorna 400 para nome duplicado", async () => {
@@ -80,7 +80,7 @@ describe("CategoriasController", () => {
     categoriasModel.findOne.mockResolvedValueOnce(buildModelInstance({ id_categoria: 7 }));
     await CategoriasController.create(mockRequest({ body: { nome: "cat" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Ja existe categoria com esse nome." });
+    expect(res.json).toHaveBeenCalledWith({ message: "Já existe categoria com esse nome." });
   });
 
   it("create retorna 201 com a categoria criada", async () => {
@@ -93,27 +93,27 @@ describe("CategoriasController", () => {
     expect(res.send).toHaveBeenCalledWith(categoria);
   });
 
-  it("update retorna 400 para id invalido", async () => {
+  it("update retorna 400 para id inválido", async () => {
     const res = mockResponse();
     await CategoriasController.update(mockRequest({ params: { id: "x" }, body: { nome: "x" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria invalido." });
+    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria inválido." });
   });
 
-  it("update retorna 404 quando a categoria nao existe", async () => {
+  it("update retorna 404 quando a categoria não existe", async () => {
     const res = mockResponse();
     categoriasModel.findByPk.mockResolvedValueOnce(null);
     await CategoriasController.update(mockRequest({ params: { id: "1" }, body: { nome: "x" } }), res);
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Categoria nao encontrada." });
+    expect(res.json).toHaveBeenCalledWith({ message: "Categoria não encontrada." });
   });
 
-  it("update retorna 400 para nome invalido", async () => {
+  it("update retorna 400 para nome inválido", async () => {
     const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 1, nome: "A" });
     categoriasModel.findByPk.mockResolvedValueOnce(categoria);
     await CategoriasController.update(mockRequest({ params: { id: "1" }, body: { nome: "   " } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "nome invalido." });
+    expect(res.json).toHaveBeenCalledWith({ message: "nome inválido." });
   });
 
   it("update retorna 400 para nome duplicado", async () => {
@@ -122,7 +122,7 @@ describe("CategoriasController", () => {
     categoriasModel.findOne.mockResolvedValueOnce(buildModelInstance({ id_categoria: 2, nome: "B" }));
     await CategoriasController.update(mockRequest({ params: { id: "1" }, body: { nome: "B" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Ja existe categoria com esse nome." });
+    expect(res.json).toHaveBeenCalledWith({ message: "Já existe categoria com esse nome." });
   });
 
   it("update retorna 200 com a categoria atualizada", async () => {
@@ -135,19 +135,19 @@ describe("CategoriasController", () => {
     expect(res.send).toHaveBeenCalledWith(categoria);
   });
 
-  it("remove retorna 400 para id invalido", async () => {
+  it("remove retorna 400 para id inválido", async () => {
     const res = mockResponse();
     await CategoriasController.remove(mockRequest({ params: { id: "x" } }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria invalido." });
+    expect(res.json).toHaveBeenCalledWith({ message: "ID da categoria inválido." });
   });
 
-  it("remove retorna 404 quando a categoria nao existe", async () => {
+  it("remove retorna 404 quando a categoria não existe", async () => {
     const res = mockResponse();
     categoriasModel.findByPk.mockResolvedValueOnce(null);
     await CategoriasController.remove(mockRequest({ params: { id: "5" } }), res);
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Categoria nao encontrada." });
+    expect(res.json).toHaveBeenCalledWith({ message: "Categoria não encontrada." });
   });
 
   it("remove retorna 204 quando exclui a categoria", async () => {

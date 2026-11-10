@@ -6,9 +6,9 @@ import { mockRequest, mockResponse } from "../helpers/http";
 describe("error.middleware", () => {
   it("responde com o status e a mensagem de um HttpError", () => {
     const next = jest.fn(), response = mockResponse();
-    errorHandler(new HttpError(404, "Recurso nao encontrado."), mockRequest(), response, next);
+    errorHandler(new HttpError(404, "Recurso não encontrado."), mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({ message: "Recurso nao encontrado." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Recurso não encontrado." });
   });
 
   it("responde 400 para JSON malformado no corpo", () => {
@@ -16,7 +16,7 @@ describe("error.middleware", () => {
     const parseError = Object.assign(new SyntaxError("Unexpected token"), { type: "entity.parse.failed" });
     errorHandler(parseError, mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "Corpo da requisicao nao e um JSON valido." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Corpo da requisição não é um JSON válido." });
   });
 
   it("traduz LIMIT_FILE_SIZE do multer para uma mensagem amigavel", () => {
@@ -24,7 +24,7 @@ describe("error.middleware", () => {
     errorHandler(new MulterError("LIMIT_FILE_SIZE"), mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({
-      message: "Arquivo muito grande. Tamanho maximo permitido: 20MB.",
+      message: "Arquivo muito grande. Tamanho máximo permitido: 20MB.",
     });
   });
 
@@ -43,7 +43,7 @@ describe("error.middleware", () => {
     error.name = "SequelizeUniqueConstraintError";
     errorHandler(error, mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(409);
-    expect(response.json).toHaveBeenCalledWith({ message: "Este registro ja existe no sistema." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Este registro já existe no sistema." });
   });
 
   it("responde 400 para violacao de chave estrangeira do Sequelize", () => {
@@ -53,7 +53,7 @@ describe("error.middleware", () => {
     errorHandler(error, mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({
-      message: "Operacao invalida: referencia um dado que nao existe ou esta em uso.",
+      message: "Operação inválida: referencia um dado que não existe ou está em uso.",
     });
   });
 
@@ -63,7 +63,7 @@ describe("error.middleware", () => {
     error.name = "SequelizeValidationError";
     errorHandler(error, mockRequest(), response, next);
     expect(response.status).toHaveBeenCalledWith(400);
-    expect(response.json).toHaveBeenCalledWith({ message: "Os dados enviados sao invalidos." });
+    expect(response.json).toHaveBeenCalledWith({ message: "Os dados enviados são inválidos." });
   });
 
   it("responde 500 para erros desconhecidos", () => {

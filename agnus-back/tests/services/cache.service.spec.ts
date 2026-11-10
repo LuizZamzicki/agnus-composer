@@ -39,7 +39,7 @@ describe("cache.service", () => {
     expect(CacheService.buildKey("produtos", "lista", { q: "x".repeat(300) })).toMatch(/^produtos:lista:[a-f0-9]{40}$/);
   });
 
-  it("executa o loader direto quando o Redis nao esta configurado", async () => {
+  it("executa o loader direto quando o Redis não esta configurado", async () => {
     const { CacheService } = loadService(null);
     const loader = jest.fn(async () => ({ data: [1] }));
 
@@ -69,7 +69,7 @@ describe("cache.service", () => {
     expect(metrics.getMetricsSnapshot().counters.cache_misses_total).toBe(1);
   });
 
-  it("nao grava resultados rejeitados pelo shouldCache", async () => {
+  it("não grava resultados rejeitados pelo shouldCache", async () => {
     const redis = buildRedis();
     redis.get.mockResolvedValue(null);
     const { CacheService } = loadService(redis);
@@ -78,7 +78,7 @@ describe("cache.service", () => {
     expect(redis.set).not.toHaveBeenCalled();
   });
 
-  it("degrada para a fonte quando o Redis falha e abre o circuito apos falhas seguidas", async () => {
+  it("degrada para a fonte quando o Redis falha e abre o circuito após falhas seguidas", async () => {
     const redis = buildRedis();
     redis.get.mockRejectedValue(new Error("timeout"));
     redis.set.mockRejectedValue(new Error("timeout"));
@@ -98,7 +98,7 @@ describe("cache.service", () => {
     expect(redis.get).toHaveBeenCalled();
   });
 
-  it("ignora o Redis quando a conexao ainda nao esta pronta", async () => {
+  it("ignora o Redis quando a conexão ainda não esta pronta", async () => {
     const redis = buildRedis();
     redis.status = "connecting";
     const { CacheService } = loadService(redis);
@@ -110,7 +110,7 @@ describe("cache.service", () => {
     expect(redis.set).not.toHaveBeenCalled();
   });
 
-  it("invalida todas as chaves do namespace usando SCAN", async () => {
+  it("inválida todas as chaves do namespace usando SCAN", async () => {
     const redis = buildRedis();
     redis.scan
       .mockResolvedValueOnce(["7", ["agnus:cache:produtos:a", "agnus:cache:produtos:b"]])

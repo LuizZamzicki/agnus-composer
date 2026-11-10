@@ -18,7 +18,7 @@ function obterDataValida(valor) {
 }
 
 function formatarDataHora(valor) {
-  if (!valor) return "Data indisponivel";
+  if (!valor) return "Data indisponível";
 
   return valor.toLocaleString("pt-BR", {
     day: "2-digit",
@@ -36,11 +36,11 @@ function criarAcoesRecentes(usuarios, pedidos, produtos, categorias) {
     const data = obterDataValida(item?.data_criacao ?? item?.created_at ?? item?.dataCadastro);
     if (!data) return;
 
-    const nome = item?.nome ?? item?.nome_usuario ?? item?.usuario_nome ?? item?.name ?? item?.username ?? `Usuario ${index + 1}`;
+    const nome = item?.nome ?? item?.nome_usuario ?? item?.usuario_nome ?? item?.name ?? item?.username ?? `Usuário ${index + 1}`;
     acoes.push({
       id: `usuario-${item?.id_usuario ?? item?.id ?? index}`,
-      titulo: "Novo usuario cadastrado",
-      descricao: nome,
+      titulo: "Novo usuário cadastrado",
+      descrição: nome,
       data,
       icone: UserPlus,
     });
@@ -70,7 +70,7 @@ function criarAcoesRecentes(usuarios, pedidos, produtos, categorias) {
     acoes.push({
       id: `produto-${item?.id_produto ?? item?.id ?? index}`,
       titulo: "Novo produto cadastrado",
-      descricao: nome,
+      descrição: nome,
       data,
       icone: PackagePlus,
     });
@@ -84,7 +84,7 @@ function criarAcoesRecentes(usuarios, pedidos, produtos, categorias) {
     acoes.push({
       id: `categoria-${item?.id_categoria ?? item?.id ?? index}`,
       titulo: "Nova categoria cadastrada",
-      descricao: nome,
+      descrição: nome,
       data,
       icone: Tag,
     });
@@ -192,7 +192,7 @@ function AdminDashboard() {
   const cards = useMemo(
     () => [
       {
-        titulo: "Total de Usuarios",
+        titulo: "Total de Usuários",
         valor: dashboardStats.totalUsuarios,
         cor: "var(--lit)",
         icone: Users,
@@ -250,7 +250,7 @@ function AdminDashboard() {
 
       <section className="admin-section">
         <div data-cy="dashboard-title" className="admin-section__header">
-          <h2>Ultimas Acoes</h2>
+          <h2>Ultimas Ações</h2>
         </div>
 
         {acoesRecentes.length === 0 ? (

@@ -37,6 +37,7 @@ jest.mock("../src/controllers/produtoFotos.controller", () => ({ __esModule: tru
 jest.mock("../src/controllers/produtoGrades.controller", () => ({ __esModule: true, default: controllerMock }));
 jest.mock("../src/controllers/produtos.controller", () => ({ __esModule: true, default: controllerMock }));
 jest.mock("../src/controllers/pedidos.controller", () => ({ __esModule: true, default: controllerMock }));
+jest.mock("../src/controllers/notificacoes.controller", () => ({ __esModule: true, default: { findMine: handler, markAllAsRead: handler, markAsRead: handler } }));
 jest.mock("../src/controllers/usuarioContatos.controller", () => ({ __esModule: true, default: controllerMock }));
 jest.mock("../src/controllers/usuarioEnderecos.controller", () => ({ __esModule: true, default: controllerMock }));
 jest.mock("../src/controllers/usuarioSenhasHistorico.controller", () => ({ __esModule: true, default: controllerMock }));

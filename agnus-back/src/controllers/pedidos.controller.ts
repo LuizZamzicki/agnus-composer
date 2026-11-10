@@ -5,6 +5,7 @@ import Usuarios from "../models/Usuarios";
 import type { AuthenticatedResponseLocals } from "../middlewares/auth.middleware";
 import CheckoutService, { CheckoutError } from "../services/checkout.service";
 import EventBusService from "../services/eventBus.service";
+import NotificacaoService from "../services/notificacao.service";
 import PedidoRegrasService from "../services/pedidoRegras.service";
 import type {
   PedidoBody,
@@ -87,23 +88,23 @@ class PedidosController {
 
   private static getCreateErrorMessage(payload: PedidoPayload) {
     if (!payload.hasUserField() || !payload.hasAddressField()) {
-      return "id_usuario e id_usuario_endereco sao obrigatorios.";
+      return "id_usuario e id_usuario_endereco são obrigatórios.";
     }
 
     if (!payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (!payload.addressId) {
-      return "id_usuario_endereco invalido.";
+      return "id_usuario_endereco inválido.";
     }
 
     if (payload.hasStatusField() && !payload.status) {
-      return "status invalido.";
+      return "status inválido.";
     }
 
     if (payload.status && !PedidoRegrasService.estaAberto(payload.status)) {
-      return "Um pedido novo so pode comecar em aguardando_calculo_frete ou aguardando_pagamento.";
+      return "Um pedido novo só pode começar em aguardando_calculo_frete ou aguardando_pagamento.";
     }
 
     return null;
@@ -111,15 +112,15 @@ class PedidosController {
 
   private static getUpdateErrorMessage(payload: PedidoPayload) {
     if (payload.hasUserField() && !payload.userId) {
-      return "id_usuario invalido.";
+      return "id_usuario inválido.";
     }
 
     if (payload.hasAddressField() && !payload.addressId) {
-      return "id_usuario_endereco invalido.";
+      return "id_usuario_endereco inválido.";
     }
 
     if (payload.hasStatusField() && !payload.status) {
-      return "status invalido.";
+      return "status inválido.";
     }
 
     return null;
@@ -134,11 +135,11 @@ class PedidosController {
       : PedidosController.normalizeStatus(query.status);
 
     if (query.id_usuario !== undefined && !userId) {
-      return { message: "id_usuario invalido." };
+      return { message: "id_usuario inválido." };
     }
 
     if (query.status !== undefined && !status) {
-      return { message: "status invalido." };
+      return { message: "status inválido." };
     }
 
     return { id_usuario: userId, status };
@@ -146,7 +147,7 @@ class PedidosController {
 
   private static async findUserError(userId?: number | null) {
     return userId && !(await Usuarios.findByPk(userId))
-      ? "Usuario nao encontrado."
+      ? "Usuário não encontrado."
       : null;
   }
 
@@ -210,13 +211,13 @@ class PedidosController {
     const orderId = PedidosController.parsePositiveId(req.params.id);
 
     if (!orderId) {
-      return res.status(400).json({ message: "ID do pedido invalido." });
+      return res.status(400).json({ message: "ID do pedido inválido." });
     }
 
     const pedido = await Pedidos.findByPk(orderId);
 
     if (!pedido) {
-      return res.status(404).json({ message: "Pedido nao encontrado." });
+      return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
     return res.status(200).send(pedido);
@@ -243,12 +244,12 @@ class PedidosController {
     }
 
     if (!endereco) {
-      return res.status(404).json({ message: "Endereco do usuario nao encontrado." });
+      return res.status(404).json({ message: "Endereço do usuário não encontrado." });
     }
 
     if (endereco.id_usuario !== payload.userId) {
       return res.status(400).json({
-        message: "O endereco informado nao pertence ao usuario informado.",
+        message: "O endereço informado não pertence ao usuário informado.",
       });
     }
 
@@ -295,14 +296,14 @@ class PedidosController {
     const payload = new PedidoPayload(req.body);
 
     if (!orderId) {
-      return res.status(400).json({ message: "ID do pedido invalido." });
+      return res.status(400).json({ message: "ID do pedido inválido." });
     }
 
     const pedido = await Pedidos.findByPk(orderId);
     const message = PedidosController.getUpdateErrorMessage(payload);
 
     if (!pedido) {
-      return res.status(404).json({ message: "Pedido nao encontrado." });
+      return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
     if (message) {
@@ -311,7 +312,7 @@ class PedidosController {
 
     if (payload.status && !PedidoRegrasService.podeTransitar(pedido.status, payload.status)) {
       return res.status(409).json({
-        message: `Transicao de status invalida: ${pedido.status} -> ${payload.status}.`,
+        message: `Transição de status inválida: ${pedido.status} -> ${payload.status}.`,
       });
     }
 
@@ -325,12 +326,12 @@ class PedidosController {
     }
 
     if (!endereco) {
-      return res.status(404).json({ message: "Endereco do usuario nao encontrado." });
+      return res.status(404).json({ message: "Endereço do usuário não encontrado." });
     }
 
     if (endereco.id_usuario !== userId) {
       return res.status(400).json({
-        message: "O endereco informado nao pertence ao usuario informado.",
+        message: "O endereço informado não pertence ao usuário informado.",
       });
     }
 
@@ -349,6 +350,7 @@ class PedidosController {
       await PedidoRegrasService.recalcularTotal(pedido);
     }
 
+    await NotificacaoService.avisarMudancaDeStatus(pedido, previousStatus);
     await EventBusService.publish("pedido.atualizado", {
       id_pedido: pedido.id_pedido,
       id_usuario: pedido.id_usuario,
@@ -362,13 +364,13 @@ class PedidosController {
     const orderId = PedidosController.parsePositiveId(req.params.id);
 
     if (!orderId) {
-      return res.status(400).json({ message: "ID do pedido invalido." });
+      return res.status(400).json({ message: "ID do pedido inválido." });
     }
 
     const pedido = await Pedidos.findByPk(orderId);
 
     if (!pedido) {
-      return res.status(404).json({ message: "Pedido nao encontrado." });
+      return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
     await pedido.destroy();

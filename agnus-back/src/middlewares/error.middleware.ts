@@ -4,7 +4,7 @@ import { HttpError } from "../types/http_error";
 import logger from "../utils/logger";
 
 const MULTER_ERROR_MESSAGES: Record<string, string> = {
-  LIMIT_FILE_SIZE: "Arquivo muito grande. Tamanho maximo permitido: 20MB.",
+  LIMIT_FILE_SIZE: "Arquivo muito grande. Tamanho máximo permitido: 20MB.",
   LIMIT_FILE_COUNT: "Muitos arquivos enviados.",
   LIMIT_UNEXPECTED_FILE: "Campo de arquivo inesperado.",
 };
@@ -27,21 +27,21 @@ export const errorHandler = (
 
   // JSON malformado no corpo e erro do cliente, nao do servidor.
   if ((error as Error & { type?: string }).type === "entity.parse.failed") {
-    return res.status(400).json({ message: "Corpo da requisicao nao e um JSON valido." });
+    return res.status(400).json({ message: "Corpo da requisição não é um JSON válido." });
   }
 
   if (error.name === "SequelizeUniqueConstraintError") {
-    return res.status(409).json({ message: "Este registro ja existe no sistema." });
+    return res.status(409).json({ message: "Este registro já existe no sistema." });
   }
 
   if (error.name === "SequelizeForeignKeyConstraintError") {
     return res.status(400).json({
-      message: "Operacao invalida: referencia um dado que nao existe ou esta em uso.",
+      message: "Operação inválida: referencia um dado que não existe ou está em uso.",
     });
   }
 
   if (error.name === "SequelizeValidationError") {
-    return res.status(400).json({ message: "Os dados enviados sao invalidos." });
+    return res.status(400).json({ message: "Os dados enviados são inválidos." });
   }
 
   logger.error("http.erro_nao_tratado", { method: req.method, path: req.path, error });

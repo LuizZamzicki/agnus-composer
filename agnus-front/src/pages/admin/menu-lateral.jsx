@@ -135,7 +135,7 @@ function AdminMenuLateral() {
           <Users size={20} />
 
           <span>
-            Usuarios
+            Usuários
           </span>
 
         </button>

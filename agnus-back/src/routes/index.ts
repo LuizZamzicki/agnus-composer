@@ -4,6 +4,7 @@ import carrinhoRoutes from './carrinho.routes';
 import catalogoRoutes from './catalogo.routes';
 import clientesRoutes from './clientes.routes';
 import identidadeRoutes from './identidade.routes';
+import notificacoesRoutes from './notificacoes.routes';
 import pedidosRoutes from './pedidos.routes';
 
 // Um modulo de rotas por bounded context (ver docs/arquitetura/ddd.md).
@@ -15,5 +16,6 @@ router.use(catalogoRoutes);
 router.use(avaliacoesRoutes);
 router.use(carrinhoRoutes);
 router.use(pedidosRoutes);
+router.use(notificacoesRoutes);
 
 export default router;

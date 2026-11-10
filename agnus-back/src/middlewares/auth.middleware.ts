@@ -38,21 +38,21 @@ const authenticateToken = async (req: Request, res: AuthResponse, next: NextFunc
   const tokenPayload = token ? AuthService.verifyToken(token) : null;
 
   if (!token) {
-    return res.status(401).json({ message: "Token nao informado." });
+    return res.status(401).json({ message: "Token não informado." });
   }
 
   if (!tokenPayload) {
-    return res.status(401).json({ message: "Token invalido ou expirado." });
+    return res.status(401).json({ message: "Token inválido ou expirado." });
   }
 
   const authUser = await buildAuthUser(tokenPayload.id_usuario);
 
   if (!authUser) {
-    return res.status(401).json({ message: "Usuario do token nao existe mais." });
+    return res.status(401).json({ message: "Usuário do token não existe mais." });
   }
 
   if (!isCurrentToken(tokenPayload, authUser)) {
-    return res.status(401).json({ message: "Token desatualizado. Faca login novamente." });
+    return res.status(401).json({ message: "Token desatualizado. Faça login novamente." });
   }
 
   res.locals.authUser = authUser;
@@ -76,11 +76,11 @@ export const authorizeRoles = (...allowedRoles: UserRole[]) => (req: Request, re
   const authUser = res.locals.authUser;
 
   if (!authUser) {
-    return res.status(401).json({ message: "Nao autenticado." });
+    return res.status(401).json({ message: "Não autenticado." });
   }
 
   if (!allowedRoles.includes(authUser.tipo)) {
-    return res.status(403).json({ message: "Sem permissao para este recurso." });
+    return res.status(403).json({ message: "Sem permissão para este recurso." });
   }
 
   return next();
@@ -90,7 +90,7 @@ export const authorizeSelfOrAdmin = (paramName = "id") => (req: Request, res: Au
   const authUser = res.locals.authUser;
 
   if (!authUser) {
-    return res.status(401).json({ message: "Nao autenticado." });
+    return res.status(401).json({ message: "Não autenticado." });
   }
 
   if (authUser.tipo === "administrador") {
@@ -100,11 +100,11 @@ export const authorizeSelfOrAdmin = (paramName = "id") => (req: Request, res: Au
   const requestedUserId = Number(req.params[paramName]);
 
   if (!Number.isInteger(requestedUserId)) {
-    return res.status(400).json({ message: "ID de usuario invalido." });
+    return res.status(400).json({ message: "ID de usuário inválido." });
   }
 
   if (requestedUserId !== authUser.id_usuario) {
-    return res.status(403).json({ message: "Voce so pode acessar o proprio usuario." });
+    return res.status(403).json({ message: "Você só pode acessar o próprio usuário." });
   }
 
   return next();

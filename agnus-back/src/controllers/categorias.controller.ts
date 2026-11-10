@@ -40,20 +40,20 @@ class CategoriasController {
 
   private static getCreateErrorMessage(payload: CategoriaPayload) {
     return !payload.hasNameField() || !payload.nome
-      ? "nome e obrigatorio."
+      ? "nome e obrigatório."
       : null;
   }
 
   private static getUpdateErrorMessage(payload: CategoriaPayload) {
     return payload.hasNameField() && !payload.nome
-      ? "nome invalido."
+      ? "nome inválido."
       : null;
   }
 
   private static async findDuplicateMessage(nome: string | null, currentName?: string) {
     return !nome || nome === currentName || !(await Categorias.findOne({ where: { nome } }))
       ? null
-      : "Ja existe categoria com esse nome.";
+      : "Já existe categoria com esse nome.";
   }
 
   // O catalogo de produtos exibe o nome da categoria, entao os dois namespaces sao invalidados.
@@ -96,7 +96,7 @@ class CategoriasController {
     const categoryId = CategoriasController.parsePositiveId(req.params.id);
 
     if (!categoryId) {
-      return res.status(400).json({ message: "ID da categoria invalido." });
+      return res.status(400).json({ message: "ID da categoria inválido." });
     }
 
     const categoria = await CacheService.getOrSet(
@@ -107,7 +107,7 @@ class CategoriasController {
     );
 
     if (!categoria) {
-      return res.status(404).json({ message: "Categoria nao encontrada." });
+      return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
     return res.status(200).send(categoria);
@@ -139,7 +139,7 @@ class CategoriasController {
     const payload = new CategoriaPayload(req.body);
 
     if (!categoryId) {
-      return res.status(400).json({ message: "ID da categoria invalido." });
+      return res.status(400).json({ message: "ID da categoria inválido." });
     }
 
     const categoria = await Categorias.findByPk(categoryId);
@@ -149,7 +149,7 @@ class CategoriasController {
       : null;
 
     if (!categoria) {
-      return res.status(404).json({ message: "Categoria nao encontrada." });
+      return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
     if (message) {
@@ -169,13 +169,13 @@ class CategoriasController {
     const categoryId = CategoriasController.parsePositiveId(req.params.id);
 
     if (!categoryId) {
-      return res.status(400).json({ message: "ID da categoria invalido." });
+      return res.status(400).json({ message: "ID da categoria inválido." });
     }
 
     const categoria = await Categorias.findByPk(categoryId);
 
     if (!categoria) {
-      return res.status(404).json({ message: "Categoria nao encontrada." });
+      return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
     await categoria.destroy();

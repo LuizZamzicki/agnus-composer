@@ -38,7 +38,7 @@ class AvaliacaoFotosController {
 
   private static getCreateErrorMessage(reviewId: number | null, uploads: AvaliacaoFotoUpload[], filesCount: number) {
     if (!reviewId) {
-      return "id_avaliacao_produto invalido.";
+      return "id_avaliacao_produto inválido.";
     }
 
     if (!uploads.length && !filesCount) {
@@ -105,7 +105,7 @@ class AvaliacaoFotosController {
     }
 
     if (body.caminho_url !== undefined && !photoPath) {
-      return "caminho_url invalido.";
+      return "caminho_url inválido.";
     }
 
     return null;
@@ -126,13 +126,13 @@ class AvaliacaoFotosController {
     const reviewId = AvaliacaoFotosController.parsePositiveId(req.params.id_review);
 
     if (!reviewId) {
-      return res.status(400).json({ message: "ID da avaliacao invalido." });
+      return res.status(400).json({ message: "ID da avaliação inválido." });
     }
 
     const fotos = await AvaliacaoFotos.findAll({ where: { id_avaliacao_produto: reviewId } });
 
     if (!fotos) {
-      return res.status(404).json({ message: "Foto da avaliacao nao encontrada." });
+      return res.status(404).json({ message: "Foto da avaliação não encontrada." });
     }
 
     return res.status(200).send(fotos);
@@ -151,7 +151,7 @@ class AvaliacaoFotosController {
     const avaliacao = await AvaliacaoProdutos.findByPk(reviewId!);
 
     if (!avaliacao) {
-      return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
+      return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
     const photoPaths = await AvaliacaoFotosController.buildPhotoPaths(files, uploads);
@@ -171,24 +171,24 @@ class AvaliacaoFotosController {
     const uploadedFile = AvaliacaoFotosController.getUploadedFiles(req)[0];
 
     if (!photoId) {
-      return res.status(400).json({ message: "ID da foto invalido." });
+      return res.status(400).json({ message: "ID da foto inválido." });
     }
 
     const foto = await AvaliacaoFotos.findByPk(photoId);
 
     if (!foto) {
-      return res.status(404).json({ message: "Foto da avaliacao nao encontrada." });
+      return res.status(404).json({ message: "Foto da avaliação não encontrada." });
     }
 
     if (req.body.id_avaliacao_produto !== undefined && !reviewId) {
-      return res.status(400).json({ message: "id_avaliacao_produto invalido." });
+      return res.status(400).json({ message: "id_avaliacao_produto inválido." });
     }
 
     if (
       req.body.id_avaliacao_produto !== undefined &&
       !(await AvaliacaoProdutos.findByPk(reviewId!))
     ) {
-      return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
+      return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
     // O arquivo so e gravado depois de todas as checagens, para nao sobrar no disco sem registro.
@@ -224,13 +224,13 @@ class AvaliacaoFotosController {
     const photoId = AvaliacaoFotosController.parsePositiveId(req.params.id);
 
     if (!photoId) {
-      return res.status(400).json({ message: "ID da foto invalido." });
+      return res.status(400).json({ message: "ID da foto inválido." });
     }
 
     const foto = await AvaliacaoFotos.findByPk(photoId);
 
     if (!foto) {
-      return res.status(404).json({ message: "Foto da avaliacao nao encontrada." });
+      return res.status(404).json({ message: "Foto da avaliação não encontrada." });
     }
 
     await foto.destroy();

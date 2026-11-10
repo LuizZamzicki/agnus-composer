@@ -7,6 +7,18 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Em andamento
 - Integração de pagamento com Mercado Pago (US-25, US-26).
 
+### Adicionado
+- Notificações no site: um sino no cabeçalho avisa o cliente quando o status do pedido muda e leva direto ao pedido.
+- Na tela de pedidos, botão para ver as peças e avaliar cada peça entregue, com foto.
+- Pop-up de confirmação ao colocar uma peça na sacola.
+
+### Alterado
+- Quem já avaliou uma peça vê só "Alterar sua avaliação"; a nota é dada apenas pelas estrelas.
+
+### Corrigido
+- Mensagens da API e textos do site voltam a ter acentos.
+- O nome digitado na avaliação era descartado ao enviar.
+
 ## [3.4.0] — 2026-11-06
 
 ### Segurança

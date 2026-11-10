@@ -61,7 +61,7 @@ class EventBusService {
     const subscriber = createRedisSubscriber();
 
     if (!subscriber) {
-      throw new Error("REDIS_URL nao configurada: nao e possivel assinar eventos.");
+      throw new Error("REDIS_URL não configurada: não e possível assinar eventos.");
     }
 
     subscriber.on("pmessage", async (_pattern, channel, message) => {

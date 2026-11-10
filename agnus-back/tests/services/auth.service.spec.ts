@@ -80,7 +80,7 @@ describe("AuthService", () => {
     expect(jwtMock.sign).toHaveBeenCalledWith(payload, "secret", { expiresIn: "1h" });
   });
 
-  it("verifyToken devolve payload valido", () => {
+  it("verifyToken devolve payload válido", () => {
     jwtMock.verify.mockReturnValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "administrador" } as never);
     expect(AuthService.verifyToken("jwt-token")).toEqual({ id_usuario: 1, email: "a@a.com", tipo: "administrador" });
   });
@@ -90,24 +90,24 @@ describe("AuthService", () => {
     expect(AuthService.verifyToken("bad")).toBeNull();
   });
 
-  it("verifyToken devolve null para token invalido", () => {
+  it("verifyToken devolve null para token inválido", () => {
     jwtMock.verify.mockImplementationOnce(() => { throw new Error("invalid"); });
     expect(AuthService.verifyToken("bad")).toBeNull();
   });
 
-  it("authenticate devolve null quando o usuario nao existe", async () => {
+  it("authenticate devolve null quando o usuário não existe", async () => {
     usuariosModel.findOne.mockResolvedValueOnce(null);
     await expect(AuthService.authenticate("a@a.com", "123")).resolves.toBeNull();
   });
 
-  it("authenticate devolve null para senha invalida", async () => {
+  it("authenticate devolve null para senha inválida", async () => {
     const user = buildModelInstance({ ...buildPublicUser("a@a.com"), senha: "hash" });
     usuariosModel.findOne.mockResolvedValueOnce(user as never as Usuarios);
     argon2Mock.verify.mockResolvedValueOnce(false as never);
     await expect(AuthService.authenticate("a@a.com", "123")).resolves.toBeNull();
   });
 
-  it("authenticate devolve usuario e token no sucesso", async () => {
+  it("authenticate devolve usuário e token no sucesso", async () => {
     const user = buildModelInstance({ ...buildPublicUser("a@a.com"), senha: "hash" });
     usuariosModel.findOne.mockResolvedValueOnce(user as never as Usuarios);
     argon2Mock.verify.mockResolvedValueOnce(true as never);
@@ -143,7 +143,7 @@ describe("AuthService", () => {
   it.each([
     ["site", undefined, "https://localhost/api/auth/google/callback"],
     ["app", "agnusapp://login", "https://agnus.ngrok-free.dev/auth/google/callback"],
-  ])("na troca do codigo (%s) repete o redirect_uri usado na autorizacao", async (_label, appRedirect, expected) => {
+  ])("na troca do código (%s) repete o redirect_uri usado na autorizacao", async (_label, appRedirect, expected) => {
     process.env.GOOGLE_REDIRECT_URI = "https://agnus.ngrok-free.dev/auth/google/callback";
     process.env.GOOGLE_REDIRECT_URI_WEB = "https://localhost/api/auth/google/callback";
     jwtMock.verify
@@ -157,7 +157,7 @@ describe("AuthService", () => {
     expect(body.get("redirect_uri")).toBe(expected);
   });
 
-  it("buildGoogleAuthorizationUrl falha sem configuracao", () => {
+  it("buildGoogleAuthorizationUrl falha sem configuração", () => {
     process.env.GOOGLE_CLIENT_ID = "";
     process.env.GOOGLE_CLIENT_SECRET = "";
     expect(() => AuthService.buildGoogleAuthorizationUrl()).toThrow("Google OAuth");
@@ -173,17 +173,17 @@ describe("AuthService", () => {
     );
   });
 
-  it("peekGoogleStateRedirect devolve o redirect de um state valido", () => {
+  it("peekGoogleStateRedirect devolve o redirect de um state válido", () => {
     jwtMock.verify.mockReturnValueOnce({ provider: "google", redirect: "agnusapp://auth" } as never);
     expect(AuthService.peekGoogleStateRedirect("state")).toBe("agnusapp://auth");
   });
 
-  it("peekGoogleStateRedirect devolve undefined para state invalido", () => {
+  it("peekGoogleStateRedirect devolve undefined para state inválido", () => {
     jwtMock.verify.mockImplementationOnce(() => { throw new Error("bad"); });
     expect(AuthService.peekGoogleStateRedirect("state")).toBeUndefined();
   });
 
-  it("authenticateWithGoogle falha com estado invalido", async () => {
+  it("authenticateWithGoogle falha com estado inválido", async () => {
     jwtMock.verify.mockImplementationOnce(() => { throw new Error("state invalid"); });
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Estado OAuth");
   });
@@ -194,7 +194,7 @@ describe("AuthService", () => {
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Falha ao obter token Google");
   });
 
-  it("authenticateWithGoogle falha quando o perfil nao tem email verificado", async () => {
+  it("authenticateWithGoogle falha quando o perfil não tem email verificado", async () => {
     jwtMock.verify.mockReturnValueOnce({ provider: "google" } as never);
     fetchMock
       .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "ga" }), { status: 200 }))
@@ -202,7 +202,7 @@ describe("AuthService", () => {
     await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Conta Google sem email verificado.");
   });
 
-  it("authenticateWithGoogle autentica usuario existente por google_id", async () => {
+  it("authenticateWithGoogle autentica usuário existente por google_id", async () => {
     const user = buildModelInstance({ ...buildPublicUser("a@a.com"), google_id: "sub-1", senha: "hash" });
     jwtMock.verify.mockReturnValueOnce({ provider: "google" } as never);
     fetchMock
@@ -225,7 +225,7 @@ describe("AuthService", () => {
     expect(user.update).toHaveBeenCalledWith({ google_id: "sub-2" });
   });
 
-  it("authenticateWithGoogle cria usuario quando nao encontra conta", async () => {
+  it("authenticateWithGoogle cria usuário quando não encontra conta", async () => {
     const user = buildModelInstance({ ...buildPublicUser("c@c.com"), id_usuario: 3, google_id: "sub-3", senha: "hash" });
     jwtMock.verify.mockReturnValueOnce({ provider: "google" } as never);
     fetchMock

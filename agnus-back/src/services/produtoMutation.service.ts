@@ -135,7 +135,7 @@ class ProdutoMutationService {
 
   static async update(productId: number, body: ProdutoBody) {
     if (!Number.isInteger(productId)) {
-      return { message: "id do produto invalido.", status: 400 };
+      return { message: "id do produto inválido.", status: 400 };
     }
 
     const produto = await Produtos.findByPk(productId);
@@ -163,13 +163,13 @@ class ProdutoMutationService {
 
   static async remove(productId: number) {
     if (!Number.isInteger(productId)) {
-      return { message: "id do produto invalido.", status: 400 };
+      return { message: "id do produto inválido.", status: 400 };
     }
 
     const produto = await Produtos.findByPk(productId);
 
     if (!produto) {
-      return { message: "Produto nao encontrado", status: 404 };
+      return { message: "Produto não encontrado", status: 404 };
     }
 
     const orderFilters = await ProdutoMutationService.buildOrderFilters(productId);
@@ -177,7 +177,7 @@ class ProdutoMutationService {
 
     if (orderCount > 0) {
       return {
-        message: "Produto vinculado a pedidos nao pode ser removido. Desative-o em vez de excluir.",
+        message: "Produto vinculado a pedidos não pode ser removido. Desative-o em vez de excluir.",
         status: 409,
       };
     }
@@ -211,7 +211,7 @@ class ProdutoMutationService {
 
   static async getUpdateError(produto: Produtos | null, payload: ProdutoPayload) {
     if (!produto) {
-      return { message: "Produto nao encontrado", status: 404 };
+      return { message: "Produto não encontrado", status: 404 };
     }
 
     const message = ProdutoMutationService.getPayloadError(payload, false);
@@ -226,15 +226,15 @@ class ProdutoMutationService {
 
   static getPayloadError(payload: ProdutoPayload, creating: boolean) {
     if (creating && (!payload.nome || payload.precoBase === undefined)) {
-      return "nome e preco_base sao obrigatorios.";
+      return "nome e preco_base são obrigatórios.";
     }
 
     if (payload.hasPriceCostField() && payload.precoCusto === undefined) {
-      return "preco_custo invalido.";
+      return "preco_custo inválido.";
     }
 
     if (payload.hasCategoryField() && payload.categoryId === undefined) {
-      return "id_categoria invalido.";
+      return "id_categoria inválido.";
     }
 
     if (payload.hasGradesField() && !payload.grades) {
@@ -289,7 +289,7 @@ class ProdutoMutationService {
       payload.categoryId !== null &&
       payload.categoryId !== undefined &&
       !(await Categorias.findByPk(payload.categoryId))
-      ? "Categoria nao encontrada"
+      ? "Categoria não encontrada"
       : null;
   }
 
@@ -356,7 +356,7 @@ class ProdutoMutationService {
     }
 
     if (acrescimo === undefined) {
-      throw new Error(`Acrescimo invalido para a grade "${nome}".`);
+      throw new Error(`Acréscimo inválido para a grade "${nome}".`);
     }
 
     return ProdutoGrades.create(
@@ -395,7 +395,7 @@ class ProdutoMutationService {
     }
 
     if (acrescimo === undefined) {
-      throw new Error(`Acrescimo invalido para a cor "${nome}".`);
+      throw new Error(`Acréscimo inválido para a cor "${nome}".`);
     }
 
     const corCriada = await ProdutoCores.create(
@@ -467,7 +467,7 @@ class ProdutoMutationService {
       .map((foto) => foto.trim())
       .filter((foto) => {
         if (!foto) {
-          throw new Error(`Foto existente invalida na cor "${nomeCor}".`);
+          throw new Error(`Foto existente inválida na cor "${nomeCor}".`);
         }
 
         return true;
@@ -499,7 +499,7 @@ class ProdutoMutationService {
     const savedFilePath = await saveProdutoFotoBits(foto);
 
     if (!savedFilePath) {
-      throw new Error(`Foto nova invalida em fotos_upload na cor "${nomeCor}".`);
+      throw new Error(`Foto nova inválida em fotos_upload na cor "${nomeCor}".`);
     }
 
     return savedFilePath;

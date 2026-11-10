@@ -56,8 +56,8 @@ function formatarTipoUsuario(valor) {
     administrador: "Administrador",
     admin: "Administrador",
     cliente: "Cliente",
-    usuario: "Usuario",
-    user: "Usuario",
+    usuario: "Usuário",
+    user: "Usuário",
   };
 
   return mapa[String(valor).toLowerCase()] ?? String(valor);
@@ -92,7 +92,7 @@ function AdminUsuarioLista() {
 
         if (!response.ok) {
           setUsuariosError(
-            payload?.message || "Erro ao carregar usuarios."
+            payload?.message || "Erro ao carregar usuários."
           );
           return;
         }
@@ -209,9 +209,9 @@ function AdminUsuarioLista() {
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value) || 10)}
           >
-            <option value={10}>10 por pagina</option>
-            <option value={20}>20 por pagina</option>
-            <option value={30}>30 por pagina</option>
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
+            <option value={30}>30 por página</option>
           </select>
         </div>
       </div>
@@ -219,7 +219,7 @@ function AdminUsuarioLista() {
       {usuariosLoading ? (
         <div className="admin-products-empty">
           <Users size={48} />
-          <p>Carregando usuarios...</p>
+          <p>Carregando usuários...</p>
         </div>
       ) : usuariosError ? (
         <div className="admin-products-empty">
@@ -229,12 +229,12 @@ function AdminUsuarioLista() {
       ) : usuarios.length === 0 ? (
         <div className="admin-products-empty">
           <Users size={48} />
-          <p>Nenhum usuario encontrado</p>
+          <p>Nenhum usuário encontrado</p>
         </div>
       ) : usuariosFiltrados.length === 0 ? (
         <div className="admin-products-empty">
           <Users size={48} />
-          <p>Nenhum usuario encontrado para os filtros informados.</p>
+          <p>Nenhum usuário encontrado para os filtros informados.</p>
         </div>
       ) : (
         <>
@@ -288,9 +288,9 @@ function AdminUsuarioLista() {
           <div data-cy="usuario-paginacao" className="admin-list-pagination">
             <div className="admin-list-pagination__meta">
               <div className="admin-form-input admin-list-pagination__status">
-                Pagina {pagination.page} de {pagination.totalPages}
+                Página {pagination.page} de {pagination.totalPages}
               </div>
-              <span>{pagination.total} usuario(s) no total</span>
+              <span>{pagination.total} usuário(s) no total</span>
             </div>
 
             <div className="admin-products-acoes">

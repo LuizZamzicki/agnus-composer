@@ -28,7 +28,7 @@ const handlers: Partial<Record<AgnusEventType, AgnusEventHandler>> = {
       eventId: event.id,
       pedido: event.payload.id_pedido,
       valorTotal: event.payload.valor_total,
-      mensagem: "Novo pedido recebido. Iniciar producao sob demanda apos confirmacao do pagamento.",
+      mensagem: "Novo pedido recebido. Iniciar produção sob demanda após confirmação do pagamento.",
     });
   },
   "pedido.atualizado": (event) => {

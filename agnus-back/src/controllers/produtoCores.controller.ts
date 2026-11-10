@@ -74,19 +74,19 @@ class ProdutoCoresController {
 
   private static getCreateErrorMessage(payload: ProdutoCorPayload) {
     if (!payload.hasProductField() || !payload.hasNameField() || !payload.hasColorField()) {
-      return "id_produto, nome e codigo_rgb sao obrigatorios.";
+      return "id_produto, nome e codigo_rgb são obrigatórios.";
     }
 
     if (!payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (!payload.nome) {
-      return "nome invalido.";
+      return "nome inválido.";
     }
 
     if (!payload.rgbCode) {
-      return "codigo_rgb invalido. Use formato RGB valido.";
+      return "codigo_rgb inválido. Use formato RGB válido.";
     }
 
     return null;
@@ -94,15 +94,15 @@ class ProdutoCoresController {
 
   private static getUpdateErrorMessage(payload: ProdutoCorPayload) {
     if (payload.hasProductField() && !payload.productId) {
-      return "id_produto invalido.";
+      return "id_produto inválido.";
     }
 
     if (payload.hasNameField() && !payload.nome) {
-      return "nome invalido.";
+      return "nome inválido.";
     }
 
     if (payload.hasColorField() && !payload.rgbCode) {
-      return "codigo_rgb invalido. Use formato RGB valido.";
+      return "codigo_rgb inválido. Use formato RGB válido.";
     }
 
     return null;
@@ -110,7 +110,7 @@ class ProdutoCoresController {
 
   private static async findProductError(productId?: number | null) {
     return productId && !(await Produtos.findByPk(productId))
-      ? "Produto nao encontrado."
+      ? "Produto não encontrado."
       : null;
   }
 
@@ -127,13 +127,13 @@ class ProdutoCoresController {
     const productId = ProdutoCoresController.parsePositiveId(req.params.id_produto);
 
     if (!productId) {
-      return res.status(400).json({ message: "ID do produto invalido." });
+      return res.status(400).json({ message: "ID do produto inválido." });
     }
 
     const cores = await ProdutoCores.findAll({ where: { id_produto: productId } });
 
     if (!cores) {
-      return res.status(404).json({ message: "Cor do produto nao encontrada." });
+      return res.status(404).json({ message: "Cor do produto não encontrada." });
     }
 
     return res.status(200).send(cores);
@@ -169,14 +169,14 @@ class ProdutoCoresController {
     const payload = new ProdutoCorPayload(req.body);
 
     if (!colorId) {
-      return res.status(400).json({ message: "ID da cor invalido." });
+      return res.status(400).json({ message: "ID da cor inválido." });
     }
 
     const cor = await ProdutoCores.findByPk(colorId);
     const message = ProdutoCoresController.getUpdateErrorMessage(payload);
 
     if (!cor) {
-      return res.status(404).json({ message: "Cor do produto nao encontrada." });
+      return res.status(404).json({ message: "Cor do produto não encontrada." });
     }
 
     if (message) {
@@ -198,13 +198,13 @@ class ProdutoCoresController {
     const colorId = ProdutoCoresController.parsePositiveId(req.params.id);
 
     if (!colorId) {
-      return res.status(400).json({ message: "ID da cor invalido." });
+      return res.status(400).json({ message: "ID da cor inválido." });
     }
 
     const cor = await ProdutoCores.findByPk(colorId);
 
     if (!cor) {
-      return res.status(404).json({ message: "Cor do produto nao encontrada." });
+      return res.status(404).json({ message: "Cor do produto não encontrada." });
     }
 
     await cor.destroy();

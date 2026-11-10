@@ -3,7 +3,7 @@
 // um arquivo para ".png" para que o navegador envie "image/png".
 
 export const INVALID_IMAGE_MESSAGE =
-  "Arquivo enviado nao e uma imagem valida. Formatos aceitos: JPEG, PNG, GIF, WEBP e BMP.";
+  "Arquivo enviado não é uma imagem válida. Formatos aceitos: JPEG, PNG, GIF, WEBP e BMP.";
 
 const startsWith = (buffer: Buffer, signature: number[], offset = 0) =>
   buffer.length >= offset + signature.length &&

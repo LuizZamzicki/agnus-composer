@@ -48,23 +48,23 @@ class UsuarioEnderecosController {
 
   private static getCreateErrorMessage(payload: UsuarioEnderecoPayload) {
     if (!payload.hasUserField() || !payload.hasCepField() || !payload.hasLogradouroField()) 
-      return "id_usuario, cep e logradouro sao obrigatorios.";
+      return "id_usuario, cep e logradouro são obrigatórios.";
    
-    if (!payload.userId) return "id_usuario invalido.";
-    if (!payload.cep) return "cep invalido.";
-    if (!payload.logradouro) return "logradouro invalido.";
+    if (!payload.userId) return "id_usuario inválido.";
+    if (!payload.cep) return "cep inválido.";
+    if (!payload.logradouro) return "logradouro inválido.";
     return null;
   }
 
   private static getUpdateErrorMessage(payload: UsuarioEnderecoPayload) {
-    if (payload.hasUserField() && !payload.userId) return "id_usuario invalido.";
-    if (payload.hasCepField() && !payload.cep) return "cep invalido.";
-    if (payload.hasLogradouroField() && !payload.logradouro) return "logradouro invalido.";
+    if (payload.hasUserField() && !payload.userId) return "id_usuario inválido.";
+    if (payload.hasCepField() && !payload.cep) return "cep inválido.";
+    if (payload.hasLogradouroField() && !payload.logradouro) return "logradouro inválido.";
     return null;
   }
 
   private static async findUserError(userId?: number | null) {
-    return userId && !(await Usuarios.findByPk(userId)) ? "Usuario nao encontrado." : null;
+    return userId && !(await Usuarios.findByPk(userId)) ? "Usuário não encontrado." : null;
   }
 
   private static buildUpdateData(endereco: UsuarioEnderecos, payload: UsuarioEnderecoPayload): UsuarioEnderecoUpdateData {
@@ -87,12 +87,12 @@ class UsuarioEnderecosController {
     const userId = UsuarioEnderecosController.parsePositiveId(req.params.id_user);
 
     if (!userId) 
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
     
     const enderecos = await UsuarioEnderecos.findAll({ where: { id_usuario: userId } });
     
     if (!enderecos) 
-      return res.status(404).json({ message: "Endereco nao encontrado." });
+      return res.status(404).json({ message: "Endereço não encontrado." });
     
     return res.status(200).send(enderecos);
   }
@@ -129,13 +129,13 @@ class UsuarioEnderecosController {
     const payload = new UsuarioEnderecoPayload(req.body);
     
     if (!addressId) 
-      return res.status(400).json({ message: "ID do endereco invalido." });
+      return res.status(400).json({ message: "ID do endereço inválido." });
     
     const endereco = await UsuarioEnderecos.findByPk(addressId);
     const message = UsuarioEnderecosController.getUpdateErrorMessage(payload);
     
     if (!endereco) 
-      return res.status(404).json({ message: "Endereco nao encontrado." });
+      return res.status(404).json({ message: "Endereço não encontrado." });
     
     if (message) 
       return res.status(400).json({ message });
@@ -153,12 +153,12 @@ class UsuarioEnderecosController {
     const addressId = UsuarioEnderecosController.parsePositiveId(req.params.id);
 
     if (!addressId) 
-      return res.status(400).json({ message: "ID do endereco invalido." });
+      return res.status(400).json({ message: "ID do endereço inválido." });
     
     const endereco = await UsuarioEnderecos.findByPk(addressId);
     
     if (!endereco) 
-      return res.status(404).json({ message: "Endereco nao encontrado." });
+      return res.status(404).json({ message: "Endereço não encontrado." });
     
     await endereco.destroy();
     return res.status(204).send();

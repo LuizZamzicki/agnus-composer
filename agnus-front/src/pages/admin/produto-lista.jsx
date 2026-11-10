@@ -156,7 +156,7 @@ function AdminProdutoLista() {
   async function deletarProduto(id) {
     const confirmado = await notify.confirm({
       title: "Excluir produto",
-      message: "Tem certeza que deseja excluir este produto? Essa acao nao pode ser desfeita.",
+      message: "Tem certeza que deseja excluir este produto? Essa ação não pode ser desfeita.",
       confirmText: "Excluir",
       cancelText: "Cancelar",
       tone: "danger",
@@ -234,9 +234,9 @@ function AdminProdutoLista() {
             value={limit}
             onChange={(event) => { setCurrentPage(1); setLimit(Number(event.target.value) || 10); }}
           >
-            <option value={10}>10 por pagina</option>
-            <option value={20}>20 por pagina</option>
-            <option value={30}>30 por pagina</option>
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
+            <option value={30}>30 por página</option>
           </select>
         </div>
 
@@ -275,8 +275,8 @@ function AdminProdutoLista() {
                   <th>Nome</th>
                   <th>Categoria</th>
                   <th>Custo</th>
-                  <th>Preco</th>
-                  <th>Acoes</th>
+                  <th>Preço</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -313,7 +313,7 @@ function AdminProdutoLista() {
           <div data-cy="produto-paginacao" className="admin-list-pagination">
             <div className="admin-list-pagination__meta">
               <div className="admin-form-input admin-list-pagination__status">
-                Pagina {pagination.page} de {pagination.totalPages}
+                Página {pagination.page} de {pagination.totalPages}
               </div>
               <span>{pagination.total} produto(s) no total</span>
             </div>

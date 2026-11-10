@@ -64,7 +64,7 @@ class UsuarioPasswordPayload {
 }
 
 class UsuariosController {
-  private static readonly PASSWORD_MESSAGE = "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.";
+  private static readonly PASSWORD_MESSAGE = "Senha fraca. Ela deve ter pelo menos 8 caracteres, com letra maiúscula, minúscula, número e simbolo.";
 
   static parsePositiveId(value: string | undefined) {
     const userId = Number(value);
@@ -106,29 +106,29 @@ class UsuariosController {
 
   private static getCpfMessage(payload: UsuarioPayload) {
     if (!payload.hasCpfField() || !payload.cpf)
-      return payload.hasCpfField() ? "cpf invalido." : null;
+      return payload.hasCpfField() ? "cpf inválido." : null;
 
-    return isValidCpf(payload.cpf) ? null : "cpf invalido.";
+    return isValidCpf(payload.cpf) ? null : "cpf inválido.";
   }
 
   private static getEmailMessage(email?: string | null) {
-    return email && isValidEmail(email) ? null : "email invalido.";
+    return email && isValidEmail(email) ? null : "email inválido.";
   }
 
   private static getEmailUpdateMessage(payload: UsuarioPayload, currentEmail: string) {
     if (!payload.hasEmailField() || !payload.email)
-      return payload.hasEmailField() ? "email invalido." : null;
+      return payload.hasEmailField() ? "email inválido." : null;
 
     if (!isValidEmail(payload.email))
-      return "email invalido.";
+      return "email inválido.";
 
-    return payload.email === currentEmail ? null : "email nao pode ser alterado.";
+    return payload.email === currentEmail ? null : "email não pode ser alterado.";
   }
 
   private static getCreateErrorMessage(payload: UsuarioPayload) {
 
     if (!payload.nome || !payload.cpf || !payload.email || !payload.senha)
-      return "Nome, cpf, email e senha sao obrigatorios.";
+      return "Nome, cpf, email e senha são obrigatórios.";
 
     if (UsuariosController.getCpfMessage(payload))
       return UsuariosController.getCpfMessage(payload);
@@ -142,7 +142,7 @@ class UsuariosController {
   private static getUpdateErrorMessage(payload: UsuarioPayload, currentEmail: string) {
 
     if (payload.hasNomeField() && !payload.nome)
-      return "nome invalido.";
+      return "nome inválido.";
 
     if (payload.hasSenhaField())
       return "Use PATCH /users/:id/password para alterar a senha.";
@@ -173,15 +173,15 @@ class UsuariosController {
   }
 
   private static async findDuplicateEmailMessage(email: string) {
-    return (await Usuarios.findOne({ where: { email } })) ? "Usuario ja existe com esse email!" : null;
+    return (await Usuarios.findOne({ where: { email } })) ? "Usuário já existe com esse email!" : null;
   }
 
   private static getPasswordBodyMessage(payload: UsuarioPasswordPayload) {
     if (!payload.senhaAtual || !payload.confirmacaoSenhaAtual || !payload.novaSenha)
-      return "Senha atual, confirmacao da senha atual e nova senha sao obrigatorias.";
+      return "Senha atual, confirmação da senha atual e nova senha são obrigatórias.";
 
     if (payload.senhaAtual !== payload.confirmacaoSenhaAtual)
-      return "As duas informacoes da senha atual devem ser iguais.";
+      return "As duas informações da senha atual devem ser iguais.";
 
     return null;
   }
@@ -192,9 +192,9 @@ class UsuariosController {
   ) {
 
     if (!(await argon2.verify(user.senha, payload.senhaAtual!)))
-      return "Senha atual invalida.";
+      return "Senha atual inválida.";
 
-    return await argon2.verify(user.senha, payload.novaSenha!) ? "A nova senha nao pode ser igual a senha atual." : null;
+    return await argon2.verify(user.senha, payload.novaSenha!) ? "A nova senha não pode ser igual a senha atual." : null;
   }
 
   private static async updateStoredPassword(
@@ -204,7 +204,7 @@ class UsuariosController {
   ) {
 
     if (await UsuarioSenhasHistoricoController.findByUserIdAndPassword(user.id_usuario, newPassword))
-      return res.status(400).json({ message: "A nova senha ja foi utilizada anteriormente." });
+      return res.status(400).json({ message: "A nova senha já foi utilizada anteriormente." });
 
     const passwordHash = await UsuariosController.hashPassword(newPassword);
     await user.update({ senha: passwordHash });
@@ -235,12 +235,12 @@ class UsuariosController {
     const userId = UsuariosController.parsePositiveId(req.params.id);
 
     if (!userId)
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
 
     const user = await Usuarios.findByPk(userId);
 
     if (!user)
-      return res.status(404).json({ message: "Usuario nao encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
 
     return res.status(200).send(UsuariosController.sanitizeUser(user));
   }
@@ -281,12 +281,12 @@ class UsuariosController {
     const userId = UsuariosController.parsePositiveId(req.params.id);
 
     if (!userId)
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
 
     const user = await Usuarios.findByPk(userId);
 
     if (!user)
-      return res.status(404).json({ message: "Usuario nao encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
 
     await user.destroy();
     return res.status(204).send();
@@ -297,15 +297,15 @@ class UsuariosController {
     const payload = new UsuarioPayload(req.body);
 
     if (!userId)
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
 
     const user = await Usuarios.findByPk(userId);
 
     if (!user)
-      return res.status(404).json({ message: "Usuario nao encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
 
     if (payload.hasTipoField() && res.locals.authUser?.tipo !== "administrador")
-      return res.status(403).json({ message: "Apenas administradores podem alterar o tipo de usuario." });
+      return res.status(403).json({ message: "Apenas administradores podem alterar o tipo de usuário." });
 
     const message = UsuariosController.getUpdateErrorMessage(payload, user.email);
 
@@ -322,7 +322,7 @@ class UsuariosController {
     const payload = new UsuarioPasswordPayload(req.body);
 
     if (!userId)
-      return res.status(400).json({ message: "ID do usuario invalido." });
+      return res.status(400).json({ message: "ID do usuário inválido." });
 
     const bodyMessage = UsuariosController.getPasswordBodyMessage(payload);
     const passwordError = payload.novaSenha ? UsuariosController.getPasswordError(payload.novaSenha) : null;
@@ -336,7 +336,7 @@ class UsuariosController {
     const user = await Usuarios.findByPk(userId);
 
     if (!user)
-      return res.status(404).json({ message: "Usuario nao encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
 
     const currentPasswordMessage = await UsuariosController.getCurrentPasswordMessage(user, payload);
 

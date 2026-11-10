@@ -201,9 +201,9 @@ function AdminCategoriaLista() {
             value={limit}
             onChange={(event) => { setCurrentPage(1); setLimit(Number(event.target.value) || 10); }}
           >
-            <option value={10}>10 por pagina</option>
-            <option value={20}>20 por pagina</option>
-            <option value={30}>30 por pagina</option>
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
+            <option value={30}>30 por página</option>
           </select>
         </div>
 
@@ -253,7 +253,7 @@ function AdminCategoriaLista() {
           <div className="admin-list-pagination">
             <div className="admin-list-pagination__meta">
               <div className="admin-form-input admin-list-pagination__status">
-                Pagina {pagination.page} de {pagination.totalPages}
+                Página {pagination.page} de {pagination.totalPages}
               </div>
               <span>{pagination.total} categoria(s) no total</span>
             </div>

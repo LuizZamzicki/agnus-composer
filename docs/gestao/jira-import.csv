@@ -101,3 +101,10 @@ CA: totais de pedidos; mais vendidos.",High,,,5,7,Done,2.0.0,Luiz Zamzicki,
 918,Bug,,Fotos de avaliação ficam órfãs no disco,O arquivo era gravado antes do 404 e nunca apagado. Correção: gravar depois das validações e apagar ao trocar ou remover.,Medium,bug,,,6,Done,3.4.0,Luiz Zamzicki,
 919,Bug,,Custo e margem expostos em GET /products,"Rotas públicas devolviam preco_custo e margem_lucro. Correção: campos só para administradores, com cache separado.",High,bug,seguranca,,2,Done,3.4.0,Luiz Zamzicki,
 920,Bug,,Login e cadastro sem limite fora do Nginx e painel do ngrok aberto,"O limite do Nginx era burlável por variações da rota e pelo túnel. Correção: limite por IP na API, tamanho máximo de e-mail e de fotos por requisição, painel 4040 só local, chave de cache codificada e redirect pós-login restrito ao site.",High,bug,seguranca,,8,Done,3.4.0,Luiz Zamzicki,
+410,Story,,US-31 Notificação de mudança no status do pedido,"Como cliente, quero ser avisado quando meu pedido mudar.
+CA: sino com não lidas; aviso leva ao pedido; só o próprio cliente vê.",High,,,5,4,Done,4.0.0,Luiz Zamzicki,
+411,Story,,US-32 Ver e avaliar peças na tela de pedidos,"Como cliente, quero avaliar as peças pelo pedido.
+CA: só em pedido entregue; peça avaliada oferece apenas alterar; nota por estrelas.",High,,,3,4,Done,4.0.0,Luiz Zamzicki,
+303,Story,,US-33 Pop-up ao colocar peça na sacola,"Como cliente, quero confirmar o que entrou na sacola.
+CA: pop-up com peça, cor, tamanho e preço; caminho para a sacola.",Medium,,,1,3,Done,4.0.0,Luiz Zamzicki,
+921,Bug,,Textos e mensagens sem acento,Mensagens da API e rótulos do site estavam sem acentuação. Correção: acentos em todos os textos visíveis.,Medium,bug,,,8,Done,4.0.0,Luiz Zamzicki,

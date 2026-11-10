@@ -41,7 +41,7 @@ OK   [Observabilidade] /metrics para admin, 403 para cliente -> p95=123.61ms, ca
 16/16 verificações OK
 ```
 
-**Testes automatizados:** `cd agnus-back && npm test` (510 testes) · `cd agnus-front && CI=true npm test -- --watchAll=false` (39 testes). Os mesmos rodam no CI a cada PR.
+**Testes automatizados:** `cd agnus-back && npm test` (518 testes) · `cd agnus-front && CI=true npm test -- --watchAll=false` (39 testes). Os mesmos rodam no CI a cada PR.
 
 ---
 
@@ -140,7 +140,7 @@ Onde: [`docker-compose.yml`](../docker-compose.yml), [`nginx.conf`](../agnus-fro
 | Controllers / services / DTOs | `src/controllers`, `src/services`, `src/types` | Controllers validam a entrada e montam a resposta; regras e transações nos services (`checkout`, `pedidoRegras`, `produtoMutation`, `cache`, `eventBus`); contratos `*Body`, `*Query`, `*RouteParams` |
 | Logs claros por fluxo | `docker compose logs backend worker \| grep <X-Request-Id>` | Todas as linhas JSON de uma requisição, da API ao worker |
 | Tratamento de erros | [`error.middleware.ts`](../agnus-back/src/middlewares/error.middleware.ts) | 400/409 para erros de validação e do banco, 500 sem detalhes internos e com `http.erro_nao_tratado` + stack no log. Teste: `curl -sk -X POST https://localhost/api/auth/login -H 'Content-Type: application/json' -d '{x'` → `400` |
-| Testes | `npm test` | 510 testes no back-end, em 28 suítes |
+| Testes | `npm test` | 518 testes no back-end, em 30 suítes |
 
 ---
 
