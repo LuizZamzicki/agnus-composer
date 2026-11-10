@@ -18,16 +18,20 @@
 
 ### Teste de carga
 
-> Medição feita antes da separação em microsserviços. Refazer para ter o número atual, que inclui as chamadas entre serviços.
-
-Medição local (MacBook, Docker/OrbStack), **200 produtos** no catálogo, `ab -k -n 3000 -c 20` em `GET /products/catalog?page=1&limit=24`, direto no backend:
+Medição local (MacBook, Docker/OrbStack), arquitetura de **microsserviços**, **200 produtos** no catálogo (195 temporários, removidos depois), `ab -k -n 3000 -c 20` em `GET /products/catalog?page=1&limit=24`. O `ab` roda num container na rede `agnus_app`, direto no serviço `catalogo` (sem passar pelo gateway). Foram 5 rodadas por cenário, depois de uma rodada de aquecimento; a tabela mostra a **mediana** de cada coluna.
 
 | Cenário | Throughput | p50 | p95 | p99 | Erros |
 | --- | --- | --- | --- | --- | --- |
-| **Com cache Redis** (hit) | **3.485 req/s** | 5 ms | **10 ms** | 15 ms | 0 |
-| Sem cache (Redis parado → fallback para MySQL) | 1.211 req/s | 12 ms | 34 ms | 112 ms | 0 |
+| **Com cache Redis** (hit) | **3.209 req/s** | 4 ms | **15 ms** | 29 ms | 0 |
+| Sem cache (Redis parado → fallback para MySQL) | 1.623 req/s | 9 ms | 28 ms | 55 ms | 0 |
 
-O cache multiplicou o throughput por **≈ 2,9×** e reduziu o p99 **≈ 7×**. Com o Redis fora do ar, o sistema **continuou respondendo sem erros**, só mais devagar. Isso confirma o cenário QS-03 em [quality-scenarios.md](quality-scenarios.md).
+Faixa das rodadas: com cache, de 2.262 a 4.052 req/s; sem cache, de 1.242 a 1.897 req/s. A variação vem do notebook, que roda os outros containers ao mesmo tempo.
+
+Pelo gateway (`https://localhost/api/...`, TLS no Nginx, uma rodada): 2.336 req/s e p99 de 22 ms com cache; 1.500 req/s e p99 de 54 ms sem cache.
+
+O cache dobrou o throughput (**≈ 2,0×**) e reduziu o p99 **≈ 1,9×**. Com o Redis fora do ar, o sistema **continuou respondendo sem erros**, só mais devagar. Isso confirma o cenário QS-03 em [quality-scenarios.md](quality-scenarios.md).
+
+Medição anterior, ainda no monólito e com o mesmo comando: 3.485 req/s e p99 de 15 ms com cache; 1.211 req/s e p99 de 112 ms sem cache (≈ 2,9× no throughput). As duas medições não são diretamente comparáveis, porque o catálogo e o ambiente mudaram entre elas.
 
 ## 2. Estratégias de resiliência aplicadas
 
