@@ -22,6 +22,16 @@ Pedra clara, letras de inscrição romana e texto de missal. A cor de destaque d
 
 Cores dos tempos: Tempo Comum `#2f6a46`, Advento `#5b3a86`, Quaresma `#4e2f6e`, Natal e Páscoa `#7a5c17`, Pentecostes `#a1231c`, todas com contraste ≥ 4,5:1 tanto com o branco quanto com o fundo de pedra (verificado: a menor é o dourado, 5,2:1 sobre `--stone` e 6,2:1 com branco).
 
+## Tema escuro (opcional)
+
+O claro é o padrão da marca. O escuro segue a preferência do sistema ou a escolha no botão de sol/lua do cabeçalho, guardada no navegador (`data-theme` em `<html>`, `utils/tema.js`).
+
+- Pedra escura, nunca preto puro: `--stone #1b1a18`, `--stone-2 #23221f`, `--paper #2a2926`, `--ink #ecebe7`, `--muted #a9a49b`, `--line #4a4741`.
+- Cores do tempo mais claras, com 4,8:1 ou mais sobre `--paper`: Tempo Comum `#47a86d`, Advento `#a587cd`, Quaresma `#aa87ce`, Natal e Páscoa `#be8e1f`, Pentecostes `#e9736d`. Texto sobre elas fica escuro (`--on-lit`).
+- Logos: escrita AGNUS branca (`escrita-clara.png`) e logo completo com escrita branca (`logo-completo-escuro.png`, de `docs/marca/agnus-logo-cordeiro-escuro.png`); o símbolo simplificado serve aos dois temas. A troca usa as classes `.so-tema-claro` e `.so-tema-escuro`.
+- Fotos e molduras em arco ganham uma borda de uma cor só (`--line`) para não se perderem no fundo; selos que ficariam abaixo de 4,5:1 usam fundo neutro e borda.
+- O painel administrativo não tem tema escuro.
+
 ## Tipografia (servidas pelo projeto via `@fontsource`)
 
 - **Marcellus**: títulos.
@@ -40,7 +50,7 @@ Cores dos tempos: Tempo Comum `#2f6a46`, Advento `#5b3a86`, Quaresma `#4e2f6e`, 
 ## Componentes e regras
 
 - **Arco**: fotos de destaque (página inicial, página da peça, login) em arco romano com moldura `--paper` de 10px.
-- **Botões**: `.btn-agnus` (tinta) e `.btn-agnus-ghost` (contorno); no hover a ação primária ganha a cor do tempo. Cantos de 8px (`--radius`), também em campos e cartões.
+- **Botões**: a ação principal (`.btn-agnus`, Entrar, Adicionar à sacola, Finalizar pedido) usa `--acao`: no tema claro é a cor do tempo litúrgico com texto branco e fica mais escura no hover; no escuro é a tinta clara e ganha a cor do tempo no hover. `.btn-agnus-ghost` é o contorno. Estados de seleção (tamanho e cor escolhidos, item ativo do menu) continuam em tinta. Cantos de 8px (`--radius`), também em campos e cartões.
 - **Cartões de peça**: sem caixa, sem sombra; imagem 3:4 com cantos `--radius`, nome em Marcellus, preço em versalete. Só as fotos de destaque usam o arco.
 - **Proibido**: rótulo pequeno acima de título, borda colorida grossa na lateral de cartões, degradê decorativo, emoji ou caractere Unicode no lugar de ícone (usar `lucide-react` com traço de 1,5).
 - **Movimento**: uma entrada orquestrada na página inicial (título, filete, foto); demais transições de até 0,3s com `--ease-out`; botões respondem ao pressionar (escala 0,97, sem atraso); páginas, cartões, janelas e painéis entram com um leve fade; carregamento usa lugares reservados que pulsam, nunca texto solto ou brilho em gradiente; nenhuma animação mantém `transform` ao terminar (quebraria `position: fixed`); respeita `prefers-reduced-motion`.

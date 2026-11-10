@@ -240,3 +240,19 @@
 }
 .opcoes_header .notificacoes-topo button { flex: none; white-space: nowrap; }
 .opcoes_header .notificacoes-painel button:hover { color: var(--ink); }
+
+/* Alternância de tema: mesmo desenho dos demais ícones do cabeçalho. */
+.tema-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    transition: color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
+}
+
+.tema-toggle:hover { color: var(--lit); }
+.tema-toggle:active { transform: scale(0.97); }

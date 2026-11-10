@@ -55,7 +55,8 @@ describe("calendário litúrgico", () => {
         const tempo = aplicarTempoLiturgico(d(2026, 3, 1), root);
 
         expect(tempo.chave).toBe("quaresma");
-        expect(root.style.getPropertyValue("--lit")).toBe("#4e2f6e");
+        expect(root.style.getPropertyValue("--lit-claro")).toBe("#4e2f6e");
+        expect(root.style.getPropertyValue("--lit-escuro")).toBe("#aa87ce");
         expect(root.dataset.tempo).toBe("quaresma");
     });
 });

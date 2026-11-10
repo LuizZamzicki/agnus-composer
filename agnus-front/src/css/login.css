@@ -42,7 +42,7 @@
   aspect-ratio: 4 / 5;
   border-radius: 999px 999px 0 0;
   overflow: hidden;
-  border: 10px solid var(--paper);
+  border: 10px solid var(--moldura);
   outline: 1px solid var(--line);
   box-shadow: 0 30px 60px -32px rgba(29, 28, 26, 0.55);
 }
@@ -179,10 +179,10 @@
 .login-form > button[type="submit"] {
   min-height: 52px;
   margin-top: 6px;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--acao);
   border-radius: var(--radius);
-  background: var(--ink);
-  color: var(--stone);
+  background: var(--acao);
+  color: var(--on-acao);
   font: 15px/1 var(--f-caps);
   letter-spacing: 0.22em;
   cursor: pointer;
@@ -190,9 +190,9 @@
 }
 
 .login-form > button[type="submit"]:hover:not(:disabled) {
-  background: var(--lit);
-  border-color: var(--lit);
-  color: var(--on-lit);
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
+  color: var(--on-acao-hover);
 }
 
 .login-form > button[type="submit"]:disabled { opacity: 0.55; cursor: progress; }

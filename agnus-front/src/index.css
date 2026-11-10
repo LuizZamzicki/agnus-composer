@@ -1,10 +1,20 @@
 /* Agnus · Tempo Litúrgico
-   Pedra clara, inscrição romana e texto de missal. --lit é a cor do tempo litúrgico
-   do dia, aplicada em runtime por utils/liturgia.js; o valor abaixo é o Tempo Comum. */
+   Pedra clara, inscrição romana e texto de missal. A cor do tempo litúrgico do dia chega
+   em runtime por utils/liturgia.js (--lit-claro e --lit-escuro); o padrão é o Tempo Comum.
+   O tema escuro é opcional: segue o sistema ou a escolha guardada (data-theme em <html>). */
 
 :root {
-  --lit: #2f6a46;
+  --lit: var(--lit-claro, #2f6a46);
   --on-lit: #ffffff;
+  --on-danger: #ffffff;
+  --danger-hover: #7f2318;
+  --brass-ink: #6b5115;
+  --moldura: var(--paper);
+  /* Ação principal: no claro, a cor do tempo litúrgico com texto branco; no escuro, a tinta clara. */
+  --acao: var(--lit);
+  --on-acao: var(--on-lit);
+  --acao-hover: color-mix(in oklab, var(--lit) 80%, #000);
+  --on-acao-hover: var(--on-lit);
 
   --stone: #ecebe7;
   --stone-2: #e2e0db;
@@ -34,6 +44,95 @@
   --strip-h: 30px;
 
   color-scheme: light;
+}
+
+/* Tema escuro: pedra escura, nunca preto puro. Todas as cores de texto e as do tempo
+   litúrgico têm contraste de pelo menos 4,5:1 com --stone e --paper (DESIGN.md). */
+:root[data-theme="dark"] {
+  --lit: var(--lit-escuro, #47a86d);
+  --on-lit: #1b1a18;
+  --on-danger: #1b1a18;
+  --danger-hover: #f2a594;
+  --brass-ink: #d2b061;
+  --moldura: var(--line);
+  --acao: var(--ink);
+  --on-acao: var(--stone);
+  --acao-hover: var(--lit);
+  --on-acao-hover: var(--on-lit);
+
+  --stone: #1b1a18;
+  --stone-2: #23221f;
+  --paper: #2a2926;
+  --ink: #ecebe7;
+  --ink-2: #d3d0c9;
+  --muted: #a9a49b;
+  --line: #4a4741;
+  --line-soft: #36342f;
+  --brass: #d2b061;
+  --danger: #ec8a78;
+  --danger-soft: #3a2521;
+  --ok: #86c49b;
+  --ok-soft: #1f3327;
+  --shadow-lift: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lit: var(--lit-escuro, #47a86d);
+    --on-lit: #1b1a18;
+    --on-danger: #1b1a18;
+    --danger-hover: #f2a594;
+    --brass-ink: #d2b061;
+    --moldura: var(--line);
+  --acao: var(--ink);
+  --on-acao: var(--stone);
+  --acao-hover: var(--lit);
+  --on-acao-hover: var(--on-lit);
+
+    --stone: #1b1a18;
+    --stone-2: #23221f;
+    --paper: #2a2926;
+    --ink: #ecebe7;
+    --ink-2: #d3d0c9;
+    --muted: #a9a49b;
+    --line: #4a4741;
+    --line-soft: #36342f;
+    --brass: #d2b061;
+    --danger: #ec8a78;
+    --danger-soft: #3a2521;
+    --ok: #86c49b;
+    --ok-soft: #1f3327;
+    --shadow-lift: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+
+    color-scheme: dark;
+  }
+}
+
+/* Imagens com versão por tema (logo com escrita preta ou branca): só a inativa é escondida,
+   para a versão visível manter o display que o próprio componente define. */
+:root[data-theme="light"] .so-tema-escuro,
+:root[data-theme="dark"] .so-tema-claro { display: none !important; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .so-tema-escuro { display: none !important; }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .so-tema-claro { display: none !important; }
+}
+
+/* Fotos escuras sobre fundo escuro: uma borda de uma só cor as destaca. */
+:root[data-theme="dark"] :is(.product-image, .thumbs img, .cart-item img, .fin-resumo li img, .item-foto, .sacola-modal-peca img, .avaliacao-img, .preview-imagens img) {
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+}
+:root[data-theme="dark"] :is(.hero-arch, .img-main, .login-arch) { outline: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.product-image, .thumbs img, .cart-item img, .fin-resumo li img, .item-foto, .sacola-modal-peca img, .avaliacao-img, .preview-imagens img) {
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+  }
+  :root:not([data-theme="light"]) :is(.hero-arch, .img-main, .login-arch) { outline: none; }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -109,8 +208,8 @@ code {
   transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
-.btn-agnus { background: var(--ink); color: var(--stone); border: 1px solid var(--ink); }
-.btn-agnus:hover { background: var(--lit); border-color: var(--lit); color: var(--on-lit); }
+.btn-agnus { background: var(--acao); color: var(--on-acao); border: 1px solid var(--acao); }
+.btn-agnus:hover { background: var(--acao-hover); border-color: var(--acao-hover); color: var(--on-acao-hover); }
 
 .btn-agnus-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
 .btn-agnus-ghost:hover { background: var(--ink); color: var(--stone); }
