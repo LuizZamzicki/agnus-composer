@@ -34,12 +34,14 @@ O arquivo [`jira-import.csv`](jira-import.csv) traz **9 épicos, 36 histórias, 
    | Epic Name | Epic Name | Só existe em projetos *company-managed*; nos *team-managed*, ignore |
    | Summary / Description | Summary / Description | |
    | Priority | Priority | |
-   | Labels (2 colunas) | Labels | O Jira junta as duas colunas |
+   | Labels (3 colunas) | Labels | O Jira junta as colunas. A terceira marca `retroativo` |
    | Story Points | Story point estimate | |
    | Status | Status | `To Do`, `In Progress`, `Done`, `Won't Do` → colunas do quadro |
    | Fix Version | Fix versions | |
    | Assignee | Assignee | Na etapa **Mapear valores**, ligue `Luiz Zamzicki` e `Bruno Medeiros` às contas de vocês |
    | Sprint | Sprint | Liga 6 itens à `AGNUS Sprint 1` |
+   | Created | Date Created | Formato de data na tela de configuração: `yyyy-MM-dd HH:mm` |
+   | Resolved | Date Resolved | Vazio nas issues ainda abertas |
 
 3. Confira: o backlog deve mostrar 101 issues, e a sprint, US-25, US-26, US-24, TS-09, TS-16 e TS-17.
 
@@ -50,6 +52,16 @@ O arquivo [`jira-import.csv`](jira-import.csv) traz **9 épicos, 36 histórias, 
 3. Durante a sprint, **cada um move os próprios cards** (`A Fazer → Em Andamento → Em Revisão → Concluído`) à medida que trabalha, comentando impedimentos com `@menção`.
 4. Use a chave da issue nas branches, commits e PRs (seção abaixo), para que o Jira mostre o desenvolvimento ligado a cada card.
 5. Tire as capturas da lista de evidências no fim deste documento.
+
+### Datas retroativas
+
+O Jira passou a ser usado depois de boa parte do código já existir. Para o histórico fazer sentido, as datas de criação e de resolução foram **reconstruídas a partir do Git**, nunca inventadas:
+
+- **Resolvida:** commit da tag da versão (`Fix Version`). Os itens da 3.4.0 usam o PR #21, porque a tag `v3.4.0` foi criada antes desse merge.
+- **Criada:** primeira vez que a issue aparece no backlog ou neste CSV, quando isso é anterior à entrega; senão, o primeiro commit do ciclo daquela versão.
+- **Épicos:** criados com a primeira issue e resolvidos com a última.
+
+Cada uma dessas issues tem a etiqueta `retroativo`, e a descrição informa o commit de origem de cada data. O CSV não importa o histórico de status: burndown e relatórios de sprint refletem só o que for movido no quadro depois da importação.
 
 ## Ligação entre Jira e GitHub
 
