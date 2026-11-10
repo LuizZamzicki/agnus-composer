@@ -46,6 +46,7 @@ O job de deploy é um **esqueleto funcional**: só executa quando o ambiente `pr
 ### Banco de dados no deploy
 
 - Mudanças de schema precisam ser **retrocompatíveis** com a versão anterior (padrão *expand → migrate → contract*), para que o rollback da aplicação não exija rollback do banco.
+- O schema muda só por **migrations**: cada serviço aplica as pendentes ao subir, na ordem da lista em `src/migracoes/index.ts`, e registra cada uma em `agnus_migracoes`. Uma trava do MySQL (`GET_LOCK`) impede duas réplicas de migrarem ao mesmo tempo. Migration publicada nunca é editada; correção vira uma nova.
 - Backup antes de cada release: `docker exec agnus-mysql mysqldump ... > backup_<versao>.sql`.
 
 ## 3. Versionamento de releases
