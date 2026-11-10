@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   PRODUTO_GRADE_EXCLUIR: "produto-grades:excluir",
 
   PEDIDO_LISTAR: "pedidos:listar",
+  PEDIDO_CRIAR: "pedidos:criar",
   PEDIDO_ATUALIZAR: "pedidos:atualizar",
   PEDIDO_EXCLUIR: "pedidos:excluir",
 } as const;

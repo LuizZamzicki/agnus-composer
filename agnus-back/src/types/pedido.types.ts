@@ -27,6 +27,5 @@ export type PedidoUpdateData = {
   id_usuario: number;
   id_usuario_endereco: number;
   status: PedidoStatus;
-  valor_total: number | string | null;
   valor_frete: number | string | null;
 };

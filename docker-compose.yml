@@ -52,8 +52,9 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       SERVICE_NAME: agnus-api
+    # So na maquina local (debug/Postman). De fora, a API e acessada apenas pelo Nginx em /api.
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       mysql:
         condition: service_healthy

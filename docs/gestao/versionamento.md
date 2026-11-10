@@ -52,15 +52,20 @@ As "versões" de negócio do [readme](../../readme.md) mapeiam para versões MAJ
 | 3ª — Mobile e responsividade | 3.x | Login Google no app, upload, cache, eventos |
 | 4ª — Pagamento online | 4.0.0 | Mercado Pago (em andamento) |
 
-> As tags 2.0.0 a 3.2.1 foram **definidas retroativamente** a partir dos PRs e datas do histórico do Git (ver CHANGELOG). Para formalizá-las:
->
-> ```bash
-> git tag -a v2.0.0 c646f5ce -m "E-commerce"
-> git tag -a v2.1.0 4eaa4ce0 -m "Husky, ESLint e Commitlint"
-> git tag -a v2.2.0 d2a312e0 -m "CI, template de PR e Nginx dedicado"
-> git tag -a v3.0.0 f6fa1bf5 -m "Login Google no app mobile"
-> git tag -a v3.1.0 a027f047 -m "Ordenação por preço e requisitos"
-> git tag -a v3.2.0 cbc87c9b -m "Upload Multer e controle admin"
-> git tag -a v3.2.1 7b3d2b39 -m "ngrok e correção do CI"
-> git push origin --tags
-> ```
+## Tags e releases publicadas
+
+Cada versão é uma **tag anotada** no Git com uma **Release** no GitHub (notas copiadas do [CHANGELOG](../../CHANGELOG.md)): <https://github.com/LuizZamzicki/agnus-composer/releases>.
+
+| Tag | Commit | Data | Conteúdo |
+| --- | --- | --- | --- |
+| `v2.0.0` | `c646f5ce` | 2026-06-16 | E-commerce |
+| `v2.1.0` | `4eaa4ce0` | 2026-06-25 | Husky, ESLint e Commitlint |
+| `v2.2.0` | `d2a312e0` | 2026-08-31 | CI, template de PR e Nginx dedicado (PR #1) |
+| `v3.0.0` | `f6fa1bf5` | 2026-09-08 | Login Google no app mobile |
+| `v3.1.0` | `a027f047` | 2026-09-16 | Ordenação por preço e requisitos (PRs #2–#7) |
+| `v3.2.0` | `cbc87c9b` | 2026-09-17 | Upload Multer e controle admin (PR #8) |
+| `v3.2.1` | `7b3d2b39` | 2026-09-17 | ngrok e correção do CI (PR #9) |
+| `v3.3.0` | `ecbb0ac8` | 2026-11-03 | Redis (cache e eventos), observabilidade, nova identidade visual, fluxo de compra, segurança e documentação (PRs #11–#18) |
+| `v3.4.0` | merge do PR de correções | 2026-11-06 | Regras do agregado Pedido, segurança de pedidos, rotas por contexto, Nginx e CI |
+
+As tags de `v2.0.0` a `v3.2.1` foram criadas **retroativamente**, nos commits de merge correspondentes do histórico. Elas não disparam o CD, porque o `cd.yml` só existe a partir da 3.3.0. A partir da `v3.3.0`, cada tag dispara o [`cd.yml`](../../.github/workflows/cd.yml), que roda os testes e publica as imagens versionadas no GHCR.

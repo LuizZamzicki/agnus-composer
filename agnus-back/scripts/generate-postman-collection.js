@@ -2,11 +2,13 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const appFilePath = path.join(projectRoot, "src", "app.ts");
+const routesDir = path.join(projectRoot, "src", "routes");
 const outputDir = path.join(projectRoot, "postman");
 const outputFilePath = path.join(outputDir, "agnus-back.postman_collection.json");
 
-const appSource = fs.readFileSync(appFilePath, "utf8");
+// Um arquivo de rotas por bounded context, na ordem em que src/routes/index.ts os registra.
+const routeFiles = [...fs.readFileSync(path.join(routesDir, "index.ts"), "utf8").matchAll(/from\s+['"]\.\/(.+?)['"]/g)]
+  .map(([, name]) => path.join(routesDir, `${name}.ts`));
 
 const ROUTE_OVERRIDES = {
   "AuthController.googleCallback": {
@@ -206,7 +208,7 @@ function resolveImport(fromFile, importPath) {
   return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
-function parseControllerImports(source) {
+function parseControllerImports(source, sourceFilePath) {
   const imports = new Map();
   const importRegex = /import\s+([A-Za-z0-9_]+)\s+from\s+["'](.+?)["'];?/g;
   let match;
@@ -217,7 +219,7 @@ function parseControllerImports(source) {
       continue;
     }
 
-    const resolvedPath = resolveImport(appFilePath, importPath);
+    const resolvedPath = resolveImport(sourceFilePath, importPath);
     if (!resolvedPath) {
       continue;
     }
@@ -793,7 +795,7 @@ function buildCollection(routes) {
     info: {
       name: "Agnus Back",
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-      description: "Collection gerada automaticamente a partir das rotas declaradas em src/app.ts.",
+      description: "Collection gerada automaticamente a partir das rotas declaradas em src/routes/*.routes.ts.",
     },
     variable: [
       {
@@ -818,8 +820,10 @@ function buildCollection(routes) {
   };
 }
 
-const controllerImports = parseControllerImports(appSource);
-const routes = extractRoutes(appSource, controllerImports);
+const routes = routeFiles.flatMap((filePath) => {
+  const source = fs.readFileSync(filePath, "utf8");
+  return extractRoutes(source, parseControllerImports(source, filePath));
+});
 const collection = buildCollection(routes);
 
 fs.mkdirSync(outputDir, { recursive: true });

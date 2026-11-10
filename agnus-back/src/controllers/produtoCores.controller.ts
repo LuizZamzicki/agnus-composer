@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import { CACHE_NAMESPACES } from "../config/cache";
 import ProdutoCores from "../models/ProdutoCores";
+import CacheService from "../services/cache.service";
 import Produtos from "../models/Produtos";
 import type {
   ProdutoCorBody,
@@ -59,6 +61,11 @@ class ProdutoCorPayload {
 }
 
 class ProdutoCoresController {
+  // Cores e grades entram no preco e na resposta do catalogo: toda escrita invalida o cache de produtos.
+  private static invalidateCatalogCache(action: string, cor: ProdutoCores) {
+    return CacheService.invalidateNamespace(CACHE_NAMESPACES.produtos, `produto_cor.${action}:${cor.id_produto}`);
+  }
+
   private static parsePositiveId(value: string | undefined) {
     const parsedId = Number(value);
 
@@ -146,14 +153,15 @@ class ProdutoCoresController {
       return res.status(404).json({ message: productMessage });
     }
 
-    return res.status(201).send(
-      await ProdutoCores.create({
-        id_produto: payload.productId!,
-        nome: payload.nome!,
-        codigo_rgb: payload.rgbCode!,
-        acrescimo: payload.acrescimo,
-      }),
-    );
+    const cor = await ProdutoCores.create({
+      id_produto: payload.productId!,
+      nome: payload.nome!,
+      codigo_rgb: payload.rgbCode!,
+      acrescimo: payload.acrescimo,
+    });
+
+    await ProdutoCoresController.invalidateCatalogCache("criada", cor);
+    return res.status(201).send(cor);
   }
 
   static async update(req: ProdutoCorRequest, res: Response) {
@@ -182,6 +190,7 @@ class ProdutoCoresController {
     }
 
     await cor.update(ProdutoCoresController.buildUpdateData(cor, payload));
+    await ProdutoCoresController.invalidateCatalogCache("atualizada", cor);
     return res.status(200).send(cor);
   }
 
@@ -199,6 +208,7 @@ class ProdutoCoresController {
     }
 
     await cor.destroy();
+    await ProdutoCoresController.invalidateCatalogCache("removida", cor);
     return res.status(204).send();
   }
 }

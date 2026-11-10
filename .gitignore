@@ -17,3 +17,6 @@ cypress/videos/
 node_modules/
 
 2
+# Relatorios gerados localmente
+coverage/
+*.log

@@ -36,7 +36,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: agnus-front/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            agnus-front/package-lock.json
+      # O ESLint do front usa o eslint.config.js da raiz, que depende de @eslint/js e globals.
+      - name: Dependencias da raiz (config do ESLint)
+        working-directory: .
+        run: npm ci --ignore-scripts
       - run: npm ci --legacy-peer-deps
       - run: npm run lint
       - run: npm test -- --watchAll=false

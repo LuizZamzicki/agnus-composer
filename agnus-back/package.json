@@ -13,7 +13,8 @@
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
     "db:migrate": "npx sequelize db:migrate",
-    "db:migrate:undo": "npx sequelize db:migrate:undo"
+    "db:migrate:undo": "npx sequelize db:migrate:undo",
+    "validar:rubrica": "node --no-warnings scripts/validar-rubrica.mjs"
   },
   "keywords": [],
   "author": "",

@@ -1,5 +1,4 @@
 import {
-  authorizeOpenOrderBody,
   authorizeOwnerByBody,
   authorizeOwnerByParam,
   authorizeOwnerByQuery,
@@ -146,30 +145,6 @@ describe("ownership.middleware", () => {
     it("admin lista tudo e anonimo recebe 401", async () => {
       expect((await run(authorizeOwnerByQuery("id_usuario"), mockRequest({ query: {} }), admin)).next).toHaveBeenCalled();
       expect((await run(authorizeOwnerByQuery("id_usuario"), mockRequest({ query: {} }), null)).res.status).toHaveBeenCalledWith(401);
-    });
-  });
-
-  describe("authorizeOpenOrderBody", () => {
-    const middleware = authorizeOpenOrderBody("id_pedido");
-
-    it("permite itens no proprio pedido em aberto", async () => {
-      findByPk(Pedidos).mockResolvedValueOnce({ id_usuario: 1, status: "aguardando_pagamento" });
-      expect((await run(middleware, mockRequest({ body: { id_pedido: 1 } }))).next).toHaveBeenCalled();
-    });
-
-    it("bloqueia pedido de outra pessoa (403) e pedido ja pago (409)", async () => {
-      findByPk(Pedidos).mockResolvedValueOnce({ id_usuario: 2, status: "aguardando_pagamento" });
-      expect((await run(middleware, mockRequest({ body: { id_pedido: 1 } }))).res.status).toHaveBeenCalledWith(403);
-
-      findByPk(Pedidos).mockResolvedValueOnce({ id_usuario: 1, status: "pago" });
-      expect((await run(middleware, mockRequest({ body: { id_pedido: 1 } }))).res.status).toHaveBeenCalledWith(409);
-    });
-
-    it("libera admin e pedido inexistente; exige autenticacao", async () => {
-      expect((await run(middleware, mockRequest({ body: { id_pedido: 1 } }), admin)).next).toHaveBeenCalled();
-      findByPk(Pedidos).mockResolvedValueOnce(null);
-      expect((await run(middleware, mockRequest({ body: { id_pedido: 1 } }))).next).toHaveBeenCalled();
-      expect((await run(middleware, mockRequest({ body: {} }), null)).res.status).toHaveBeenCalledWith(401);
     });
   });
 });

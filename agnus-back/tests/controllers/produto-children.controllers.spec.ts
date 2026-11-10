@@ -7,6 +7,7 @@ import ProdutoGrades from "../../src/models/ProdutoGrades";
 import Produtos from "../../src/models/Produtos";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 import { INVALID_IMAGE_MESSAGE } from "../../src/utils/imageSignature";
+import CacheService from "../../src/services/cache.service";
 
 jest.mock("../../src/models/ProdutoCores", () => ({
   __esModule: true,
@@ -165,11 +166,13 @@ describe("ProdutoCoresController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Cor do produto nao encontrada." });
   });
 
-  it("remove retorna 204 quando exclui a cor", async () => {
-    const response = mockResponse(), cor = buildModelInstance({ id_produto_cor: 1 });
+  it("remove retorna 204 quando exclui a cor e invalida o cache de produtos", async () => {
+    const invalidate = jest.spyOn(CacheService, "invalidateNamespace").mockResolvedValueOnce(2);
+    const response = mockResponse(), cor = buildModelInstance({ id_produto_cor: 1, id_produto: 7 });
     coresModel.findByPk.mockResolvedValueOnce(cor);
     await ProdutoCoresController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(cor.destroy).toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith("produtos", "produto_cor.removida:7");
     expect(response.status).toHaveBeenCalledWith(204);
   });
 });
@@ -294,11 +297,13 @@ describe("ProdutoGradesController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Grade do produto nao encontrada." });
   });
 
-  it("remove retorna 204 quando exclui a grade", async () => {
-    const response = mockResponse(), grade = buildModelInstance({ id_produto_grade: 1 });
+  it("remove retorna 204 quando exclui a grade e invalida o cache de produtos", async () => {
+    const invalidate = jest.spyOn(CacheService, "invalidateNamespace").mockResolvedValueOnce(2);
+    const response = mockResponse(), grade = buildModelInstance({ id_produto_grade: 1, id_produto: 7 });
     gradesModel.findByPk.mockResolvedValueOnce(grade);
     await ProdutoGradesController.remove(mockRequest({ params: { id: "1" } }), response);
     expect(grade.destroy).toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith("produtos", "produto_grade.removida:7");
     expect(response.status).toHaveBeenCalledWith(204);
   });
 });

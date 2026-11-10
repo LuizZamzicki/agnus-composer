@@ -19,7 +19,11 @@ Endpoints documentados, agrupados por recurso:
 | Produtos | `GET/POST /products`, `GET /products/catalog`, `GET /products/best-sellers`, `GET/PUT/DELETE /products/{id}` |
 | Fotos | `POST /product-photos` (multipart), `GET /product-photos/{id_produto}` |
 | Carrinho | `POST /carts`, `POST /cart-items`, `GET /cart-items/{id_cart}` |
-| Pedidos | `GET/POST /orders`, `GET /orders/me`, `GET/PUT/DELETE /orders/{id}` |
+| Contatos | `POST /user-contacts`, `GET /user-contacts/{id_user}` |
+| Variações | `POST /product-colors`, `GET /product-colors/{id_produto}`, `POST /product-grades`, `GET /product-grades/{id_produto}` |
+| Avaliações | `POST /product-reviews`, `GET /product-reviews/{id_produto}` |
+| Pedidos | `POST /orders/checkout` (compra do cliente), `GET /orders/me`, `GET/POST /orders` (equipe), `GET/PUT/DELETE /orders/{id}` (PUT valida a transição de status → 409) |
+| Itens de pedido | `POST /order-items`, `GET /order-items/{id_order}`, `PUT/DELETE /order-items/{id}` (só com o pedido em aberto → 409; recalculam o total) |
 
 ### Convenções
 
@@ -29,7 +33,7 @@ Endpoints documentados, agrupados por recurso:
 | Dados pessoais | Endereços, contatos, carrinhos, avaliações e itens de pedido exigem token e só aceitam o **dono** do registro (ou admin), via `ownership.middleware.ts`. Leituras públicas: catálogo, categorias e avaliações de um produto |
 | Upload | `multipart/form-data` (ou base64), até 20 MB. JPEG, PNG, GIF, WebP e BMP, com o formato decidido pelos **magic bytes** do conteúdo (`utils/imageSignature.ts`); MIME e extensão enviados pelo cliente são ignorados |
 | Paginação | `?page=1&limit=10` → `{ data: [...], pagination: { page, limit, total, totalPages, hasNextPage, hasPreviousPage } }` |
-| Erros | `{ "message": "..." }` com 400 (validação), 401, 403, 404, 409 (conflito), 500 (sem detalhes internos) |
+| Erros | `{ "message": "..." }` com 400 (validação), 401, 403, 404, 409 (conflito ou transição de status inválida), 429 (excesso de tentativas de login, aplicado pelo Nginx), 500 (sem detalhes internos) |
 | Rastreabilidade | Toda resposta inclui `X-Request-Id` |
 | Prefixo | Atrás do Nginx a API fica em `/api` (o Nginx remove o prefixo) |
 

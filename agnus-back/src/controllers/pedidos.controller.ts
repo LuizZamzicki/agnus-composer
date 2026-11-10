@@ -5,6 +5,7 @@ import Usuarios from "../models/Usuarios";
 import type { AuthenticatedResponseLocals } from "../middlewares/auth.middleware";
 import CheckoutService, { CheckoutError } from "../services/checkout.service";
 import EventBusService from "../services/eventBus.service";
+import PedidoRegrasService from "../services/pedidoRegras.service";
 import type {
   PedidoBody,
   PedidoQuery,
@@ -36,10 +37,6 @@ class PedidoPayload {
     return PedidosController.normalizeStatus(this.body.status);
   }
 
-  get valorTotal() {
-    return this.body.valor_total ?? 0;
-  }
-
   get valorFrete() {
     return this.body.valor_frete ?? null;
   }
@@ -54,10 +51,6 @@ class PedidoPayload {
 
   hasStatusField() {
     return this.body.status !== undefined;
-  }
-
-  hasValorTotalField() {
-    return this.body.valor_total !== undefined;
   }
 
   hasValorFreteField() {
@@ -107,6 +100,10 @@ class PedidosController {
 
     if (payload.hasStatusField() && !payload.status) {
       return "status invalido.";
+    }
+
+    if (payload.status && !PedidoRegrasService.estaAberto(payload.status)) {
+      return "Um pedido novo so pode comecar em aguardando_calculo_frete ou aguardando_pagamento.";
     }
 
     return null;
@@ -167,9 +164,6 @@ class PedidosController {
       id_usuario: userId,
       id_usuario_endereco: addressId,
       status: payload.status ?? pedido.status,
-      valor_total: payload.hasValorTotalField()
-        ? payload.valorTotal
-        : pedido.valor_total,
       valor_frete: payload.hasValorFreteField()
         ? payload.valorFrete
         : pedido.valor_frete,
@@ -228,6 +222,8 @@ class PedidosController {
     return res.status(200).send(pedido);
   }
 
+  // Lancamento manual pela equipe (o cliente compra por /orders/checkout). O pedido nasce sem
+  // itens e o total comeca no frete; cada item adicionado recalcula o total no servidor.
   static async create(req: PedidoRequest, res: Response) {
     const payload = new PedidoPayload(req.body);
     const message = PedidosController.getCreateErrorMessage(payload);
@@ -260,7 +256,7 @@ class PedidosController {
       id_usuario: payload.userId!,
       id_usuario_endereco: payload.addressId!,
       status: payload.status ?? "aguardando_pagamento",
-      valor_total: payload.valorTotal,
+      valor_total: Number(payload.valorFrete ?? 0),
       valor_frete: payload.valorFrete,
     });
 
@@ -313,6 +309,12 @@ class PedidosController {
       return res.status(400).json({ message });
     }
 
+    if (payload.status && !PedidoRegrasService.podeTransitar(pedido.status, payload.status)) {
+      return res.status(409).json({
+        message: `Transicao de status invalida: ${pedido.status} -> ${payload.status}.`,
+      });
+    }
+
     const userId = payload.userId ?? pedido.id_usuario;
     const addressId = payload.addressId ?? pedido.id_usuario_endereco;
     const userMessage = await PedidosController.findUserError(payload.userId);
@@ -342,6 +344,10 @@ class PedidosController {
         addressId,
       ),
     );
+
+    if (payload.hasValorFreteField()) {
+      await PedidoRegrasService.recalcularTotal(pedido);
+    }
 
     await EventBusService.publish("pedido.atualizado", {
       id_pedido: pedido.id_pedido,

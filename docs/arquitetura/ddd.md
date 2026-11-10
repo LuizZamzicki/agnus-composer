@@ -26,7 +26,7 @@ O domínio é o **varejo on-line de vestuário esportivo católico sob demanda (
 | Bounded Context | Responsabilidade | Modelos / tabelas | Código |
 | --- | --- | --- | --- |
 | **Catálogo** | Cadastro e exposição de produtos e suas variações | `Produtos`, `ProdutoCores`, `ProdutoGrades`, `ProdutoFotos`, `Categorias` | `produtoCatalog.service`, `produtoMutation.service`, `produtos/categorias/produtoCores/produtoGrades/produtoFotos.controller` |
-| **Carrinho** | Intenção de compra antes do pedido; valida estoque e quantidade | `Carrinhos`, `CarrinhoItens` | `carrinhos/carrinhoItens.controller` |
+| **Carrinho** | Intenção de compra antes do pedido; valida a variante (cor + grade do mesmo produto) e a quantidade | `Carrinhos`, `CarrinhoItens` | `carrinhos/carrinhoItens.controller` |
 | **Pedidos** | Pedido confirmado e seu ciclo de vida | `Pedidos`, `PedidoItens` | `pedidos/pedidoItens.controller`, `pedidoAuthorization.middleware` |
 | **Identidade e Acesso** | Quem é o usuário e o que pode fazer | `Usuarios`, `UsuarioSenhasHistorico`, `config/permissions.ts` | `auth.service`, `auth/usuarios.controller`, `auth/permission.middleware` |
 | **Clientes** | Dados de entrega e contato do cliente | `UsuarioEnderecos`, `UsuarioContatos` | `usuarioEnderecos/usuarioContatos.controller` |
@@ -145,14 +145,30 @@ classDiagram
 | # | Invariante | Situação no código |
 | --- | --- | --- |
 | 1 | O pedido pertence a um único usuário, e o endereço de entrega precisa ser desse usuário | ✅ Garantida em `PedidosController.create/update` |
-| 2 | Só o dono ou um usuário com permissão vê o pedido | ✅ `authorizeOrderOwnerOrAdmin` / `authorizeOwnOrderBody` |
+| 2 | Só o dono ou um usuário com permissão vê o pedido | ✅ `authorizeOrderOwnerOrAdmin`; criar pedido manual e mexer em itens exige `pedidos:criar` / `pedidos:atualizar` (`src/routes/pedidos.routes.ts`) |
 | 3 | `preco_unitario` é copiado no momento da compra e não muda quando o produto muda | ✅ Coluna própria em `PedidoItens` |
 | 4 | Mudança de status publica `pedido.atualizado` com `status_anterior` e `status` | ✅ `PedidosController.update` |
-| 5 | Não existe pedido sem itens (RF58/RF90) | ⚠️ Validado no fluxo de checkout do frontend; a API cria o cabeçalho e os itens em chamadas separadas |
-| 6 | `valor_total = Σ subtotais + valor_frete` | ⚠️ A loja já usa `POST /orders/checkout`, que calcula no servidor e cria pedido + itens em uma transação. **Pendente:** aposentar `POST /orders`, que ainda aceita o valor do cliente |
-| 7 | Transições de status seguem o fluxo esperado | ⚠️ A API aceita qualquer status válido. **Melhoria planejada:** máquina de estados no agregado |
+| 5 | O cliente não cria pedido sem itens (RF58/RF90) | ✅ O único caminho do cliente é `POST /orders/checkout`, que recusa sacola vazia (400) e grava pedido + itens + baixa da sacola numa transação (`CheckoutService.finalizar`). O lançamento manual da equipe nasce aberto e recebe os itens em seguida |
+| 6 | `valor_total = Σ subtotais + valor_frete` | ✅ Nunca vem do cliente: o checkout calcula no servidor e `PedidoRegrasService.recalcularTotal` refaz o total a cada item incluído, alterado ou removido e a cada mudança de frete. Um `valor_total` enviado é ignorado |
+| 7 | Transições de status seguem o fluxo esperado | ✅ Máquina de estados em `PedidoRegrasService.podeTransitar`; transição inválida retorna **409** |
+| 8 | Itens só mudam enquanto o pedido está aberto (`aguardando_calculo_frete` / `aguardando_pagamento`) | ✅ `PedidoItensController` retorna **409** para pedido pago, enviado, entregue ou cancelado |
 
-Os itens ⚠️ estão no backlog ([product-backlog.md](../gestao/product-backlog.md), épico *Pedidos*), porque deixar o agregado consistente é o próximo passo natural do DDD neste projeto.
+As regras ficam num único lugar, [`pedidoRegras.service.ts`](../../agnus-back/src/services/pedidoRegras.service.ts), e são cobertas por testes em `tests/controllers/pedidos.controller.spec.ts` e `tests/routes/pedidos.routes.spec.ts` (US-22 e US-23 no [backlog](../gestao/product-backlog.md)).
+
+```mermaid
+stateDiagram-v2
+    [*] --> aguardando_calculo_frete
+    [*] --> aguardando_pagamento: checkout
+    aguardando_calculo_frete --> aguardando_pagamento
+    aguardando_pagamento --> pago
+    pago --> enviado
+    enviado --> entregue
+    aguardando_calculo_frete --> cancelado
+    aguardando_pagamento --> cancelado
+    pago --> cancelado
+    entregue --> [*]
+    cancelado --> [*]
+```
 
 ### Contexto **Catálogo**
 

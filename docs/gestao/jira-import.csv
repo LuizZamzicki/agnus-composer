@@ -1,85 +1,95 @@
-Issue Id,Issue Type,Summary,Description,Priority,Labels,Story Points,Parent Id,Status,Fix Version
-1,Epic,EP-01 Identidade e Acesso,Ver docs/gestao/product-backlog.md,High,,,,In Progress,
-2,Epic,EP-02 Catálogo,Ver docs/gestao/product-backlog.md,High,,,,In Progress,
-3,Epic,EP-03 Carrinho,Ver docs/gestao/product-backlog.md,High,,,,Done,
-4,Epic,EP-04 Pedidos e Checkout,Ver docs/gestao/product-backlog.md,High,,,,In Progress,
-5,Epic,EP-05 Pagamento online,Ver docs/gestao/product-backlog.md,High,,,,In Progress,
-6,Epic,EP-06 Avaliações,Ver docs/gestao/product-backlog.md,High,,,,Done,
-7,Epic,EP-07 Painel administrativo,Ver docs/gestao/product-backlog.md,High,,,,Done,
-8,Epic,EP-08 Plataforma e Qualidade,Ver docs/gestao/product-backlog.md,High,,,,In Progress,
-101,Story,US-01 Cadastro de cliente,"Como visitante, quero me cadastrar para comprar.
-CA: e-mail único; senha forte; CPF válido.",Highest,,3,1,Done,2.0.0
-102,Story,US-02 Login com e-mail e senha,"Como cliente, quero entrar com e-mail e senha.
-CA: JWT; mensagem genérica para credenciais erradas.",Highest,,3,1,Done,2.0.0
-103,Story,US-03 Login com Google (web e app),"Como cliente, quero entrar com o Google.
-CA: OAuth com state assinado; redirect do app validado por allowlist; vincula conta existente.",High,,5,1,Done,3.0.0
-104,Story,US-04 Controle de acesso cliente/admin (RBAC),"Como dono da loja, quero que só admins alterem produtos e pedidos.
-CA: JWT + permissão; 403 para quem não pode.",Highest,,5,1,Done,3.2.0
-105,Story,US-05 Troca de senha com histórico,"Como cliente, quero trocar minha senha.
-CA: exige a senha atual; bloqueia senhas recentes.",High,,3,1,Done,2.0.0
-106,Story,"US-06 Cargos vendas, atendimento e auditor","Como admin, quero dar acesso parcial à equipe.
-CA: novos cargos em ROLE_PERMISSIONS; 403 sem permissão.",Medium,,5,1,To Do,4.0.0
-201,Story,"US-07 Cadastro de produto com cores, grades e fotos","Como admin, quero cadastrar produto completo.
-CA: transação única; ao menos uma cor com foto.",Highest,,8,2,Done,2.0.0
-202,Story,US-08 Upload de fotos de produto,"Como admin, quero enviar fotos do computador.
-CA: JPEG/PNG/WebP até 20MB; 400 para arquivo inválido.",Highest,,5,2,Done,3.2.0
-203,Story,US-09 Busca tolerante a erros,"Como cliente, quero buscar mesmo digitando errado.
-CA: Meilisearch + sinônimos; fallback SQL.",High,,5,2,Done,2.0.0
-204,Story,US-10 Ordenar catálogo por preço,"Como cliente, quero ordenar por preço.
-CA: sort=preco_asc|preco_desc com paginação.",High,,3,2,Done,3.1.0
-205,Story,US-11 Filtrar por categoria,"Como cliente, quero filtrar por categoria.
-CA: ?id_categoria=; paginação.",Highest,,2,2,Done,2.0.0
-206,Story,US-12 Catálogo rápido com cache Redis,"Como cliente, quero que o catálogo abra rápido.
-CA: cache-aside com TTL; invalidação ao editar; funciona sem Redis; p95 < 150ms.",Highest,,8,2,Done,3.3.0
-207,Story,US-13 Produtos em destaque na home,"Como dono, quero marcar destaques.
-CA: campo destaque; home lista até 8.",Medium,,3,2,To Do,4.0.0
-208,Story,US-14 Cadastro de marcas,Won't por ora: todas as peças são da marca Agnus.,Lowest,,,2,Won't Do,
-301,Story,US-15 Adicionar ao carrinho com cor e tamanho,"Como cliente, quero escolher cor e tamanho.
-CA: cor e grade do mesmo produto.",Highest,,5,3,Done,2.0.0
-302,Story,US-16 Alterar e remover itens do carrinho,"Como cliente, quero ajustar o carrinho.
-CA: subtotal e total recalculados.",Highest,,3,3,Done,2.0.0
-401,Story,US-17 Finalizar compra escolhendo endereço,"Como cliente, quero finalizar a compra.
-CA: endereço do próprio cliente; status inicial aguardando_pagamento.",Highest,,5,4,Done,2.0.0
-402,Story,US-18 Histórico de pedidos do cliente,"Como cliente, quero ver meus pedidos.
-CA: só os meus; com itens.",Highest,,3,4,Done,2.0.0
-403,Story,US-19 Avisar equipe sobre pedidos (eventos),"Como equipe, quero ser avisada de pedidos novos.
-CA: evento no Redis Pub/Sub; worker registra notificação; falha no Redis não bloqueia pedido.",High,,5,4,Done,3.3.0
-404,Story,US-20 Admin atualiza status do pedido,"Como admin, quero atualizar status.
-CA: permissão pedidos:atualizar; filtro por status.",Highest,,3,4,Done,2.0.0
-405,Story,US-21 Vários endereços de entrega,"Como cliente, quero cadastrar endereços.
-CA: CRUD; um principal.",Highest,,3,4,Done,2.0.0
-406,Story,US-22 Total do pedido calculado no servidor,"Como dono, quero impedir adulteração de preço.
-CA: total calculado no backend; pedido+itens na mesma transação.",Highest,,5,4,In Progress,4.0.0
-407,Story,US-23 Máquina de estados do pedido,"Como equipe, quero impedir transições inválidas.
-CA: fluxo permitido; 409 para inválidas.",High,,3,4,To Do,4.0.0
-408,Story,US-24 E-mail ao cliente quando o status mudar,"Como cliente, quero receber e-mail.
-CA: worker consome pedido.atualizado; falha não afeta pedido.",High,,5,4,To Do,4.0.0
-409,Story,US-29 Controle de estoque,Repensado: print on demand não tem estoque físico.,Lowest,,,4,Won't Do,
-501,Story,US-25 Pagar pelo Mercado Pago,"Como cliente, quero pagar com Pix/cartão.
-CA: valor exato; aprovado -> pago; recusado -> tenta de novo; sem dados de cartão no Agnus.",Highest,,8,5,In Progress,4.0.0
-502,Story,US-26 Webhook de confirmação de pagamento,"Como equipe, quero status pago automático.
-CA: assinatura validada; idempotente; fila durável.",Highest,,5,5,To Do,4.0.0
-601,Story,US-27 Avaliar produto com nota e fotos,"Como cliente, quero avaliar produtos.
-CA: nota 1-5; fotos opcionais.",High,,5,6,Done,2.0.0
-701,Story,US-28 Painel com pedidos e mais vendidos,"Como admin, quero acompanhar vendas.
-CA: totais de pedidos; mais vendidos.",High,,5,7,Done,2.0.0
-801,Task,"TS-01 Docker Compose com Nginx, TLS e redes isoladas",Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,5,8,Done,2.2.0
-802,Task,TS-02 Husky + ESLint + Commitlint,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,2,8,Done,2.1.0
-803,Task,TS-03 CI no GitHub Actions + template de PR,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,3,8,Done,2.2.0
-804,Task,TS-04 Documentar requisitos funcionais e não funcionais,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,3,8,Done,3.1.0
-805,Task,TS-05 ngrok no docker compose,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,2,8,Done,3.2.1
-806,Task,TS-06 Logs estruturados JSON + métricas,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,5,8,Done,3.3.0
-807,Task,TS-07 Documentação OpenAPI + Swagger UI,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,3,8,Done,3.3.0
-808,Task,TS-08 Pipeline de CD com rollback,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,3,8,Done,3.3.0
-809,Task,TS-09 Migrar sequelize.sync para migrations,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,5,8,To Do,4.0.0
-810,Task,TS-10 Exportar métricas para Prometheus/Grafana,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,5,8,To Do,
-901,Bug,Healthcheck do nginx sempre 'unhealthy',localhost resolve para IPv6 (::1) dentro do container e o nginx só escuta IPv4. Correção: usar 127.0.0.1 no healthcheck.,High,bug,,8,Done,3.3.0
-902,Bug,Erros 500 não eram registrados em log,errorHandler respondia 500 sem registrar o erro. Correção: log http.erro_nao_tratado com stack.,High,bug,,8,Done,3.3.0
-903,Bug,.env vindo do Windows quebra senhas (CRLF),Arquivos .env com CRLF deixam \r no fim dos valores. Correção: converter para LF; documentar no readme.,Medium,bug,,8,Done,3.3.0
-904,Bug,valor_total do pedido aceito do cliente,Possível adulteração de preço pelo navegador. Ver US-22.,Highest,bug,,4,To Do,4.0.0
-905,Bug,Rotas de dados pessoais sem autenticação (IDOR),"Endereços, contatos, avaliações, carrinhos e itens de pedido acessíveis sem token e sem checagem de dono. Correção: ownership.middleware + token no frontend.",Highest,"bug,seguranca",,8,Done,3.3.0
-906,Bug,Upload aceita qualquer arquivo renomeado como imagem,Tipo era decidido pelo MIME/extensão do cliente. Correção: validação por magic bytes (imageSignature.ts).,High,"bug,seguranca",,8,Done,3.3.0
-907,Bug,Login revela se a senha errada já foi usada,Mensagem de reutilização de senha confirmava senhas antigas. Correção: mensagem única.,Medium,"bug,seguranca",,8,Done,3.3.0
-908,Bug,/metrics público,Métricas internas expostas. Correção: somente administradores.,Low,"bug,seguranca",,8,Done,3.3.0
-209,Story,US-30 Coleções por tempo litúrgico,Faixa do calendário litúrgico e coleções por tempo. Adiada até haver mais estampas.,Medium,,8,2,To Do,
-811,Task,TS-11 Aplicação do logotipo oficial no site,"Cabeçalho, rodapé, login, 404, painel e ícones do site.",High,tecnico,,8,Done,
+Issue Id,Issue Type,Epic Name,Summary,Description,Priority,Labels,Labels,Story Points,Parent Id,Status,Fix Version,Assignee,Sprint
+1,Epic,EP-01 Identidade e Acesso,EP-01 Identidade e Acesso,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+2,Epic,EP-02 Catálogo,EP-02 Catálogo,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+3,Epic,EP-03 Carrinho,EP-03 Carrinho,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
+4,Epic,EP-04 Pedidos e Checkout,EP-04 Pedidos e Checkout,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+5,Epic,EP-05 Pagamento online,EP-05 Pagamento online,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+6,Epic,EP-06 Avaliações,EP-06 Avaliações,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
+7,Epic,EP-07 Painel administrativo,EP-07 Painel administrativo,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
+8,Epic,EP-08 Plataforma e Qualidade,EP-08 Plataforma e Qualidade,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+101,Story,,US-01 Cadastro de cliente,"Como visitante, quero me cadastrar para comprar.
+CA: e-mail único; senha forte; CPF válido.",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,
+102,Story,,US-02 Login com e-mail e senha,"Como cliente, quero entrar com e-mail e senha.
+CA: JWT; mensagem genérica para credenciais erradas.",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,
+103,Story,,US-03 Login com Google (web e app),"Como cliente, quero entrar com o Google.
+CA: OAuth com state assinado; redirect do app validado por allowlist; vincula conta existente.",High,,,5,1,Done,3.0.0,Luiz Zamzicki,
+104,Story,,US-04 Controle de acesso cliente/admin (RBAC),"Como dono da loja, quero que só admins alterem produtos e pedidos.
+CA: JWT + permissão; 403 para quem não pode.",Highest,,,5,1,Done,3.2.0,Luiz Zamzicki,
+105,Story,,US-05 Troca de senha com histórico,"Como cliente, quero trocar minha senha.
+CA: exige a senha atual; bloqueia senhas recentes.",High,,,3,1,Done,2.0.0,Luiz Zamzicki,
+106,Story,,"US-06 Cargos vendas, atendimento e auditor","Como admin, quero dar acesso parcial à equipe.
+CA: novos cargos em ROLE_PERMISSIONS; 403 sem permissão.",Medium,,,5,1,To Do,4.0.0,Bruno Medeiros,
+201,Story,,"US-07 Cadastro de produto com cores, grades e fotos","Como admin, quero cadastrar produto completo.
+CA: transação única; ao menos uma cor com foto.",Highest,,,8,2,Done,2.0.0,Luiz Zamzicki,
+202,Story,,US-08 Upload de fotos de produto,"Como admin, quero enviar fotos do computador.
+CA: JPEG/PNG/GIF/WebP/BMP até 20MB, formato conferido pelos magic bytes; 400 para arquivo inválido.",Highest,,,5,2,Done,3.2.0,Luiz Zamzicki,
+203,Story,,US-09 Busca tolerante a erros,"Como cliente, quero buscar mesmo digitando errado.
+CA: Meilisearch + sinônimos; fallback SQL.",High,,,5,2,Done,2.0.0,Luiz Zamzicki,
+204,Story,,US-10 Ordenar catálogo por preço,"Como cliente, quero ordenar por preço.
+CA: sort=preco_asc|preco_desc com paginação.",High,,,3,2,Done,3.1.0,Luiz Zamzicki,
+205,Story,,US-11 Filtrar por categoria,"Como cliente, quero filtrar por categoria.
+CA: ?id_categoria=; paginação.",Highest,,,2,2,Done,2.0.0,Luiz Zamzicki,
+206,Story,,US-12 Catálogo rápido com cache Redis,"Como cliente, quero que o catálogo abra rápido.
+CA: cache-aside com TTL; invalidação ao editar produto, cor, grade, foto ou categoria; funciona sem Redis; p95 < 150ms.",Highest,,,8,2,Done,3.3.0,Luiz Zamzicki,
+207,Story,,US-13 Produtos em destaque na home,"Como dono, quero marcar destaques.
+CA: campo destaque; home lista até 8.",Medium,,,3,2,To Do,4.0.0,Bruno Medeiros,
+208,Story,,US-14 Cadastro de marcas,Won't por ora: todas as peças são da marca Agnus.,Lowest,,,,2,Won't Do,,,
+209,Story,,US-30 Coleções por tempo litúrgico,Faixa do calendário litúrgico e coleções por tempo. Adiada até haver mais estampas.,Medium,,,8,2,To Do,,Luiz Zamzicki,
+301,Story,,US-15 Adicionar ao carrinho com cor e tamanho,"Como cliente, quero escolher cor e tamanho.
+CA: cor e grade do mesmo produto.",Highest,,,5,3,Done,2.0.0,Luiz Zamzicki,
+302,Story,,US-16 Alterar e remover itens do carrinho,"Como cliente, quero ajustar o carrinho.
+CA: subtotal e total recalculados.",Highest,,,3,3,Done,2.0.0,Luiz Zamzicki,
+401,Story,,US-17 Finalizar compra escolhendo endereço,"Como cliente, quero finalizar a compra.
+CA: endereço do próprio cliente; status inicial aguardando_pagamento.",Highest,,,5,4,Done,2.0.0,Luiz Zamzicki,
+402,Story,,US-18 Histórico de pedidos do cliente,"Como cliente, quero ver meus pedidos.
+CA: só os meus (GET /orders/me); com itens.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+403,Story,,US-19 Avisar equipe sobre pedidos (eventos),"Como equipe, quero ser avisada de pedidos novos.
+CA: evento no Redis Pub/Sub; worker registra notificação; falha no Redis não bloqueia pedido.",High,,,5,4,Done,3.3.0,Luiz Zamzicki,
+404,Story,,US-20 Admin atualiza status do pedido,"Como admin, quero atualizar status.
+CA: permissão pedidos:atualizar; filtro por status.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+405,Story,,US-21 Vários endereços de entrega,"Como cliente, quero cadastrar endereços.
+CA: CRUD; um principal.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+406,Story,,US-22 Total do pedido calculado no servidor,"Como dono, quero impedir adulteração de preço.
+CA: total = itens + frete calculado no backend; valor enviado pelo cliente ignorado; pedido+itens na mesma transação (POST /orders/checkout); total refeito quando itens ou frete mudam.",Highest,,,5,4,Done,3.4.0,Luiz Zamzicki,
+407,Story,,US-23 Máquina de estados do pedido,"Como equipe, quero impedir transições inválidas.
+CA: aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue; cancelado antes do envio; 409 para transição inválida.",High,,,3,4,Done,3.4.0,Luiz Zamzicki,
+408,Story,,US-24 E-mail ao cliente quando o status mudar,"Como cliente, quero receber e-mail.
+CA: worker consome pedido.atualizado; falha não afeta pedido.",High,,,5,4,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
+409,Story,,US-29 Controle de estoque,Repensado: print on demand não tem estoque físico. RFs de estoque marcados como substituídos no readme.,Lowest,,,,4,Won't Do,,,
+501,Story,,US-25 Pagar pelo Mercado Pago,"Como cliente, quero pagar com Pix/cartão.
+CA: valor exato; aprovado -> pago; recusado -> tenta de novo; sem dados de cartão no Agnus.",Highest,,,8,5,In Progress,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
+502,Story,,US-26 Webhook de confirmação de pagamento,"Como equipe, quero status pago automático.
+CA: assinatura validada; idempotente; fila durável.",Highest,,,5,5,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
+601,Story,,US-27 Avaliar produto com nota e fotos,"Como cliente, quero avaliar produtos.
+CA: nota 1-5; fotos opcionais.",High,,,5,6,Done,2.0.0,Luiz Zamzicki,
+701,Story,,US-28 Painel com pedidos e mais vendidos,"Como admin, quero acompanhar vendas.
+CA: totais de pedidos; mais vendidos.",High,,,5,7,Done,2.0.0,Luiz Zamzicki,
+801,Task,,"TS-01 Docker Compose com Nginx, TLS e redes isoladas",Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,5,8,Done,2.2.0,Luiz Zamzicki,
+802,Task,,TS-02 Husky + ESLint + Commitlint,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,2,8,Done,2.1.0,Bruno Medeiros,
+803,Task,,TS-03 CI no GitHub Actions + template de PR,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,3,8,Done,2.2.0,Luiz Zamzicki,
+804,Task,,TS-04 Documentar requisitos funcionais e não funcionais,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,3,8,Done,3.1.0,Bruno Medeiros,
+805,Task,,TS-05 ngrok no docker compose,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,,2,8,Done,3.2.1,Luiz Zamzicki,
+806,Task,,TS-06 Logs estruturados JSON + métricas,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,5,8,Done,3.3.0,Luiz Zamzicki,
+807,Task,,TS-07 Documentação OpenAPI + Swagger UI,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,
+808,Task,,TS-08 Pipeline de CD com rollback,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,
+809,Task,,TS-09 Migrar sequelize.sync para migrations,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,5,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
+810,Task,,TS-10 Exportar métricas para Prometheus/Grafana,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,,5,8,To Do,,Bruno Medeiros,
+811,Task,,TS-11 Aplicação do logotipo oficial no site,"Cabeçalho, rodapé, login, 404, painel e ícones do site.",High,tecnico,,,8,Done,3.3.0,Luiz Zamzicki,
+812,Task,,TS-12 Rotas da API por bounded context,"app.ts dividido em src/routes/*.routes.ts (identidade, clientes, catálogo, avaliações, carrinho, pedidos). Coleção Postman gerada a partir dos módulos.",Medium,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,
+813,Task,,TS-13 Endurecer o Nginx,"Upstream com keepalive, timeouts de proxy, gzip, cache de estáticos e rate limit no login (429). Porta 3000 da API só em 127.0.0.1.",High,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,
+814,Task,,TS-14 Tags SemVer e Releases no GitHub,Tags anotadas v2.0.0 a v3.4.0 e uma Release por versão com as notas do CHANGELOG. A tag dispara o cd.yml.,High,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,
+815,Task,,TS-15 Roteiro de validação da rubrica,docs/validacao-rubrica.md: como verificar cada item com comandos e evidências. Script npm run validar:rubrica com 16 verificações automáticas.,Medium,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,
+816,Task,,TS-16 Publicar a loja em um endereço público,Servidor com docker compose + segredos DEPLOY_* no ambiente producao do GitHub para o job de deploy do cd.yml. Entrega o LINK DO SITE.,Highest,tecnico,,5,8,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
+817,Task,,TS-17 Integrar Jira e GitHub,"Instalar o app GitHub for Jira e citar a chave AGNUS-n em branches, commits e PRs.",Medium,tecnico,,1,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
+901,Bug,,Healthcheck do nginx sempre 'unhealthy',localhost resolve para IPv6 (::1) dentro do container e o nginx só escuta IPv4. Correção: usar 127.0.0.1 no healthcheck.,High,bug,,,8,Done,3.3.0,Luiz Zamzicki,
+902,Bug,,Erros 500 não eram registrados em log,errorHandler respondia 500 sem registrar o erro. Correção: log http.erro_nao_tratado com stack.,High,bug,,,8,Done,3.3.0,Luiz Zamzicki,
+903,Bug,,.env vindo do Windows quebra senhas (CRLF),Arquivos .env com CRLF deixam \r no fim dos valores. Correção: converter para LF; documentar no readme.,Medium,bug,,,8,Done,3.3.0,Luiz Zamzicki,
+904,Bug,,Cliente cria pedido com valor_total e status escolhidos (POST /orders),"Qualquer cliente autenticado criava pedido para si com {status: pago, valor_total: 0}. Correção: POST /orders exclusivo da equipe (pedidos:criar), pedido nasce aberto e valor enviado é ignorado. Ver US-22.",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,
+905,Bug,,Rotas de dados pessoais sem autenticação (IDOR),"Endereços, contatos, avaliações, carrinhos e itens de pedido acessíveis sem token e sem checagem de dono. Correção: ownership.middleware + token no frontend.",Highest,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
+906,Bug,,Upload aceita qualquer arquivo renomeado como imagem,Tipo era decidido pelo MIME/extensão do cliente. Correção: validação por magic bytes (imageSignature.ts).,High,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
+907,Bug,,Login revela se a senha errada já foi usada,Mensagem de reutilização de senha confirmava senhas antigas. Correção: mensagem única.,Medium,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
+908,Bug,,/metrics público,Métricas internas expostas. Correção: somente administradores.,Low,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
+909,Bug,,CI vermelho na main após remover node_modules do Git,"O ESLint do front usa o eslint.config.js da raiz, cujas dependências (@eslint/js, globals) não eram instaladas no job. Correção: declarar no package.json da raiz e instalar no CI.",Highest,bug,,,8,Done,3.4.0,Luiz Zamzicki,
+910,Bug,,Cliente inclui itens no pedido depois do checkout sem pagar por eles,"POST /order-items aceitava itens do dono em pedido aberto sem recalcular valor_total. Correção: itens só pela equipe, só com pedido aberto (409) e total recalculado.",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,
+911,Bug,,Cache de produtos não invalida ao editar cor ou grade,Acréscimo de preço da cor/grade levava até 5 min para aparecer no catálogo. Correção: invalidar o namespace produtos nas escritas de cor e grade.,High,bug,,,2,Done,3.4.0,Luiz Zamzicki,
+912,Bug,,Worker perde o primeiro evento depois de reiniciar,"A conexão de comandos do Redis só abria no primeiro evento; sem fila offline, o LPUSH da auditoria falhava e a notificação não era disparada. Correção: aguardar a conexão antes de assinar e isolar a falha da auditoria.",High,bug,,,8,Done,3.4.0,Luiz Zamzicki,
