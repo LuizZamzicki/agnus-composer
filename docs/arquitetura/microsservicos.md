@@ -97,6 +97,10 @@ sequenceDiagram
     end
 ```
 
+## Esquema dos bancos
+
+Cada serviço versiona o próprio esquema em `src/migracoes`. A primeira migration (`0001-esquema-inicial`) foi gerada a partir do banco em uso e não altera tabelas que já existem. As seguintes entram no fim da lista. O que já rodou fica registrado em `agnus_migracoes`, dentro do banco de cada serviço.
+
 ## Migração dos dados
 
 O container `migrador` roda [`migrar-bancos.sh`](../../services/scripts/migrar-bancos.sh) a cada subida. Ele cria os bancos e usuários e copia cada tabela do banco antigo só se ela ainda não existir no destino. O banco antigo (`agnus`) é apenas lido e pode ser removido depois de validar o novo ambiente.

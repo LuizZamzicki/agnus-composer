@@ -11,6 +11,7 @@ import authenticateToken, { authorizeRoles } from "../middlewares/auth.middlewar
 import { errorHandler } from "../middlewares/error.middleware";
 import { requestLogger } from "../middlewares/requestLogger.middleware";
 import logger from "./logger";
+import { executarMigracoes, type Migracao } from "./migracoes";
 import { getMetricsSnapshot } from "./metrics";
 
 type ConfiguracaoApp = {
@@ -82,16 +83,19 @@ export const criarApp = ({ rotas, interno, estaticos = [], metricasLocais = true
 type Inicializacao = {
   app: ReturnType<typeof express>;
   banco?: Sequelize;
+  migracoes?: Migracao[];
   aoIniciar?: () => Promise<void> | void;
 };
 
 const TENTATIVAS_BANCO = 30;
 const ESPERA_BANCO_MS = 2000;
 
-const prepararBanco = async (banco: Sequelize) => {
+// O esquema muda só por migrations versionadas; o sync automático alterava tabelas sem registro.
+const prepararBanco = async (banco: Sequelize, migracoes: Migracao[]) => {
   for (let tentativa = 1; ; tentativa += 1) {
     try {
-      await banco.sync({ alter: true });
+      await banco.authenticate();
+      await executarMigracoes(banco, migracoes);
       return;
     } catch (error) {
       if (tentativa >= TENTATIVAS_BANCO) {
@@ -104,12 +108,12 @@ const prepararBanco = async (banco: Sequelize) => {
   }
 };
 
-export const iniciarServico = async ({ app, banco, aoIniciar }: Inicializacao) => {
+export const iniciarServico = async ({ app, banco, migracoes = [], aoIniciar }: Inicializacao) => {
   const porta = Number(process.env.PORT || 3000);
 
   try {
     if (banco) {
-      await prepararBanco(banco);
+      await prepararBanco(banco, migracoes);
     }
 
     // A conexão não tem fila offline: sem abri-la agora, o primeiro evento publicado se perderia.

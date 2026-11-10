@@ -70,7 +70,7 @@ Para a rastreabilidade ficar visível nas issues, instale o app **GitHub for Jir
 | Onde | Padrão | Exemplo |
 | --- | --- | --- |
 | Branch | `<tipo>/AGNUS-<n>-descricao` | `feat/AGNUS-206-cache-redis` |
-| Commit (Conventional Commits) | `<tipo>: AGNUS-<n> descrição` | `feat: AGNUS-206 cache-aside no catálogo` |
+| Commit (Conventional Commits) | `<tipo>(escopo): descrição (AGNUS-<n>)`. A chave vai no fim porque o commitlint recusa assunto começando em maiúscula | `feat(services): troca o sync automático por migrations (AGNUS-154)` |
 | Pull Request | título com a chave | `AGNUS-206 Cache Redis e eventos` |
 
 Com isso, cada issue mostra os branches, commits, PRs e o status do CI.

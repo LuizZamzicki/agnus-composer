@@ -194,8 +194,10 @@ RF69, RF70
 - Logo oficial (cordeiro com auréola e estandarte) aplicado no cabeçalho, rodapé, login, página 404, painel e ícones do site.
 - Arte original guardada em `docs/marca/`; versões otimizadas em `agnus-front/src/img/marca/`.
 
-### TS-09 · Migrar `sequelize.sync` para migrations · `Should` · 5 pts · 📋 (release 4.0.0)
-- Schema versionado em migrations; deploy roda `db:migrate` antes de subir a nova versão.
+### TS-09 · Migrar `sequelize.sync` para migrations · `Should` · 5 pts · 🔍 em revisão (AGNUS-154)
+- ✅ Cada serviço versiona o próprio esquema em `src/migracoes` e aplica as pendentes ao subir.
+- ✅ A migration inicial reproduz o esquema em uso e não altera bancos existentes.
+- ✅ Duas réplicas não migram ao mesmo tempo (trava no MySQL).
 
 ### TS-10 · Métricas no Prometheus/Grafana · `Could` · 5 pts · 📋
 - `/metrics` em formato Prometheus; painel com os SLOs.
