@@ -122,11 +122,12 @@
 
 .app-confirm-btn:hover { background: var(--stone-2); }
 
-.app-confirm-btn--primary { background: var(--ink); color: var(--stone); }
+.app-confirm-btn--primary { background: var(--acao); color: var(--on-acao); }
+.app-confirm-btn--primary:hover { background: var(--acao-hover); color: var(--on-acao-hover); }
 .app-confirm-btn--primary:hover { background: var(--lit); border-color: var(--lit); color: var(--on-lit); }
 
-.app-confirm-btn--danger { background: var(--danger); border-color: var(--danger); color: #fff; }
-.app-confirm-btn--danger:hover { background: #7f2318; border-color: #7f2318; }
+.app-confirm-btn--danger { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
+.app-confirm-btn--danger:hover { background: var(--danger-hover); border-color: var(--danger-hover); }
 
 @keyframes app-toast-enter {
   from { opacity: 0; transform: translateY(-8px); }

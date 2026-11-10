@@ -76,7 +76,7 @@
 .perfil-content label {
     font-size: 14px;
     font-weight: 600;
-    color: #4a4a4a;
+    color: var(--ink-2);
     margin-bottom: 12px;
     margin-top: 12px;
     display: block;
@@ -186,17 +186,17 @@
 
 .toast-card.success {
     color: var(--ok);
-    background: #d4f8d4;
+    background: var(--ok-soft);
 }
 
 .toast-card.error {
     color: var(--danger);
-    background: #f8d4d4;
+    background: var(--danger-soft);
 }
 
 .perfil-content button {
     margin-top: 20px;
-    background: var(--ink);
+    background: var(--acao);
     border: none;
     padding: 14px;
     font-weight: bold;
@@ -204,13 +204,13 @@
     transition: all 0.3s ease;
     /* width: 100%; */
     border-radius: 6px;
-    color: var(--stone);
+    color: var(--on-acao);
 }
 
 .perfil-content button:hover {
-    background: var(--ink);
+    background: var(--acao-hover);
     transform: translateY(-2px);
-    color: var(--stone);
+    color: var(--on-acao-hover);
 }
 
 .perfil-content button[disabled] {
@@ -371,14 +371,14 @@
 }
 
 .modal-actions button:last-child {
-    background: var(--ink);
-    color: var(--stone);
+    background: var(--acao);
+    color: var(--on-acao);
 }
 
 .modal-actions button:last-child:hover {
-    background: var(--ink);
+    background: var(--acao-hover);
     transform: translateY(-1px);
-    color: var(--stone);
+    color: var(--on-acao-hover);
 }
 
 .status {
@@ -391,17 +391,17 @@
 
 .status.pendente {
     background: color-mix(in oklab, var(--brass) 16%, var(--paper));
-    color: #6b5115;
+    color: var(--brass-ink);
 }
 
 .status.aprovado {
     background: var(--ok-soft);
-    color: #166534;
+    color: var(--ok);
 }
 
 .status.cancelado {
     background: var(--danger-soft);
-    color: #991b1b;
+    color: var(--danger);
 }
 
 .pedido-itens {
@@ -674,14 +674,14 @@
 }
 
 .modal-actions button:last-child {
-    background: var(--ink);
-    color: var(--stone);
+    background: var(--acao);
+    color: var(--on-acao);
 }
 
 .modal-actions button:last-child:hover {
-    background: var(--ink);
+    background: var(--acao-hover);
     transform: translateY(-1px);
-    color: var(--stone);
+    color: var(--on-acao-hover);
 }
 
 .perfil-content button.loading {
@@ -869,7 +869,7 @@
 
 .senha-bar.fraca {
     width: 40%;
-    background: #b5651d;
+    background: var(--brass);
 }
 
 .senha-bar.media {
@@ -880,7 +880,7 @@
 
 .senha-bar.forte {
     width: 80%;
-    background: #4ade80;
+    background: color-mix(in oklab, var(--ok) 70%, var(--paper));
 }
 
 .senha-bar.muito_forte {
@@ -956,12 +956,25 @@ button[disabled] {
 
 .pedido-header .status.aguardando_pagamento,
 .pedido-header .status.aguardando_calculo_frete {
-    color: #6b5115;
+    color: var(--brass-ink);
     background: color-mix(in oklab, var(--brass) 16%, var(--paper));
 }
 
 .pedido-header .status.entregue { color: var(--ok); background: var(--ok-soft); }
 .pedido-header .status.cancelado { color: var(--danger); background: var(--danger-soft); }
+
+/* No escuro, a cor do tempo sobre fundo tingido não chega a 4,5:1: o selo fica com fundo
+   neutro e borda de uma cor só. */
+:root[data-theme="dark"] .pedido-header .status:not(.entregue, .cancelado, .aguardando_pagamento, .aguardando_calculo_frete) {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px currentColor;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .pedido-header .status:not(.entregue, .cancelado, .aguardando_pagamento, .aguardando_calculo_frete) {
+        background: transparent;
+        box-shadow: inset 0 0 0 1px currentColor;
+    }
+}
 
 /* Celular: número e data em cima; selo, valor e botão embaixo, sem nada vazar do cartão. */
 @media (max-width: 560px) {

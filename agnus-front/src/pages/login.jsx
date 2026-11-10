@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import "../css/login.css";
 import hero from "../img/hero.png";
 import logoCompleto from "../img/marca/logo-completo.png";
+import logoCompletoEscuro from "../img/marca/logo-completo-escuro.png";
 import { apiUrl } from "../utils/api";
 import { destinoSeguro } from "../utils/destinoSeguro";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
@@ -330,7 +331,10 @@ function Login() {
 
       <section className="login-panel">
         <div className="login-brand">
-          <h1><img src={logoCompleto} alt="Agnus" /></h1>
+          <h1>
+            <img className="so-tema-claro" src={logoCompleto} alt="Agnus" />
+            <img className="so-tema-escuro" src={logoCompletoEscuro} alt="Agnus" />
+          </h1>
           <p>
             {searchParams.get("redirect") === "/finalizar"
               ? `${modoCadastro ? "Crie a sua conta" : "Entre na sua conta"} para concluir o pedido. Sua sacola fica guardada.`

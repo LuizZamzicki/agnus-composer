@@ -3,12 +3,13 @@
 // solenidades isoladas (exceto Pentecostes) não mudam a cor do site.
 
 const TEMPOS = {
-    advento: { nome: "Advento", cor: "#5b3a86" },
-    natal: { nome: "Tempo do Natal", cor: "#7a5c17" },
-    comum: { nome: "Tempo Comum", cor: "#2f6a46" },
-    quaresma: { nome: "Quaresma", cor: "#4e2f6e" },
-    pascoa: { nome: "Tempo Pascal", cor: "#7a5c17" },
-    pentecostes: { nome: "Pentecostes", cor: "#a1231c" },
+    // corEscura: mesma cor, mais clara, para o tema escuro (contraste de 4,8:1 ou mais sobre --paper).
+    advento: { nome: "Advento", cor: "#5b3a86", corEscura: "#a587cd" },
+    natal: { nome: "Tempo do Natal", cor: "#7a5c17", corEscura: "#be8e1f" },
+    comum: { nome: "Tempo Comum", cor: "#2f6a46", corEscura: "#47a86d" },
+    quaresma: { nome: "Quaresma", cor: "#4e2f6e", corEscura: "#aa87ce" },
+    pascoa: { nome: "Tempo Pascal", cor: "#7a5c17", corEscura: "#be8e1f" },
+    pentecostes: { nome: "Pentecostes", cor: "#a1231c", corEscura: "#e9736d" },
 };
 
 const atMidnight = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -78,7 +79,8 @@ export function tempoLiturgico(data = new Date()) {
 export function aplicarTempoLiturgico(data = new Date(), root = document.documentElement) {
     const tempo = tempoLiturgico(data);
 
-    root.style.setProperty("--lit", tempo.cor);
+    root.style.setProperty("--lit-claro", tempo.cor);
+    root.style.setProperty("--lit-escuro", tempo.corEscura);
     root.dataset.tempo = tempo.chave;
 
     return tempo;
