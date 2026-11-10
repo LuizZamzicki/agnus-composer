@@ -62,23 +62,19 @@ function Notificacoes() {
     }, [aberto]);
 
     function abrirNotificacao(notificacao) {
-        if (!notificacao.lida) {
-            setLista((atuais) => atuais.map((n) => (
-                n.id_notificacao === notificacao.id_notificacao ? { ...n, lida: true } : n
-            )));
-            setNaoLidas((total) => Math.max(0, total - 1));
-            fetch(apiUrl(`notifications/${notificacao.id_notificacao}/read`), {
-                method: "PATCH",
-                headers: authHeaders(),
-            }).catch(() => {});
-        }
+        setLista((atuais) => atuais.filter((n) => n.id_notificacao !== notificacao.id_notificacao));
+        setNaoLidas((total) => Math.max(0, total - 1));
+        fetch(apiUrl(`notifications/${notificacao.id_notificacao}/read`), {
+            method: "PATCH",
+            headers: authHeaders(),
+        }).catch(() => {});
 
         setAberto(false);
         navigate(`/cliente/pedidos?pedido=${notificacao.id_pedido}`);
     }
 
     function marcarTodas() {
-        setLista((atuais) => atuais.map((n) => ({ ...n, lida: true })));
+        setLista([]);
         setNaoLidas(0);
         fetch(apiUrl("notifications/read-all"), { method: "PATCH", headers: authHeaders() }).catch(() => {});
     }
@@ -107,7 +103,7 @@ function Notificacoes() {
                     </div>
 
                     {lista.length === 0 ? (
-                        <p className="notificacoes-vazio">Quando o status de um pedido mudar, o aviso aparece aqui.</p>
+                        <p className="notificacoes-vazio">Nenhuma notificação no momento</p>
                     ) : (
                         <ul>
                             {lista.map((n) => (
@@ -115,7 +111,6 @@ function Notificacoes() {
                                     <button
                                         type="button"
                                         data-cy="notificacao"
-                                        className={n.lida ? "lida" : ""}
                                         onClick={() => abrirNotificacao(n)}
                                     >
                                         <strong>{n.titulo}</strong>

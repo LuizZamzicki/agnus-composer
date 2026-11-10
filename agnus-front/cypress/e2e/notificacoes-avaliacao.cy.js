@@ -57,6 +57,43 @@ describe('Notificações, avaliação no pedido e sacola', () => {
         cy.location('search').should('eq', '?pedido=12');
         cy.get('[data-cy="item-produto"]').should('contain', 'Camiseta Ecce Agnus');
         cy.get('[data-cy="notificacoes-contador"]').should('not.exist');
+        cy.get('[data-cy="abrir-notificacoes"]').click();
+        cy.get('[data-cy="notificacao"]').should('not.exist');
+        cy.get('[data-cy="painel-notificacoes"]').should('contain', 'Nenhuma notificação no momento');
+    });
+
+    it('aceita meia estrela na nota', () => {
+        mockPedidos();
+        cy.intercept('POST', '**/product-reviews', { statusCode: 201, body: minhaAvaliacao }).as('avaliar');
+        cy.visit('/cliente/pedidos');
+        cy.get('[data-cy="ver-pecas"]').click();
+        cy.get('[data-cy="avaliar-peca"]').click();
+        cy.get('[data-cy="estrela-3.5"]').click();
+        cy.get('[data-cy="comentario-avaliacao"]').type('Gostei');
+        cy.get('[data-cy="enviar-avaliacao"]').click();
+        cy.wait('@avaliar').its('request.body').should('include', { nota: 3.5 });
+    });
+
+    it('a lupa abre o catálogo com a busca pronta para digitar', () => {
+        cy.visit('/');
+        cy.get('[aria-label="Buscar peças"]').click();
+        cy.location('pathname').should('eq', '/catalogo');
+        cy.focused().should('have.attr', 'data-cy', 'buscar-produto');
+    });
+
+    it('volta ao topo ao ir da página inicial para o catálogo', () => {
+        cy.visit('/');
+        cy.scrollTo('bottom');
+        cy.get('main a[href="/catalogo"]').last().click({ force: true });
+        cy.location('pathname').should('eq', '/catalogo');
+        cy.window().its('scrollY').should('eq', 0);
+    });
+
+    it('não mostra a sacola para administrador', () => {
+        localStorage.setItem('auth', JSON.stringify({ id_usuario: 1, tipo: 'administrador' }));
+        cy.visit('/');
+        cy.get('[aria-label="Minha conta"]').should('exist');
+        cy.get('.sacola-link').should('not.exist');
     });
 
     it('deixa avaliar a peça de um pedido entregue só com as estrelas', () => {

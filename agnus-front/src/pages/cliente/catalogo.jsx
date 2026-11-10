@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../../css/cliente/vitrine.css";
 import "../../css/cliente/catalogo.css";
 import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 
 function Catalogo() {
@@ -10,6 +10,13 @@ function Catalogo() {
     const [produtos, setProdutos] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [busca, setBusca] = useState("");
+    const location = useLocation();
+    const campoBusca = useRef(null);
+
+    // A lupa do cabeçalho traz o cliente direto para digitar.
+    useEffect(() => {
+        if (location.state?.focarBusca) campoBusca.current?.focus();
+    }, [location.key, location.state]);
     const [categoria, setCategoria] = useState("Todos");
     const [ordem, setOrdem] = useState("relevancia");
 
@@ -135,6 +142,7 @@ function Catalogo() {
                         <span className="sr-only">Buscar peça</span>
                         <input
                             type="search"
+                            ref={campoBusca}
                             data-cy="buscar-produto"
                             placeholder="Buscar produto..."
                             value={busca}

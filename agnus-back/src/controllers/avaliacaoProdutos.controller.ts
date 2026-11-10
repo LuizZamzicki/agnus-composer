@@ -87,7 +87,7 @@ class AvaliacaoProdutosController {
   private static hasValidNota(nota: AvaliacaoProdutoNotaValue) {
     return (
       nota !== "invalid" &&
-      (nota === undefined || nota === null || (nota >= 1 && nota <= 5))
+      (nota === undefined || nota === null || (nota >= 0.5 && nota <= 5 && Number.isInteger(nota * 2)))
     );
   }
 
@@ -105,7 +105,7 @@ class AvaliacaoProdutosController {
     }
 
     if (!AvaliacaoProdutosController.hasValidNota(payload.nota)) {
-      return "nota inválida. Use valor entre 1 e 5.";
+      return "nota inválida. Use de 0,5 a 5, de meia em meia estrela.";
     }
 
     return null;
@@ -124,7 +124,7 @@ class AvaliacaoProdutosController {
       payload.hasNotaField() &&
       !AvaliacaoProdutosController.hasValidNota(payload.nota)
     ) {
-      return "nota inválida. Use valor entre 1 e 5.";
+      return "nota inválida. Use de 0,5 a 5, de meia em meia estrela.";
     }
 
     return null;

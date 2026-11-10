@@ -10,8 +10,8 @@ storage/
 certs/
 
 # Cypress
-cypress/screenshots/
-cypress/videos/
+**/cypress/screenshots/
+**/cypress/videos/
 
 # dependencies
 node_modules/

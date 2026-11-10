@@ -4,28 +4,37 @@ import { apiUrl, assetUrl, authHeaders } from "../utils/api";
 
 const MAX_FOTOS = 4;
 
-export function Estrelas({ nota = 0, onEscolher = null }) {
-    const valor = Number(nota) || 0;
+export function Estrelas({ nota = 0, onEscolher = null, tamanho = 18 }) {
+    const valor = Math.round((Number(nota) || 0) * 2) / 2;
 
     return (
-        <div className="rating">
+        <div className="rating" role={onEscolher ? "group" : undefined} aria-label={onEscolher ? "Nota" : undefined}>
             {[1, 2, 3, 4, 5].map((n) => {
-                const estrela = <Star size={18} className={n <= Math.round(valor) ? "star filled" : "star"} aria-hidden="true" />;
+                const preenchido = valor >= n ? 100 : valor >= n - 0.5 ? 50 : 0;
 
-                return onEscolher ? (
-                    <button
-                        key={n}
-                        type="button"
-                        data-cy={`estrela-${n}`}
-                        className="estrela-botao"
-                        aria-label={`${n} de 5 estrelas`}
-                        aria-pressed={n === valor}
-                        onClick={() => onEscolher(n)}
-                    >
-                        {estrela}
-                    </button>
-                ) : (
-                    <span key={n}>{estrela}</span>
+                return (
+                    <span key={n} className="estrela">
+                        <Star size={tamanho} className="star" aria-hidden="true" />
+
+                        {preenchido > 0 && (
+                            <span className="estrela-cheia" style={{ width: `${preenchido}%` }}>
+                                <Star size={tamanho} className="star filled" aria-hidden="true" />
+                            </span>
+                        )}
+
+                        {/* Cada estrela tem duas metades clicáveis: a esquerda vale meia. */}
+                        {onEscolher && [n - 0.5, n].map((opcao) => (
+                            <button
+                                key={opcao}
+                                type="button"
+                                data-cy={`estrela-${opcao}`}
+                                className={`estrela-metade ${opcao === n ? "direita" : "esquerda"}`}
+                                aria-label={`${String(opcao).replace(".", ",")} de 5 estrelas`}
+                                aria-pressed={opcao === valor}
+                                onClick={() => onEscolher(opcao)}
+                            />
+                        ))}
+                    </span>
                 );
             })}
         </div>
@@ -171,7 +180,7 @@ function AvaliacaoForm({ idProduto, idUsuario, avaliacao = null, onConcluir, onC
             />
 
             <span>Nota</span>
-            <Estrelas nota={nota} onEscolher={setNota} />
+            <Estrelas nota={nota} onEscolher={setNota} tamanho={26} />
 
             <textarea
                 data-cy="comentario-avaliacao"
