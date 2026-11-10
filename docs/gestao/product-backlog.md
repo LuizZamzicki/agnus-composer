@@ -16,6 +16,7 @@ Rastreabilidade: cada história referencia os requisitos funcionais (RF) do [rea
 | **EP-06** Avaliações | Prova social para novos clientes | US-27 | ✅ |
 | **EP-07** Painel administrativo | Equipe acompanha vendas e opera a loja | US-28 | 1/1 ✅ |
 | **EP-08** Plataforma e Qualidade (*enablers*) | Base técnica confiável para evoluir rápido | TS-01..17 | 13/17 ✅ |
+| **EP-09** Microsserviços | Partes do sistema escalam, publicam e falham separadamente | US-34..36, TS-18..30 | 16/16 ✅ |
 
 ---
 
@@ -37,20 +38,6 @@ RF93
 - Webhook com assinatura inválida retorna 401 e não altera nada.
 - O mesmo webhook recebido duas vezes não duplica efeitos (idempotência pelo id do pagamento).
 - O evento de pagamento usa fila durável (Redis Streams), não Pub/Sub ([ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md)).
-
-### US-31 · Avisar o cliente quando o status do pedido mudar · `Should` · 5 pts · ✅
-**Como** cliente, **quero** ser avisado no site quando meu pedido mudar **para** acompanhar a entrega.
-- ✅ Sino no cabeçalho com o total de não lidas; o aviso leva ao pedido e some da lista ao ser aberto.
-- ✅ Cada cliente só vê e marca as próprias notificações.
-- ✅ Falha ao gravar o aviso não desfaz a mudança de status.
-
-### US-32 · Avaliar as peças pela tela de pedidos · `Should` · 3 pts · ✅
-**Como** cliente, **quero** ver as peças do pedido e avaliá-las ali **para** não ter de procurar cada produto.
-- ✅ Peças visíveis em cada pedido; avaliação liberada só em pedido entregue.
-- ✅ Peça já avaliada oferece apenas alterar a avaliação, e a nota é dada pelas estrelas.
-
-### US-33 · Confirmar visualmente a peça colocada na sacola · `Should` · 1 pt · ✅
-- ✅ Pop-up com a peça, a cor, o tamanho e o preço, com caminho para a sacola.
 
 ### TS-16 · Publicar a loja em um endereço público · `Must` · 5 pts · 📋
 **Como** equipe, **quero** a loja acessível na internet **para** que clientes e avaliadores usem a versão real.
@@ -96,6 +83,44 @@ RF33–RF36, RF40
 
 ### US-29 · Controle de estoque por variação · `Won't (repensado)` · — · ⛔
 **Motivo:** no modelo **print on demand**, as peças são produzidas depois do pedido, então não existe estoque físico a controlar. Os requisitos RF24–RF26, RF56–RF57 e RF97 foram substituídos pela regra "a variante (cor + grade) precisa existir e o produto precisa estar ativo" (RF55). ✅ RFs marcados como substituídos no readme.
+
+---
+
+## Release 3.5.0 — Microsserviços e experiência de uso ✅ (2026-11-09)
+
+### US-34 · Continuar comprando quando uma parte do site falha · `Must` · 5 pts · ✅
+**Como** cliente, **quero** continuar navegando quando a pesquisa ou as avaliações saem do ar **para** não perder a compra.
+- ✅ Sem o serviço de busca, a vitrine responde normalmente e só a pesquisa informa indisponibilidade.
+- ✅ Sem avaliações, o catálogo continua funcionando.
+
+### US-35 · Não gerar pedido em dobro · `Must` · 5 pts · ✅
+**Como** cliente, **quero** que um clique repetido ao finalizar não crie dois pedidos **para** não pagar em dobro.
+- ✅ Duas finalizações simultâneas geram um só pedido; a outra responde 409.
+- ✅ Se a sacola não puder ser baixada, o pedido é desfeito.
+
+### US-36 · Painel administrativo em site próprio · `Should` · 5 pts · ✅
+**Como** admin, **quero** um painel separado da loja **para** que mudanças em um não afetem o outro.
+- ✅ Painel em `/admin`, com build próprio e a sessão do login da loja.
+- ✅ Cliente sem permissão volta à loja.
+- ✅ O dashboard mostra dados parciais quando uma fonte está fora do ar.
+
+### US-31 · Avisar o cliente quando o status do pedido mudar · `Should` · 5 pts · ✅
+**Como** cliente, **quero** ser avisado no site quando meu pedido mudar **para** acompanhar a entrega.
+- ✅ Sino no cabeçalho com o total de não lidas; o aviso leva ao pedido e some da lista ao ser aberto.
+- ✅ Cada cliente só vê e marca as próprias notificações.
+- ✅ Falha ao gravar o aviso não desfaz a mudança de status.
+
+### US-32 · Avaliar as peças pela tela de pedidos · `Should` · 3 pts · ✅
+**Como** cliente, **quero** ver as peças do pedido e avaliá-las ali **para** não ter de procurar cada produto.
+- ✅ Peças visíveis em cada pedido; avaliação liberada só em pedido entregue.
+- ✅ Peça já avaliada oferece apenas alterar a avaliação, e a nota é dada pelas estrelas.
+
+### US-33 · Confirmar visualmente a peça colocada na sacola · `Should` · 1 pt · ✅
+- ✅ Pop-up com a peça, a cor, o tamanho e o preço, com caminho para a sacola.
+
+
+### TS-18..30 · Extração dos serviços · ✅
+Pacote comum, um serviço e um banco por contexto, saga do checkout, BFF do admin, gateway, migração dos dados, CI/CD por serviço e documentação. Detalhes em [microsserviços](../arquitetura/microsservicos.md) e no [ADR 0008](../arquitetura/adr/0008-microsservicos.md).
 
 ---
 
@@ -169,8 +194,10 @@ RF69, RF70
 - Logo oficial (cordeiro com auréola e estandarte) aplicado no cabeçalho, rodapé, login, página 404, painel e ícones do site.
 - Arte original guardada em `docs/marca/`; versões otimizadas em `agnus-front/src/img/marca/`.
 
-### TS-09 · Migrar `sequelize.sync` para migrations · `Should` · 5 pts · 📋 (release 4.0.0)
-- Schema versionado em migrations; deploy roda `db:migrate` antes de subir a nova versão.
+### TS-09 · Migrar `sequelize.sync` para migrations · `Should` · 5 pts · 🔍 em revisão (AGNUS-154)
+- ✅ Cada serviço versiona o próprio esquema em `src/migracoes` e aplica as pendentes ao subir.
+- ✅ A migration inicial reproduz o esquema em uso e não altera bancos existentes.
+- ✅ Duas réplicas não migram ao mesmo tempo (trava no MySQL).
 
 ### TS-10 · Métricas no Prometheus/Grafana · `Could` · 5 pts · 📋
 - `/metrics` em formato Prometheus; painel com os SLOs.

@@ -64,7 +64,7 @@
     max-width: 520px;
     border-radius: 999px 999px 0 0;
     overflow: hidden;
-    border: 10px solid var(--paper);
+    border: 10px solid var(--moldura);
     outline: 1px solid var(--line);
     box-shadow: 0 30px 60px -32px rgba(29, 28, 26, 0.55);
 }

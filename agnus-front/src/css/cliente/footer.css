@@ -86,3 +86,8 @@
     .footer-baixo { grid-template-columns: 1fr 1fr; }
     .footer-desc { grid-column: 1 / -1; }
 }
+
+/* No celular o desenho completo continua, só que sem tomar meia tela. */
+@media (max-width: 720px) {
+    .footer-mark { height: 112px; }
+}

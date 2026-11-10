@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import "../css/login.css";
 import hero from "../img/hero.png";
 import logoCompleto from "../img/marca/logo-completo.png";
+import logoCompletoEscuro from "../img/marca/logo-completo-escuro.png";
 import { apiUrl } from "../utils/api";
 import { destinoSeguro } from "../utils/destinoSeguro";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
@@ -15,6 +16,16 @@ const CHAVE_NONCE = "agnus_nonce_login";
 
 function Login() {
   const navigate = useNavigate();
+
+  // O painel é outro site: só a navegação completa do navegador chega nele.
+  const irParaDestino = (destino) => {
+    if (destino === "/admin") {
+      window.location.replace(destino);
+      return;
+    }
+
+    navigate(destino, { replace: true });
+  };
   const [searchParams] = useSearchParams();
 
   const [modoCadastro, setModoCadastro] = useState(false);
@@ -123,9 +134,7 @@ function Login() {
             ? "/admin"
             : redirect || "/";
 
-        navigate(destino, {
-          replace: true,
-        });
+        irParaDestino(destino);
 
       } catch (err) {
         console.error(err);
@@ -279,12 +288,7 @@ function Login() {
         localStorage.setItem("auth", JSON.stringify(data));
         if (token) localStorage.setItem("auth_token", token);
 
-        navigate(
-          data.tipo === "administrador"
-            ? "/admin"
-            : redirect || "/",
-          { replace: true }
-        );
+        irParaDestino(data.tipo === "administrador" ? "/admin" : redirect || "/");
       }
     } catch {
       setError("Erro ao conectar com servidor.");
@@ -327,7 +331,10 @@ function Login() {
 
       <section className="login-panel">
         <div className="login-brand">
-          <h1><img src={logoCompleto} alt="Agnus" /></h1>
+          <h1>
+            <img className="so-tema-claro" src={logoCompleto} alt="Agnus" />
+            <img className="so-tema-escuro" src={logoCompletoEscuro} alt="Agnus" />
+          </h1>
           <p>
             {searchParams.get("redirect") === "/finalizar"
               ? `${modoCadastro ? "Crie a sua conta" : "Entre na sua conta"} para concluir o pedido. Sua sacola fica guardada.`
@@ -343,7 +350,7 @@ function Login() {
               setError("");
             }}
           >
-            LOGIN
+            Login
           </button>
           <button
             className={modoCadastro ? "active" : ""}
@@ -352,7 +359,7 @@ function Login() {
               setError("");
             }}
           >
-            CADASTRO
+            Cadastro
           </button>
         </div>
 

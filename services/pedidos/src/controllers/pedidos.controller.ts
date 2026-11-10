@@ -1,0 +1,382 @@
+import { Request, Response } from "express";
+import Pedidos from "../models/Pedidos";
+import { consultarOuNull } from "@agnus/comum/utils/clienteInterno";
+import { usuarioExiste } from "@agnus/comum/utils/referencias";
+import type { AuthenticatedResponseLocals } from "@agnus/comum/middlewares/auth.middleware";
+import CheckoutService, { CheckoutError } from "../services/checkout.service";
+import EventBusService from "@agnus/comum/services/eventBus.service";
+import AvisoPedidoService from "../services/avisoPedido.service";
+import PedidoRegrasService from "../services/pedidoRegras.service";
+import type {
+  PedidoBody,
+  PedidoQuery,
+  PedidoRouteParams,
+  PedidoStatus,
+  PedidoUpdateData,
+} from "../types/pedido.types";
+
+type PedidoRequest = Request<PedidoRouteParams, object, PedidoBody, PedidoQuery>;
+
+class PedidoPayload {
+  constructor(private readonly body: PedidoBody) {}
+
+  private parseId(value: number | string | null | undefined) {
+    const parsedId = Number(value);
+
+    return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null;
+  }
+
+  get userId() {
+    return this.parseId(this.body.id_usuario);
+  }
+
+  get addressId() {
+    return this.parseId(this.body.id_usuario_endereco);
+  }
+
+  get status() {
+    return PedidosController.normalizeStatus(this.body.status);
+  }
+
+  get valorFrete() {
+    return this.body.valor_frete ?? null;
+  }
+
+  hasUserField() {
+    return this.body.id_usuario !== undefined;
+  }
+
+  hasAddressField() {
+    return this.body.id_usuario_endereco !== undefined;
+  }
+
+  hasStatusField() {
+    return this.body.status !== undefined;
+  }
+
+  hasValorFreteField() {
+    return this.body.valor_frete !== undefined;
+  }
+}
+
+class PedidosController {
+  private static readonly VALID_STATUSES: PedidoStatus[] = [
+    "aguardando_calculo_frete",
+    "aguardando_pagamento",
+    "pago",
+    "enviado",
+    "entregue",
+    "cancelado",
+  ];
+
+  static parsePositiveId(value: number | string | null | undefined) {
+    const parsedId = Number(value);
+
+    return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null;
+  }
+
+  static normalizeStatus(value: PedidoBody["status"]) {
+    if (
+      typeof value === "string" &&
+      PedidosController.VALID_STATUSES.includes(value as PedidoStatus)
+    ) {
+      return value as PedidoStatus;
+    }
+
+    return null;
+  }
+
+  private static getCreateErrorMessage(payload: PedidoPayload) {
+    if (!payload.hasUserField() || !payload.hasAddressField()) {
+      return "id_usuario e id_usuario_endereco são obrigatórios.";
+    }
+
+    if (!payload.userId) {
+      return "id_usuario inválido.";
+    }
+
+    if (!payload.addressId) {
+      return "id_usuario_endereco inválido.";
+    }
+
+    if (payload.hasStatusField() && !payload.status) {
+      return "status inválido.";
+    }
+
+    if (payload.status && !PedidoRegrasService.estaAberto(payload.status)) {
+      return "Um pedido novo só pode começar em aguardando_calculo_frete ou aguardando_pagamento.";
+    }
+
+    return null;
+  }
+
+  private static getUpdateErrorMessage(payload: PedidoPayload) {
+    if (payload.hasUserField() && !payload.userId) {
+      return "id_usuario inválido.";
+    }
+
+    if (payload.hasAddressField() && !payload.addressId) {
+      return "id_usuario_endereco inválido.";
+    }
+
+    if (payload.hasStatusField() && !payload.status) {
+      return "status inválido.";
+    }
+
+    return null;
+  }
+
+  private static buildWhere(query: PedidoQuery) {
+    const userId = query.id_usuario === undefined
+      ? undefined
+      : PedidosController.parsePositiveId(query.id_usuario);
+    const status = query.status === undefined
+      ? undefined
+      : PedidosController.normalizeStatus(query.status);
+
+    if (query.id_usuario !== undefined && !userId) {
+      return { message: "id_usuario inválido." };
+    }
+
+    if (query.status !== undefined && !status) {
+      return { message: "status inválido." };
+    }
+
+    return { id_usuario: userId, status };
+  }
+
+  private static async findUserError(userId?: number | null) {
+    return userId && !(await usuarioExiste(userId))
+      ? "Usuário não encontrado."
+      : null;
+  }
+
+  private static async findAddress(addressId?: number | null) {
+    return addressId ? consultarOuNull<{ id_usuario: number }>("identidade", `/enderecos/${addressId}`) : null;
+  }
+
+  private static buildUpdateData(
+    pedido: Pedidos,
+    payload: PedidoPayload,
+    userId: number,
+    addressId: number,
+  ): PedidoUpdateData {
+    return {
+      id_usuario: userId,
+      id_usuario_endereco: addressId,
+      status: payload.status ?? pedido.status,
+      valor_frete: payload.hasValorFreteField()
+        ? payload.valorFrete
+        : pedido.valor_frete,
+    };
+  }
+
+  static async findAll(req: PedidoRequest, res: Response) {
+    const where = PedidosController.buildWhere(req.query);
+
+    if ("message" in where) {
+      return res.status(400).json({ message: where.message });
+    }
+
+    return res.status(200).send(
+      await Pedidos.findAll({
+        where: {
+          ...(where.id_usuario ? { id_usuario: where.id_usuario } : {}),
+          ...(where.status ? { status: where.status } : {}),
+        },
+      }),
+    );
+  }
+
+  // Pedidos do usuario autenticado; o id vem do token, nunca da query.
+  static async findMine(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
+    const where = PedidosController.buildWhere({ status: req.query.status });
+
+    if ("message" in where) {
+      return res.status(400).json({ message: where.message });
+    }
+
+    return res.status(200).send(
+      await Pedidos.findAll({
+        where: {
+          id_usuario: res.locals.authUser!.id_usuario,
+          ...(where.status ? { status: where.status } : {}),
+        },
+        order: [["data_criacao", "DESC"]],
+      }),
+    );
+  }
+
+  static async getById(req: PedidoRequest, res: Response) {
+    const orderId = PedidosController.parsePositiveId(req.params.id);
+
+    if (!orderId) {
+      return res.status(400).json({ message: "ID do pedido inválido." });
+    }
+
+    const pedido = await Pedidos.findByPk(orderId);
+
+    if (!pedido) {
+      return res.status(404).json({ message: "Pedido não encontrado." });
+    }
+
+    return res.status(200).send(pedido);
+  }
+
+  // Lancamento manual pela equipe (o cliente compra por /orders/checkout). O pedido nasce sem
+  // itens e o total comeca no frete; cada item adicionado recalcula o total no servidor.
+  static async create(req: PedidoRequest, res: Response) {
+    const payload = new PedidoPayload(req.body);
+    const message = PedidosController.getCreateErrorMessage(payload);
+    const userMessage = message
+      ? null
+      : await PedidosController.findUserError(payload.userId);
+    const endereco = userMessage
+      ? null
+      : await PedidosController.findAddress(payload.addressId);
+
+    if (message) {
+      return res.status(400).json({ message });
+    }
+
+    if (userMessage) {
+      return res.status(404).json({ message: userMessage });
+    }
+
+    if (!endereco) {
+      return res.status(404).json({ message: "Endereço do usuário não encontrado." });
+    }
+
+    if (endereco.id_usuario !== payload.userId) {
+      return res.status(400).json({
+        message: "O endereço informado não pertence ao usuário informado.",
+      });
+    }
+
+    const pedido = await Pedidos.create({
+      id_usuario: payload.userId!,
+      id_usuario_endereco: payload.addressId!,
+      status: payload.status ?? "aguardando_pagamento",
+      valor_total: Number(payload.valorFrete ?? 0),
+      valor_frete: payload.valorFrete,
+    });
+
+    await EventBusService.publish("pedido.criado", {
+      id_pedido: pedido.id_pedido,
+      id_usuario: pedido.id_usuario,
+      status: pedido.status,
+      valor_total: pedido.valor_total,
+    });
+    return res.status(201).send(pedido);
+  }
+
+  // Finaliza a compra da sacola do usuario autenticado; o id vem do token.
+  static async checkout(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
+    const addressId = PedidosController.parsePositiveId(req.body.id_usuario_endereco);
+
+    if (!addressId) {
+      return res.status(400).json({ message: "Escolha um endereço de entrega." });
+    }
+
+    try {
+      return res
+        .status(201)
+        .send(await CheckoutService.finalizar(res.locals.authUser!.id_usuario, addressId));
+    } catch (error) {
+      if (error instanceof CheckoutError) {
+        return res.status(error.status).json({ message: error.message });
+      }
+
+      throw error;
+    }
+  }
+
+  static async update(req: PedidoRequest, res: Response) {
+    const orderId = PedidosController.parsePositiveId(req.params.id);
+    const payload = new PedidoPayload(req.body);
+
+    if (!orderId) {
+      return res.status(400).json({ message: "ID do pedido inválido." });
+    }
+
+    const pedido = await Pedidos.findByPk(orderId);
+    const message = PedidosController.getUpdateErrorMessage(payload);
+
+    if (!pedido) {
+      return res.status(404).json({ message: "Pedido não encontrado." });
+    }
+
+    if (message) {
+      return res.status(400).json({ message });
+    }
+
+    if (payload.status && !PedidoRegrasService.podeTransitar(pedido.status, payload.status)) {
+      return res.status(409).json({
+        message: `Transição de status inválida: ${pedido.status} -> ${payload.status}.`,
+      });
+    }
+
+    const userId = payload.userId ?? pedido.id_usuario;
+    const addressId = payload.addressId ?? pedido.id_usuario_endereco;
+    const userMessage = await PedidosController.findUserError(payload.userId);
+    const endereco = await PedidosController.findAddress(addressId);
+
+    if (userMessage) {
+      return res.status(404).json({ message: userMessage });
+    }
+
+    if (!endereco) {
+      return res.status(404).json({ message: "Endereço do usuário não encontrado." });
+    }
+
+    if (endereco.id_usuario !== userId) {
+      return res.status(400).json({
+        message: "O endereço informado não pertence ao usuário informado.",
+      });
+    }
+
+    const previousStatus = pedido.status;
+
+    await pedido.update(
+      PedidosController.buildUpdateData(
+        pedido,
+        payload,
+        userId,
+        addressId,
+      ),
+    );
+
+    if (payload.hasValorFreteField()) {
+      await PedidoRegrasService.recalcularTotal(pedido);
+    }
+
+    await AvisoPedidoService.avisarMudancaDeStatus(pedido, previousStatus);
+    await EventBusService.publish("pedido.atualizado", {
+      id_pedido: pedido.id_pedido,
+      id_usuario: pedido.id_usuario,
+      status_anterior: previousStatus,
+      status: pedido.status,
+    });
+    return res.status(200).send(pedido);
+  }
+
+  static async remove(req: PedidoRequest, res: Response) {
+    const orderId = PedidosController.parsePositiveId(req.params.id);
+
+    if (!orderId) {
+      return res.status(400).json({ message: "ID do pedido inválido." });
+    }
+
+    const pedido = await Pedidos.findByPk(orderId);
+
+    if (!pedido) {
+      return res.status(404).json({ message: "Pedido não encontrado." });
+    }
+
+    await pedido.destroy();
+    await EventBusService.publish("pedido.removido", { id_pedido: orderId });
+    return res.status(204).send();
+  }
+}
+
+export default PedidosController;

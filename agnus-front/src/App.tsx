@@ -1,5 +1,5 @@
-import { Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
-import { ReactNode, useLayoutEffect } from "react";
+import { Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import { useLayoutEffect } from "react";
 
 import "./css/movimento.css";
 
@@ -20,46 +20,8 @@ import ClienteEnderecos from "./pages/cliente/clienteEnderecos";
 import ClienteSenha from "./pages/cliente/clienteSenha";
 import ClienteContatos from "./pages/cliente/clienteContatos";
 
-import Admin from "./pages/admin/admin";
 import Login from "./pages/login";
 import NotFound from "./pages/notFound";
-
-function RequireAdmin({ children }: { children: ReactNode }) {
-  const token = localStorage.getItem("auth_token");
-  const authRaw = localStorage.getItem("auth");
-
-  if (!token || !authRaw) {
-    console.error("[RequireAdmin] Missing tokens", {
-      hasToken: !!token,
-      hasAuth: !!authRaw,
-    });
-    return <Navigate to="/login" replace />;
-  }
-
-  let auth;
-  try {
-    auth = JSON.parse(authRaw);
-  } catch (error) {
-    console.error("[RequireAdmin] Invalid auth JSON:", error);
-    return <Navigate to="/login" replace />;
-  }
-
-  const tipo = auth?.user?.tipo || auth?.tipo || auth?.usuario?.tipo;
-
-  console.log("[RequireAdmin] Auth check:", {
-    tipo,
-    auth_keys: Object.keys(auth || {}),
-    user_keys: Object.keys(auth?.user || {}),
-  });
-
-  if (!tipo || String(tipo).toLowerCase() !== "administrador") {
-    console.error("[RequireAdmin] User is not admin. Role:", tipo);
-    return <Navigate to="/" replace />;
-  }
-
-  console.log("[RequireAdmin] ✓ User authenticated as admin");
-  return children;
-}
 
 // O navegador só volta ao topo ao carregar a página; voltar no histórico mantém a posição.
 function VoltarAoTopo() {
@@ -78,9 +40,7 @@ function VoltarAoTopo() {
 function App() {
   const location = useLocation();
 
-  const hideLayout =
-    location.pathname.startsWith("/admin") ||
-    location.pathname === "/login";
+  const hideLayout = location.pathname === "/login";
 
   // A inicial já tem a sua entrada orquestrada; subrotas da mesma seção não reanimam a página.
   const secao = location.pathname.split("/")[1];
@@ -112,15 +72,6 @@ function App() {
         </Route>
 
         <Route path="/login" element={<Login />} />
-
-        <Route
-          path="/admin/*"
-          element={
-            <RequireAdmin>
-              <Admin />
-            </RequireAdmin>
-          }
-        />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

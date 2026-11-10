@@ -12,7 +12,9 @@ import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { NotificationProvider } from './components/notification';
 import { aplicarTempoLiturgico } from './utils/liturgia';
+import { aplicarTemaSalvo } from './utils/tema';
 
+aplicarTemaSalvo();
 aplicarTempoLiturgico();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

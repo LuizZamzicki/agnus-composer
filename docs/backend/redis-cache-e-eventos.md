@@ -1,6 +1,6 @@
 # Redis: Cache Distribuído e Mensageria (roteiro de demonstração)
 
-Implementação: [`cache.service.ts`](../../agnus-back/src/services/cache.service.ts), [`eventBus.service.ts`](../../agnus-back/src/services/eventBus.service.ts), [`worker.ts`](../../agnus-back/src/worker.ts), [`config/redis.ts`](../../agnus-back/src/config/redis.ts), [`config/cache.ts`](../../agnus-back/src/config/cache.ts). Decisões: [ADR 0003](../arquitetura/adr/0003-cache-redis-cache-aside.md) e [ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md).
+Implementação: [`cache.service.ts`](../../services/catalogo/src/services/cache.service.ts), [`eventBus.service.ts`](../../services/comum/src/services/eventBus.service.ts), [`worker.ts`](../../services/notificacoes/src/worker.ts), [`config/redis.ts`](../../services/comum/src/config/redis.ts), [`config/cache.ts`](../../services/catalogo/src/config/cache.ts). Decisões: [ADR 0003](../arquitetura/adr/0003-cache-redis-cache-aside.md) e [ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md).
 
 ## Visão geral
 
@@ -73,7 +73,7 @@ API=https://localhost/api
 **Terminal 1: acompanhar os logs**
 
 ```bash
-docker compose logs -f backend worker | grep -E 'cache\.|evento\.|notificacao\.'
+docker compose logs -f pedidos notificacoes | grep -E 'cache\.|evento\.|notificacao\.'
 ```
 
 **Terminal 2: provocar os fluxos**
@@ -144,6 +144,6 @@ WORKER  notificacao.cliente        pedido=1 statusAnterior=aguardando_pagamento 
 
 ## Testes automatizados
 
-- [`tests/services/cache.service.spec.ts`](../../agnus-back/tests/services/cache.service.spec.ts): chaves, hit/miss, TTL, `shouldCache`, invalidação por SCAN, circuit breaker, Redis indisponível.
-- [`tests/services/eventBus.service.spec.ts`](../../agnus-back/tests/services/eventBus.service.spec.ts): envelope, canal, falha de publicação, assinatura, isolamento de erro do handler.
-- [`tests/utils/observability.spec.ts`](../../agnus-back/tests/utils/observability.spec.ts): logger JSON, `X-Request-Id`, métricas.
+- [`tests/services/cache.service.spec.ts`](../../services/catalogo/tests/services/cache.service.spec.ts): chaves, hit/miss, TTL, `shouldCache`, invalidação por SCAN, circuit breaker, Redis indisponível.
+- [`tests/services/eventBus.service.spec.ts`](../../services/comum/tests/services/eventBus.service.spec.ts): envelope, canal, falha de publicação, assinatura, isolamento de erro do handler.
+- [`tests/utils/observability.spec.ts`](../../services/comum/tests/utils/observability.spec.ts): logger JSON, `X-Request-Id`, métricas.

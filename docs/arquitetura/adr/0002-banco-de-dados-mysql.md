@@ -24,4 +24,4 @@ Usar **MySQL 8.4 (LTS)** como fonte da verdade, acessado pelo ORM **Sequelize** 
 - ✅ Integridade referencial (FKs) e transações ACID.
 - ✅ Versão LTS com suporte longo e JSON nativo (usado nas consultas de catálogo com `JSON_QUOTE`/`GROUP_CONCAT`).
 - ⚠️ Consultas pesadas de catálogo motivaram o cache (ADR 0003) e o motor de busca (ADR 0005).
-- ⚠️ Hoje o schema é sincronizado por `sequelize.sync({ alter: true })`. Para produção, recomenda-se migrar para **migrations** versionadas (`sequelize-cli` já está instalado).
+- ✅ O schema de cada serviço muda só por **migrations** versionadas (`services/<serviço>/src/migracoes`), aplicadas na subida e registradas na tabela `agnus_migracoes` (TS-09, AGNUS-154). O `sequelize.sync({ alter: true })` foi abandonado porque alterava tabelas sem deixar registro.

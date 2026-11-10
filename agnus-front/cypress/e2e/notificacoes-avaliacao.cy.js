@@ -52,6 +52,8 @@ describe('Notificações, avaliação no pedido e sacola', () => {
         cy.get('[data-cy="notificacoes-contador"]').should('contain', '1');
         cy.get('[data-cy="abrir-notificacoes"]').click();
         cy.get('[data-cy="painel-notificacoes"]').should('contain', 'Pedido entregue');
+        // O sino recarrega ao receber foco: depois de lida, o servidor já não a devolve.
+        cy.intercept('GET', '**/notifications/me', { body: { data: [], naoLidas: 0 } });
         cy.get('[data-cy="notificacao"]').click();
         cy.wait('@lida');
         cy.location('search').should('eq', '?pedido=12');

@@ -1,0 +1,450 @@
+openapi: 3.0.3
+info:
+  title: Agnus - serviço de pedidos
+  version: 3.5.0
+  description: |
+    API REST do e-commerce Agnus (roupas esportivas com estampas catolicas, modelo print on demand).
+
+    - Em producao a API e exposta pelo Nginx sob o prefixo `/api` (ex.: `https://localhost/api/products`).
+    - Rotas administrativas exigem `Authorization: Bearer <token>` e a permissao do cargo (RBAC).
+    - Toda resposta traz o cabecalho `X-Request-Id`, que tambem aparece nos logs estruturados.
+    - Leituras de produtos e categorias usam cache Redis (cache-aside com TTL), invalidado nas escritas.
+servers:
+  - url: /api
+    description: Via Nginx (docker compose)
+  - url: http://localhost:3000
+    description: Backend direto (desenvolvimento)
+tags:
+  - name: Observabilidade
+  - name: Pedidos
+  - name: Itens de pedido
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [ Observabilidade ]
+      summary: Liveness do backend (usado pelo healthcheck do Docker)
+      responses:
+        "200":
+          description: Servico no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+      security: []
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [ Pedidos ]
+      summary: Lista pedidos (permissao PEDIDO_LISTAR)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: query, name: id_usuario, schema: { type: integer } }
+        - { in: query, name: status, schema: { $ref: "#/components/schemas/PedidoStatus" } }
+      responses:
+        "200":
+          description: Pedidos
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Pedido" } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: postOrders
+      tags: [ Pedidos ]
+      summary: Lancamento manual de pedido pela equipe (permissao PEDIDO_CRIAR; publica `pedido.criado`)
+      description: |
+        O cliente compra por `POST /orders/checkout`. Aqui a equipe lanca um pedido manual, que nasce
+        sem itens e sempre aberto (`aguardando_calculo_frete` ou `aguardando_pagamento`). Um `valor_total`
+        enviado e ignorado: o total comeca no frete e e recalculado a cada item adicionado em `/order-items`.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoInput" }
+      responses:
+        "201":
+          description: Pedido criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pedido" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /orders/checkout:
+    post:
+      operationId: postOrdersCheckout
+      tags:
+        - Pedidos
+      summary: Finaliza a sacola do usuario autenticado em uma unica transacao
+      description: O total e calculado no servidor; pedido, itens e baixa da sacola sao gravados juntos.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_usuario_endereco]
+              properties:
+                id_usuario_endereco:
+                  type: integer
+      responses:
+        "201":
+          description: Pedido criado
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Uma peca da sacola nao esta mais disponivel
+  /orders/me:
+    get:
+      operationId: getOrdersMe
+      tags:
+        - Pedidos
+      summary: Pedidos do usuario autenticado (cliente ou admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/PedidoStatus"
+      responses:
+        "200":
+          description: Pedidos do proprio usuario, mais recentes primeiro
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pedido"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /orders/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    get:
+      operationId: getOrdersPorId
+      tags: [ Pedidos ]
+      summary: Detalhe do pedido (dono ou admin)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "200":
+          description: Pedido
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pedido" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: putOrdersPorId
+      tags: [ Pedidos ]
+      summary: Atualiza pedido/status (permissao PEDIDO_ATUALIZAR; publica `pedido.atualizado`)
+      description: |
+        Transicoes permitidas: `aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue`;
+        `cancelado` a partir de qualquer status anterior a `enviado`. Qualquer outra transicao retorna 409.
+        Alterar `valor_frete` recalcula `valor_total`; um `valor_total` enviado e ignorado.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoInput" }
+      responses:
+        "200": { description: Atualizado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Transicao de status invalida
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { message: "Transicao de status invalida: entregue -> aguardando_pagamento." }
+    delete:
+      operationId: deleteOrdersPorId
+      tags: [ Pedidos ]
+      summary: Remove pedido (permissao PEDIDO_EXCLUIR; publica `pedido.removido`)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /order-items:
+    post:
+      operationId: postOrderItems
+      tags: [ Itens de pedido ]
+      summary: Adiciona item a um pedido aberto (permissao PEDIDO_ATUALIZAR)
+      description: O preco unitario vem do catalogo no momento da inclusao e o `valor_total` do pedido e recalculado.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoItemInput" }
+      responses:
+        "201":
+          description: Item criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PedidoItem" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Pedido ja pago, enviado, entregue ou cancelado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /order-items/{id_order}:
+    get:
+      operationId: getOrderItemsPorIdOrder
+      tags: [ Itens de pedido ]
+      summary: Itens de um pedido (dono do pedido ou admin)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id_order, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Itens com dados do produto, cor e grade
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PedidoItem" } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /order-items/{id}:
+    parameters: [ { $ref: "#/components/parameters/Id" } ]
+    put:
+      operationId: putOrderItemsPorId
+      tags: [ Itens de pedido ]
+      summary: Altera item de um pedido aberto (permissao PEDIDO_ATUALIZAR; recalcula o total)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoItemInput" }
+      responses:
+        "200": { description: Item atualizado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      operationId: deleteOrderItemsPorId
+      tags: [ Itens de pedido ]
+      summary: Remove item de um pedido aberto (permissao PEDIDO_ATUALIZAR; recalcula o total)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "204": { description: Removido }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, default: 10 }
+  responses:
+    BadRequest:
+      description: Dados invalidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Token ausente, invalido ou credenciais incorretas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Cargo sem permissao para a operacao
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Recurso nao encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflito com o estado atual (duplicidade ou vinculo)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string, example: Produto nao encontrado }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+        hasNextPage: { type: boolean }
+        hasPreviousPage: { type: boolean }
+    Metrics:
+      type: object
+      properties:
+        uptimeSeconds: { type: integer }
+        counters: { type: object, additionalProperties: { type: number } }
+        latencyMs:
+          type: object
+          properties:
+            window: { type: integer }
+            p50: { type: number }
+            p95: { type: number }
+            p99: { type: number }
+        sli:
+          type: object
+          properties:
+            availability: { type: number, nullable: true }
+            cacheHitRatio: { type: number, nullable: true }
+    Usuario:
+      type: object
+      properties:
+        id_usuario: { type: integer }
+        nome: { type: string }
+        cpf: { type: string, nullable: true }
+        email: { type: string, format: email }
+        tipo: { type: string, enum: [ cliente, administrador ] }
+        data_criacao: { type: string, format: date-time }
+    UsuarioInput:
+      type: object
+      required: [ nome, email, senha ]
+      properties:
+        nome: { type: string }
+        cpf: { type: string }
+        email: { type: string, format: email }
+        senha: { type: string, format: password }
+    Endereco:
+      allOf:
+        - $ref: "#/components/schemas/EnderecoInput"
+        - type: object
+          properties:
+            id_usuario_endereco: { type: integer }
+    EnderecoInput:
+      type: object
+      required: [ id_usuario, cep, logradouro ]
+      properties:
+        id_usuario: { type: integer }
+        cep: { type: string, example: "80000-000" }
+        logradouro: { type: string }
+        numero: { type: string }
+        complemento: { type: string }
+        bairro: { type: string }
+        cidade: { type: string }
+        estado: { type: string, example: PR }
+        pais: { type: string, example: Brasil }
+        principal: { type: boolean }
+    Categoria:
+      type: object
+      properties:
+        id_categoria: { type: integer }
+        nome: { type: string, example: Camisetas }
+    CategoriaInput:
+      type: object
+      required: [ nome ]
+      properties:
+        nome: { type: string }
+    Produto:
+      type: object
+      properties:
+        id_produto: { type: integer }
+        id_categoria: { type: integer, nullable: true }
+        nome: { type: string, example: Camiseta Dry Fit Agnus Dei }
+        descricao: { type: string, nullable: true }
+        preco_custo: { type: number, nullable: true }
+        preco_base: { type: number, example: 89.9 }
+        margem_lucro: { type: number, nullable: true }
+        ativo: { type: boolean }
+    ProdutoPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Produto" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    ProdutoInput:
+      type: object
+      required: [ nome, preco_base ]
+      properties:
+        id_categoria: { type: integer, nullable: true }
+        nome: { type: string }
+        descricao: { type: string }
+        preco_custo: { type: number }
+        preco_base: { type: number }
+        ativo: { type: boolean }
+        grades:
+          type: array
+          items:
+            type: object
+            properties:
+              nome: { type: string, example: M }
+              acrescimo: { type: number, example: 0 }
+        cores:
+          type: array
+          items:
+            type: object
+            properties:
+              nome: { type: string, example: Preto }
+              codigo_rgb: { type: string, example: "#000000" }
+              acrescimo: { type: number }
+              fotos: { type: array, items: { type: string } }
+    PedidoStatus:
+      type: string
+      enum: [ aguardando_calculo_frete, aguardando_pagamento, pago, enviado, entregue, cancelado ]
+    Pedido:
+      type: object
+      properties:
+        id_pedido: { type: integer }
+        id_usuario: { type: integer }
+        id_usuario_endereco: { type: integer }
+        status: { $ref: "#/components/schemas/PedidoStatus" }
+        valor_total: { type: number, nullable: true }
+        valor_frete: { type: number, nullable: true }
+        data_criacao: { type: string, format: date-time }
+    PedidoItem:
+      type: object
+      properties:
+        id_pedido_item: { type: integer }
+        id_pedido: { type: integer }
+        id_produto_cor: { type: integer }
+        id_produto_grade: { type: integer }
+        quantidade: { type: integer, minimum: 1 }
+        preco_unitario: { type: number, description: "Congelado no momento da compra" }
+        subtotal: { type: number }
+    PedidoItemInput:
+      type: object
+      required: [ id_pedido, id_produto_cor, id_produto_grade, quantidade ]
+      properties:
+        id_pedido: { type: integer }
+        id_produto_cor: { type: integer }
+        id_produto_grade: { type: integer }
+        quantidade: { type: integer, minimum: 1 }
+    PedidoInput:
+      type: object
+      required: [ id_usuario, id_usuario_endereco ]
+      properties:
+        id_usuario: { type: integer }
+        id_usuario_endereco: { type: integer }
+        status: { $ref: "#/components/schemas/PedidoStatus" }
+        valor_frete: { type: number, description: "Ao mudar, o valor_total e recalculado (itens + frete)" }

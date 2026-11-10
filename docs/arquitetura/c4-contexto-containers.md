@@ -28,7 +28,7 @@ C4Context
 
 ## Nível 2 — Containers
 
-Cada caixa é um container do `docker-compose.yml`. A rede `data` é **interna** (sem saída para a internet). De fora, só o Nginx (80/443) e o painel do ngrok expõem portas. A porta 3000 do backend fica presa a `127.0.0.1` (debug local), então todo acesso externo à API passa pelo proxy.
+Cada caixa é um container do `docker-compose.yml`. A rede `data` é **interna** (sem saída para a internet). De fora, só o gateway (80/443) é acessível. Contratos completos em [microsservicos.md](microsservicos.md).
 
 ```mermaid
 C4Container
@@ -37,34 +37,45 @@ C4Container
     Person(cliente, "Cliente / Admin")
 
     System_Boundary(agnus, "Agnus (docker compose)") {
-        Container(nginx, "Nginx", "nginx:alpine", "Proxy reverso + TLS. Serve o SPA e encaminha /api para o backend, com cabeçalhos de segurança e X-Request-Id")
-        Container(spa, "Frontend SPA", "React (build estático)", "Interface do cliente e painel administrativo")
-        Container(api, "API Backend", "Node.js 22 + Express 5 + TypeScript", "Regras de negócio, autenticação JWT, RBAC, cache-aside e publicação de eventos")
-        Container(worker, "Worker de eventos", "Node.js (mesma imagem da API)", "Assina eventos no Redis Pub/Sub, registra auditoria e dispara notificações")
-        ContainerDb(mysql, "MySQL 8.4", "Banco relacional", "Fonte da verdade: usuários, produtos, carrinhos, pedidos, avaliações")
-        ContainerDb(redis, "Redis 7.4", "Cache em memória + Pub/Sub", "Cache de leituras (TTL) e barramento de eventos")
-        ContainerDb(meili, "Meilisearch 1.13", "Motor de busca", "Busca textual tolerante a erros e sinônimos no catálogo")
+        Container(nginx, "Gateway Nginx", "nginx:alpine", "TLS, cabeçalhos de segurança, rate limit e roteamento por serviço")
+        Container(spa, "Loja", "React", "Interface do cliente")
+        Container(painel, "Painel admin", "React", "Publicado em /admin")
+        Container(id, "identidade", "Node.js", "Login, JWT, usuários, endereços")
+        Container(cat, "catalogo", "Node.js", "Produtos, categorias, cache-aside, vendas")
+        Container(bus, "busca", "Node.js", "Indexa e pesquisa produtos")
+        Container(av, "avaliacoes", "Node.js", "Avaliações e fotos")
+        Container(car, "carrinho", "Node.js", "Sacola")
+        Container(ped, "pedidos", "Node.js", "Pedidos e saga do checkout")
+        Container(not, "notificacoes", "Node.js", "Sino do site, auditoria, consumidor de eventos")
+        Container(adm, "admin", "Node.js", "BFF do painel e métricas consolidadas")
+        ContainerDb(mysql, "MySQL 8.4", "Um banco e um usuário por serviço", "agnus_identidade, agnus_catalogo, agnus_avaliacoes, agnus_carrinho, agnus_pedidos, agnus_notificacoes")
+        ContainerDb(redis, "Redis 7.4", "Cache + Pub/Sub", "Cache de leituras e barramento de eventos")
+        ContainerDb(meili, "Meilisearch 1.13", "Motor de busca", "Índice do catálogo")
     }
 
     System_Ext(google, "Google OAuth")
     System_Ext(ngrok, "ngrok")
 
     Rel(cliente, nginx, "Acessa", "HTTPS 443")
-    Rel(nginx, spa, "Serve arquivos estáticos")
-    Rel(nginx, api, "Proxy /api/*", "HTTP 3000")
-    Rel(ngrok, api, "Túnel", "HTTP 3000")
-    Rel(api, mysql, "Lê/escreve", "Sequelize / TCP 3306")
-    Rel(api, redis, "GET/SET/SCAN/DEL + PUBLISH", "RESP 6379")
-    Rel(api, meili, "Indexa e busca produtos", "HTTP 7700")
-    Rel(worker, redis, "PSUBSCRIBE agnus.eventos.* + LPUSH auditoria", "RESP 6379")
-    Rel(api, google, "OAuth 2.0", "HTTPS")
+    Rel(ngrok, nginx, "Túnel", "HTTP 8080")
+    Rel(nginx, spa, "Serve")
+    Rel(nginx, painel, "Serve /admin")
+    Rel(nginx, cat, "/api/products…", "HTTP")
+    Rel(nginx, ped, "/api/orders…", "HTTP")
+    Rel(ped, car, "Baixa a sacola", "HTTP /internal")
+    Rel(ped, cat, "Consulta preços", "HTTP /internal")
+    Rel(cat, redis, "Cache e eventos", "RESP")
+    Rel(not, redis, "PSUBSCRIBE", "RESP")
+    Rel(bus, meili, "Indexa e busca", "HTTP")
+    Rel(id, google, "OAuth 2.0", "HTTPS")
+    Rel(ped, mysql, "agnus_pedidos", "TCP")
 ```
 
-## Nível 3 — Componentes da API (resumo)
+## Nível 3 — Componentes de um serviço (resumo)
 
 ```mermaid
 flowchart LR
-    subgraph API["API Backend (Express)"]
+    subgraph API["Serviço (Express), mesma estrutura em todos"]
         MW["Middlewares<br/>requestLogger · auth JWT · RBAC · upload · errorHandler"]
         C["Controllers<br/>usuarios · produtos · categorias · carrinho · pedidos · auth"]
         S["Services<br/>produtoCatalog · produtoMutation · auth · searchIndex"]
@@ -81,9 +92,9 @@ flowchart LR
 
 | Camada | Pasta | Responsabilidade |
 | --- | --- | --- |
-| Middlewares | `agnus-back/src/middlewares` | Correlação de logs (`X-Request-Id`), autenticação, autorização por permissão, upload Multer, tratamento centralizado de erros |
-| Controllers | `agnus-back/src/controllers` | Validação de entrada e montagem da resposta HTTP |
-| Services | `agnus-back/src/services` | Regras de negócio, transações, cache e eventos |
-| Types/DTOs | `agnus-back/src/types` | Contratos de entrada/saída (`*Body`, `*Query`, `*RouteParams`) e eventos |
-| Models | `agnus-back/src/models` | Mapeamento objeto-relacional |
-| Config | `agnus-back/src/config` | Banco, Redis, TTLs de cache, matriz de permissões |
+| Middlewares | `services/comum/src/middlewares` | Correlação de logs (`X-Request-Id`), autenticação, autorização por permissão, upload Multer, tratamento centralizado de erros |
+| Controllers | `services/<serviço>/src/controllers` | Validação de entrada e montagem da resposta HTTP |
+| Services | `services/<serviço>/src/services` | Regras de negócio, transações, cache e eventos |
+| Types/DTOs | `services/<serviço>/src/types` | Contratos de entrada/saída (`*Body`, `*Query`, `*RouteParams`) e eventos |
+| Models | `services/<serviço>/src/models` | Mapeamento objeto-relacional |
+| Config | `services/comum/src/config` | Banco, Redis, TTLs de cache, matriz de permissões |

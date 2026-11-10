@@ -13,12 +13,12 @@
 
 ## Importar o backlog
 
-O arquivo [`jira-import.csv`](jira-import.csv) traz **8 épicos, 33 histórias, 17 tasks e 21 bugs** (12 deles de segurança), com hierarquia, prioridade, pontos, status, versão, **responsável** e a **sprint atual**.
+O arquivo [`jira-import.csv`](jira-import.csv) traz **9 épicos, 36 histórias, 30 tasks e 26 bugs** (12 deles de segurança), com hierarquia, prioridade, pontos, status, versão, **responsável** e a **sprint atual**.
 
 ### Antes de importar (5 min)
 
 1. Convide o Bruno para o projeto (**Configurações do projeto → Pessoas**), para que o responsável possa ser mapeado.
-2. **Configurações do projeto → Versões** (ou **Releases**): crie `2.0.0`, `2.1.0`, `2.2.0`, `3.0.0`, `3.1.0`, `3.2.0`, `3.2.1`, `3.3.0`, `3.4.0` e `4.0.0`.
+2. **Configurações do projeto → Versões** (ou **Releases**): crie `2.0.0`, `2.1.0`, `2.2.0`, `3.0.0`, `3.1.0`, `3.2.0`, `3.2.1`, `3.3.0`, `3.4.0`, `3.5.0` e `4.0.0`.
 3. **Backlog → Criar sprint** com o nome exato `AGNUS Sprint 1` (não inicie ainda).
 
 ### Importação
@@ -34,22 +34,34 @@ O arquivo [`jira-import.csv`](jira-import.csv) traz **8 épicos, 33 histórias, 
    | Epic Name | Epic Name | Só existe em projetos *company-managed*; nos *team-managed*, ignore |
    | Summary / Description | Summary / Description | |
    | Priority | Priority | |
-   | Labels (2 colunas) | Labels | O Jira junta as duas colunas |
+   | Labels (3 colunas) | Labels | O Jira junta as colunas. A terceira marca `retroativo` |
    | Story Points | Story point estimate | |
    | Status | Status | `To Do`, `In Progress`, `Done`, `Won't Do` → colunas do quadro |
    | Fix Version | Fix versions | |
    | Assignee | Assignee | Na etapa **Mapear valores**, ligue `Luiz Zamzicki` e `Bruno Medeiros` às contas de vocês |
    | Sprint | Sprint | Liga 6 itens à `AGNUS Sprint 1` |
+   | Created | Date Created | Formato de data na tela de configuração: `yyyy-MM-dd HH:mm` |
+   | Resolved | Date Resolved | Vazio nas issues ainda abertas |
 
-3. Confira: o backlog deve mostrar 79 issues, e a sprint, US-25, US-26, US-24, TS-09, TS-16 e TS-17.
+3. Confira: o backlog deve mostrar 101 issues, e a sprint, US-25, US-26, US-24, TS-09, TS-16 e TS-17.
 
 ### Depois de importar (é o que a rubrica avalia: uso real)
 
 1. **Inicie a `AGNUS Sprint 1`** (2 semanas) com a meta *"Pagamento online e loja publicada"*.
-2. **Lance as versões já entregues** (Releases → `⋯` → *Lançar*): `2.0.0` a `3.4.0`, cada uma com a data do [CHANGELOG](../../CHANGELOG.md).
+2. **Lance as versões já entregues** (Releases → `⋯` → *Lançar*): `2.0.0` a `3.5.0`, cada uma com a data do [CHANGELOG](../../CHANGELOG.md).
 3. Durante a sprint, **cada um move os próprios cards** (`A Fazer → Em Andamento → Em Revisão → Concluído`) à medida que trabalha, comentando impedimentos com `@menção`.
 4. Use a chave da issue nas branches, commits e PRs (seção abaixo), para que o Jira mostre o desenvolvimento ligado a cada card.
 5. Tire as capturas da lista de evidências no fim deste documento.
+
+### Datas retroativas
+
+O Jira passou a ser usado depois de boa parte do código já existir. Para o histórico fazer sentido, as datas de criação e de resolução foram **reconstruídas a partir do Git**, nunca inventadas:
+
+- **Resolvida:** commit da tag da versão (`Fix Version`). Os itens da 3.4.0 usam o PR #21, porque a tag `v3.4.0` foi criada antes desse merge.
+- **Criada:** primeira vez que a issue aparece no backlog ou neste CSV, quando isso é anterior à entrega; senão, o primeiro commit do ciclo daquela versão.
+- **Épicos:** criados com a primeira issue e resolvidos com a última.
+
+Cada uma dessas issues tem a etiqueta `retroativo`, e a descrição informa o commit de origem de cada data. O CSV não importa o histórico de status: burndown e relatórios de sprint refletem só o que for movido no quadro depois da importação.
 
 ## Ligação entre Jira e GitHub
 
@@ -58,7 +70,7 @@ Para a rastreabilidade ficar visível nas issues, instale o app **GitHub for Jir
 | Onde | Padrão | Exemplo |
 | --- | --- | --- |
 | Branch | `<tipo>/AGNUS-<n>-descricao` | `feat/AGNUS-206-cache-redis` |
-| Commit (Conventional Commits) | `<tipo>: AGNUS-<n> descrição` | `feat: AGNUS-206 cache-aside no catálogo` |
+| Commit (Conventional Commits) | `<tipo>(escopo): descrição (AGNUS-<n>)`. A chave vai no fim porque o commitlint recusa assunto começando em maiúscula | `feat(services): troca o sync automático por migrations (AGNUS-154)` |
 | Pull Request | título com a chave | `AGNUS-206 Cache Redis e eventos` |
 
 Com isso, cada issue mostra os branches, commits, PRs e o status do CI.
@@ -83,6 +95,6 @@ Capturas de tela a salvar em `docs/gestao/evidencias/` e anexar na entrega:
 - [ ] Backlog com épicos e histórias priorizadas
 - [ ] Uma história aberta mostrando critérios de aceite, pontos, responsável e PR vinculado
 - [ ] Bugs com responsável e status
-- [ ] Página de versões (releases) com `3.4.0` lançada
+- [ ] Página de versões (releases) com `3.5.0` lançada
 - [ ] Painel *Desenvolvimento* de uma issue mostrando branch/commit/PR do GitHub
 - [ ] Relatório de sprint (burndown ou velocity)

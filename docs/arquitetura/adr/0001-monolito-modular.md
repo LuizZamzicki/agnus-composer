@@ -1,6 +1,6 @@
 # ADR 0001 — Monólito modular em vez de microsserviços
 
-- **Status:** Aceito
+- **Status:** Substituído pelo [ADR 0008](0008-microsservicos.md)
 - **Data:** 2026-06-16
 
 ## Contexto

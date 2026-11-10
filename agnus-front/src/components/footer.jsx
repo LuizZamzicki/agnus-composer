@@ -3,6 +3,7 @@ import "../css/cliente/footer.css"
 import { Instagram, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoCompleto from "../img/marca/logo-completo.png";
+import logoCompletoEscuro from "../img/marca/logo-completo-escuro.png";
 
 function Footer() {
     return (
@@ -10,7 +11,8 @@ function Footer() {
             <div className="footer-container">
                 <div className="footer-baixo">
                     <div className="footer-desc">
-                        <img className="footer-mark" src={logoCompleto} alt="Agnus" />
+                        <img className="footer-mark so-tema-claro" src={logoCompleto} alt="Agnus" />
+                        <img className="footer-mark so-tema-escuro" src={logoCompletoEscuro} alt="Agnus" />
                         <p>
                             Roupas de treino com identidade católica,
                             feitas sob encomenda.

@@ -7,7 +7,7 @@ describe('Login e Cadastro', () => {
 
     it('deve abrir tela de cadastro', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')
@@ -35,7 +35,7 @@ describe('Login e Cadastro', () => {
 
     it('não deve enviar cadastro sem preencher campos', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="submit-login"]')
@@ -61,7 +61,7 @@ describe('Login e Cadastro', () => {
         ).as('cadastro');
 
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -96,7 +96,7 @@ describe('Login e Cadastro', () => {
 
     it('não deve cadastrar CPF inválido', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -128,7 +128,7 @@ describe('Login e Cadastro', () => {
 
     it('não deve cadastrar email inválido', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -148,7 +148,7 @@ describe('Login e Cadastro', () => {
 
     it('não deve cadastrar senha diferente', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -180,7 +180,7 @@ describe('Login e Cadastro', () => {
 
     it('não deve aceitar senha fraca', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -224,7 +224,7 @@ describe('Login e Cadastro', () => {
         ).as('erroCadastro');
 
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -259,7 +259,7 @@ describe('Login e Cadastro', () => {
 
     it('deve formatar CPF enquanto digita', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -278,7 +278,7 @@ describe('Login e Cadastro', () => {
 
     it('deve mostrar indicador de força da senha', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -326,7 +326,7 @@ describe('Login e Cadastro', () => {
 
     it('deve mostrar e esconder confirmação de senha', () => {
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
 
@@ -359,7 +359,7 @@ describe('Login e Cadastro', () => {
             }
         ).as('cadastro');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')
@@ -397,7 +397,7 @@ describe('Login e Cadastro', () => {
             }
         ).as('erro');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')

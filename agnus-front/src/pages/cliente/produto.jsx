@@ -7,6 +7,11 @@ import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 import { EsqueletoProduto } from "../../components/esqueleto";
 
+// "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
+function textoResumoAvaliacoes({ media, total }) {
+    return `${media.toFixed(1).replace(".", ",")} de 5 · ${total} ${total === 1 ? "avaliação" : "avaliações"}`;
+}
+
 function Produto() {
     const { id_produto } = useParams();
     const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -436,7 +441,7 @@ function Produto() {
                         <>
                             <Estrelas nota={avaliacaoResumo.media} />
                             <small>
-                                {avaliacaoResumo.media.toFixed(1)} de 5.0 — {avaliacaoResumo.total} avaliações
+                                {textoResumoAvaliacoes(avaliacaoResumo)}
                             </small>
                         </>
                     ) : (
@@ -600,7 +605,7 @@ function Produto() {
                             <>
                                 <Estrelas nota={avaliacaoResumo.media} />
                                 <small>
-                                    {avaliacaoResumo.media.toFixed(1)} de 5 — {avaliacaoResumo.total} avaliações
+                                    {textoResumoAvaliacoes(avaliacaoResumo)}
                                 </small>
                             </>
                         )}

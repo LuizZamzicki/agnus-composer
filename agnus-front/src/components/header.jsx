@@ -1,17 +1,21 @@
-import { Search, User, ShoppingBag, LogOut } from "lucide-react";
+import { Search, User, ShoppingBag, LogOut, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import "../css/cliente/app.css";
 import "../css/cliente/header.css";
 import escrita from "../img/marca/escrita.png";
+import escritaClara from "../img/marca/escrita-clara.png";
 import simbolo from "../img/marca/simbolo.png";
 import Notificacoes from "./notificacoes";
 import { tempoLiturgico } from "../utils/liturgia";
+import { alternarTema, temaAtual } from "../utils/tema";
 import { EVENTO_SACOLA, avisarSacola, contarPecas, sessaoDeAdmin } from "../utils/sacola";
 
 function Header() {
     const navigate = useNavigate();
+
+    const [tema, setTema] = useState(temaAtual);
 
     const [token, setToken] = useState(null);
     const [auth, setAuth] = useState(null);
@@ -122,16 +126,28 @@ function Header() {
                 <div className="logo">
                     <Link className="logoInicio" to="/" aria-label="Agnus, página inicial">
                         <img className="logo-simbolo" src={simbolo} alt="" />
-                        <img className="logo-escrita" src={escrita} alt="" />
+                        <img className="logo-escrita so-tema-claro" src={escrita} alt="" />
+                        <img className="logo-escrita so-tema-escuro" src={escritaClara} alt="" />
                     </Link>
                 </div>
 
                 <nav className="opcoes_header" aria-label="Conta e sacola">
+                    <button
+                        type="button"
+                        data-cy="alternar-tema"
+                        className="tema-toggle"
+                        onClick={() => setTema(alternarTema())}
+                        aria-label={tema === "dark" ? "Usar tema claro" : "Usar tema escuro"}
+                        title={tema === "dark" ? "Tema claro" : "Tema escuro"}
+                    >
+                        {tema === "dark" ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
+                    </button>
+
                     <Link to="/catalogo" state={{ focarBusca: true }} aria-label="Buscar peças">
                         <Search size={20} strokeWidth={1.5} />
                     </Link>
 
-                    <Link to={getUserRoute()} aria-label={token ? "Minha conta" : "Entrar"}>
+                    <Link to={getUserRoute()} reloadDocument={getUserRoute() === "/admin"} aria-label={token ? "Minha conta" : "Entrar"}>
                         <User size={20} strokeWidth={1.5} />
                     </Link>
 

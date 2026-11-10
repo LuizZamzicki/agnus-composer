@@ -18,6 +18,6 @@ Os logs eram `console.log` em texto livre, e erros 500 eram respondidos sem nenh
 
 ## Consequências
 
-- ✅ `docker compose logs backend worker | grep <requestId>` reconstrói um fluxo inteiro.
+- ✅ `docker compose logs catalogo pedidos notificacoes | grep <requestId>` reconstrói um fluxo inteiro.
 - ✅ Formato pronto para Loki, Elastic ou CloudWatch, sem mudar o código.
 - ⚠️ Métricas em memória são por processo e zeram no restart. Para produção, exportar em formato Prometheus.

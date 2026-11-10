@@ -2,7 +2,7 @@
 
 ## Estilo arquitetural
 
-- **Monólito modular em camadas** ([ADR 0001](adr/0001-monolito-modular.md)): `middlewares → controllers → services → models`, com tipos de entrada/saída (DTOs) em `src/types`.
+- **Microsserviços por bounded context** ([ADR 0008](adr/0008-microsservicos.md)), cada um com banco próprio e camadas `middlewares → controllers → services → models`, com tipos de entrada/saída (DTOs) em `src/types`. Mapa completo em [microsservicos.md](microsservicos.md).
 - **Event-driven nas bordas** ([ADR 0004](adr/0004-eventos-redis-pubsub.md)): efeitos colaterais entre contextos usam eventos de domínio no Redis Pub/Sub.
 - **Cache-aside** nas leituras do catálogo ([ADR 0003](adr/0003-cache-redis-cache-aside.md)).
 
@@ -36,6 +36,8 @@ O domínio é o **varejo on-line de vestuário esportivo católico sob demanda (
 | **Notificações/Auditoria** | Efeitos colaterais assíncronos | lista Redis `agnus:auditoria:eventos` | `worker.ts` |
 
 > **Linguagem ubíqua:** a mesma palavra muda de sentido conforme o contexto. Para o **Catálogo**, "produto" é a peça com preço base e variações. Para **Pedidos**, o que importa é o **item vendido**: cor + grade + quantidade + **preço unitário congelado no momento da compra**.
+
+Cada contexto virou um serviço em `services/`: Catálogo → `catalogo`, Carrinho → `carrinho`, Pedidos → `pedidos`, Identidade e Clientes → `identidade` (mesmo dono dos dados), Avaliações → `avaliacoes`, Busca → `busca`, Notificações → `notificacoes`. Pagamentos é o próximo candidato, quando a integração existir.
 
 ## Context Map
 
@@ -153,7 +155,7 @@ classDiagram
 | 7 | Transições de status seguem o fluxo esperado | ✅ Máquina de estados em `PedidoRegrasService.podeTransitar`; transição inválida retorna **409** |
 | 8 | Itens só mudam enquanto o pedido está aberto (`aguardando_calculo_frete` / `aguardando_pagamento`) | ✅ `PedidoItensController` retorna **409** para pedido pago, enviado, entregue ou cancelado |
 
-As regras ficam num único lugar, [`pedidoRegras.service.ts`](../../agnus-back/src/services/pedidoRegras.service.ts), e são cobertas por testes em `tests/controllers/pedidos.controller.spec.ts` e `tests/routes/pedidos.routes.spec.ts` (US-22 e US-23 no [backlog](../gestao/product-backlog.md)).
+As regras ficam num único lugar, [`pedidoRegras.service.ts`](../../services/pedidos/src/services/pedidoRegras.service.ts), e são cobertas por testes em `tests/controllers/pedidos.controller.spec.ts` e `tests/routes/pedidos.routes.spec.ts` (US-22 e US-23 no [backlog](../gestao/product-backlog.md)).
 
 ```mermaid
 stateDiagram-v2

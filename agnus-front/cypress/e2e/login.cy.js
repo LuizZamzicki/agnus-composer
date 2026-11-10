@@ -156,7 +156,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy=password]')
@@ -181,7 +181,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy=nome]')
@@ -212,7 +212,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')
@@ -322,7 +322,7 @@ describe('Login', () => {
         cy.visit('/login');
 
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')
@@ -391,13 +391,11 @@ describe('Login', () => {
 
         cy.wait('@login');
 
+        // A página grava o token depois de ler a resposta: a asserção espera em vez de olhar uma vez só.
         cy.window()
-            .then(win => {
-                expect(
-                    win.localStorage.getItem('auth_token')
-                )
-                    .eq('abc123');
-            });
+            .its('localStorage')
+            .invoke('getItem', 'auth_token')
+            .should('eq', 'abc123');
     });
 
     it('deve redirecionar administrador para /admin', () => {

@@ -27,10 +27,10 @@
 | Sintoma | Verificação | Ação |
 | --- | --- | --- |
 | Navegador não abre `https://...` | `docker compose ps nginx` | `docker compose up -d nginx`; se não subir, `docker compose logs nginx` (certificado em `certs/`? `nginx.conf` válido?) |
-| Página abre, mas a API retorna **502** | `docker compose ps backend` | `docker compose logs --tail=100 backend`, depois `docker compose restart backend` |
-| Backend reinicia em loop | logs com `ECONNREFUSED mysql` ou erro de `.env` | Verificar o MySQL (§1.1) e as variáveis em `agnus-back/.env` |
+| Página abre, mas a API retorna **502** | `docker compose ps` (qual serviço está fora?) | `docker compose logs --tail=100 <serviço>`, depois `docker compose restart <serviço>` |
+| Backend reinicia em loop | logs com `ECONNREFUSED mysql` ou erro de `.env` | Verificar o MySQL (§1.1) e as variáveis em `services/.env` |
 | Login responde **429** | `docker compose logs nginx \| grep limiting` | Limite por IP no Nginx (10 tentativas/min) e na API (10 logins e 5 cadastros/min, em `rateLimit.middleware.ts`). Aguarde 1 min; se for legítimo (ex.: teste de carga), ajuste os dois |
-| `http://<ip>:3000` não responde de outra máquina | `docker compose port backend 3000` → `127.0.0.1:3000` | Comportamento esperado: de fora, a API só passa pelo Nginx em `https://<host>/api` |
+| `http://<ip>:3000` não responde de outra máquina | `docker compose ps` não mostra a porta 3000 publicada | Comportamento esperado: de fora, a API só passa pelo Nginx em `https://<host>/api` |
 
 ### 1.1 MySQL
 
@@ -46,8 +46,8 @@ docker exec agnus-mysql sh -c 'mysqladmin ping -uroot -p"$MYSQL_ROOT_PASSWORD"'
 ## 2. Muitos erros 500
 
 ```bash
-docker compose logs --since 15m backend | grep '"level":"error"'
-docker compose logs backend | grep <X-Request-Id informado pelo cliente>
+docker compose logs --since 15m identidade catalogo avaliacoes carrinho pedidos notificacoes admin | grep '"level":"error"'
+docker compose logs catalogo | grep <X-Request-Id informado pelo cliente>
 curl -sk -H "Authorization: Bearer $TOKEN_ADMIN" https://localhost/api/metrics   # http_requests_5xx subindo? (token de admin)
 ```
 
@@ -73,12 +73,12 @@ curl -sk -H "Authorization: Bearer $TOKEN_ADMIN" https://localhost/api/metrics  
 
 ```bash
 docker compose ps redis
-docker compose logs backend | grep -E 'redis.erro|cache.circuito_aberto'
+docker compose logs catalogo | grep -E 'redis.erro|cache.circuito_aberto'
 docker compose restart redis
 docker exec agnus-redis redis-cli ping        # PONG
 ```
 
-A API e o worker **reconectam sozinhos** (backoff de até 5 s). Não é preciso reiniciá-los. O cache volta vazio e se reaquece com o uso.
+Os serviços **reconectam sozinhos** (backoff de até 5 s). Não é preciso reiniciá-los. O cache volta vazio e se reaquece com o uso.
 
 Para limpar o cache manualmente (ex.: dado inconsistente):
 
@@ -89,19 +89,33 @@ docker exec agnus-redis redis-cli --scan --pattern 'agnus:cache:*' | xargs -r do
 ## 5. Worker não processa eventos
 
 ```bash
-docker compose ps worker
-docker compose logs --tail=50 worker            # deve haver "evento.assinatura_ativa"
-docker compose restart worker
+docker compose ps notificacoes
+docker compose logs --tail=50 notificacoes            # deve haver "evento.assinatura_ativa"
+docker compose restart notificacoes
 docker exec agnus-redis redis-cli LRANGE agnus:auditoria:eventos 0 4   # últimos eventos auditados
 ```
 
 Eventos publicados enquanto o worker estava fora **não são reprocessados** (Pub/Sub é at-most-once, ver [ADR 0004](../arquitetura/adr/0004-eventos-redis-pubsub.md)). Se forem notificações de pedidos importantes, consulte os pedidos do período no painel administrativo e avise os clientes manualmente.
 
+## 5.1 Um microsserviço fora do ar
+
+| Serviço parado | O que o usuário percebe | Ação |
+| --- | --- | --- |
+| `identidade` | Ninguém entra; rotas autenticadas respondem 503. A vitrine segue pública | Prioridade máxima: `docker compose restart identidade` |
+| `catalogo` | Vitrine, sacola e checkout falham com 503 | `docker compose restart catalogo` |
+| `carrinho` | Sacola indisponível; o checkout responde 503 sem criar pedido | `docker compose restart carrinho` |
+| `pedidos` | Sem compras novas; exclusão de produto e usuário fica bloqueada | `docker compose restart pedidos` |
+| `busca` | A pesquisa responde 503; o restante do catálogo funciona | `docker compose restart busca`; o índice se refaz sozinho |
+| `avaliacoes`, `notificacoes` | Só a funcionalidade deles para. Avisos de status emitidos no período se perdem | Reiniciar o serviço |
+| `admin` | Painel sem dashboard e sem métricas; a loja não é afetada | Reiniciar o serviço |
+
+O log `interno.circuito_aberto` indica qual serviço está falhando para os demais. Use o `X-Request-Id` para seguir uma requisição: `docker compose logs | grep <id>`.
+
 ## 6. Rollback de versão
 
 ```bash
 cat /opt/agnus/.current_version                   # versão atual
-AGNUS_VERSION=v3.2.1 docker compose up -d --no-build
+AGNUS_VERSION=<versão anterior> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
 curl -sk https://localhost/api/health
 ```
 
@@ -129,6 +143,6 @@ Registrar em até 2 dias úteis, como issue do tipo **Bug** no Jira com o rótul
 | Item | Onde |
 | --- | --- |
 | Repositório | <https://github.com/LuizZamzicki/agnus-composer> |
-| Variáveis de ambiente | `.env` (raiz) e `agnus-back/.env`; modelos em `.env.example` |
+| Variáveis de ambiente | `.env` (raiz) e `services/.env`; modelos em `.env.example` |
 | Documentação da API | `https://<host>/api/docs/` |
 | Métricas | `https://<host>/api/metrics` (exige token de administrador) |

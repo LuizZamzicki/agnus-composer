@@ -1,0 +1,127 @@
+/* Agnus · Tempo Litúrgico
+   Pedra clara, inscrição romana e texto de missal. --lit é a cor do tempo litúrgico
+   do dia, aplicada em runtime por utils/liturgia.js; o valor abaixo é o Tempo Comum. */
+
+:root {
+  --lit: #2f6a46;
+  --on-lit: #ffffff;
+
+  --stone: #ecebe7;
+  --stone-2: #e2e0db;
+  --paper: #f7f6f3;
+  --ink: #1d1c1a;
+  --ink-2: #3a3834;
+  --muted: #5e5a54;
+  --line: #cfccc5;
+  --line-soft: #dddad4;
+  --brass: #8a6a1f;
+  --danger: #9b2c1f;
+  --danger-soft: #f3e3df;
+  --ok: #2f6a46;
+  --ok-soft: #e1ece4;
+
+  --f-display: "Marcellus", "Times New Roman", serif;
+  --f-caps: "Marcellus SC", "Marcellus", "Times New Roman", serif;
+  --f-text: "EB Garamond", Georgia, "Times New Roman", serif;
+  --f-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --track-caps: 0.18em;
+  --radius: 8px;
+  --shadow-lift: 0 18px 40px -24px rgba(29, 28, 26, 0.45);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --header-h: 72px;
+  --strip-h: 30px;
+
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scrollbar-color: var(--line) var(--stone); }
+
+body {
+  margin: 0;
+  background: var(--stone);
+  color: var(--ink);
+  font: 18px/1.55 var(--f-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  caret-color: var(--lit);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--f-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+
+p { text-wrap: pretty; }
+
+a { color: inherit; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+
+button, input, select, textarea { font: inherit; color: inherit; border-radius: var(--radius); }
+
+input, select, textarea { caret-color: var(--lit); }
+
+::placeholder { color: var(--muted); opacity: 1; }
+
+::selection { background: var(--lit); color: var(--on-lit); }
+
+:focus-visible {
+  outline: 2px solid var(--lit);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--stone); }
+::-webkit-scrollbar-thumb { background: var(--line); border: 2px solid var(--stone); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+img { max-width: 100%; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Rótulos em versalete: navegação, botões, preços. */
+.caps {
+  font-family: var(--f-caps);
+  letter-spacing: var(--track-caps);
+}
+
+/* Ações. Primária em tinta; secundária em contorno. */
+.btn-agnus,
+.btn-agnus-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 28px;
+  border-radius: var(--radius);
+  font: 15px/1 var(--f-caps);
+  letter-spacing: 0.2em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), transform 0.15s var(--ease-out);
+}
+
+.btn-agnus { background: var(--ink); color: var(--stone); border: 1px solid var(--ink); }
+.btn-agnus:hover { background: var(--lit); border-color: var(--lit); color: var(--on-lit); }
+
+.btn-agnus-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.btn-agnus-ghost:hover { background: var(--ink); color: var(--stone); }
+
+.btn-agnus:disabled,
+.btn-agnus-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

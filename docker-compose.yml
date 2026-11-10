@@ -1,3 +1,23 @@
+# Cada microsservico tem imagem, banco (usuario proprio) e deploy independentes.
+# So o gateway (nginx) publica portas; a rede "data" nao tem saida para a internet.
+x-ambiente: &ambiente
+  REDIS_URL: redis://redis:6379
+  INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+
+x-servico: &servico
+  restart: unless-stopped
+  env_file:
+    - ./services/.env
+  networks:
+    - app
+    - data
+  healthcheck:
+    test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
 services:
 
   mysql:
@@ -16,6 +36,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Executa uma vez a cada subida: cria os bancos dos servicos e traz os dados do banco antigo.
+  migrador:
+    image: mysql:8.4
+    container_name: agnus-migrador
+    restart: "no"
+    entrypoint: ["sh", "/migrar-bancos.sh"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      DB_SENHA_IDENTIDADE: ${DB_SENHA_IDENTIDADE}
+      DB_SENHA_CATALOGO: ${DB_SENHA_CATALOGO}
+      DB_SENHA_AVALIACOES: ${DB_SENHA_AVALIACOES}
+      DB_SENHA_CARRINHO: ${DB_SENHA_CARRINHO}
+      DB_SENHA_PEDIDOS: ${DB_SENHA_PEDIDOS}
+      DB_SENHA_NOTIFICACOES: ${DB_SENHA_NOTIFICACOES}
+    volumes:
+      - ./services/scripts/migrar-bancos.sh:/migrar-bancos.sh:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - data
 
   meilisearch:
     image: getmeili/meilisearch:v1.13
@@ -41,58 +84,153 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
+  identidade:
+    <<: *servico
+    image: agnus-identidade:local
+    container_name: agnus-identidade
     build:
-      context: ./agnus-back
-    image: agnus-backend:local
-    container_name: agnus-backend
-    restart: unless-stopped
-    env_file:
-      - ./agnus-back/.env
+      context: ./services
+      dockerfile: identidade/Dockerfile
     environment:
-      REDIS_URL: redis://redis:6379
-      SERVICE_NAME: agnus-api
-    # So na maquina local (debug/Postman). De fora, a API e acessada apenas pelo Nginx em /api.
-    ports:
-      - "127.0.0.1:3000:3000"
+      <<: *ambiente
+      SERVICE_NAME: agnus-identidade
+      DB_NAME: agnus_identidade
+      DB_USER: svc_identidade
+      DB_PASSWORD: ${DB_SENHA_IDENTIDADE}
     depends_on:
-      mysql:
+      migrador:
+        condition: service_completed_successfully
+      redis:
         condition: service_healthy
-      meilisearch:
-        condition: service_started
+
+  catalogo:
+    <<: *servico
+    image: agnus-catalogo:local
+    container_name: agnus-catalogo
+    build:
+      context: ./services
+      dockerfile: catalogo/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-catalogo
+      DB_NAME: agnus_catalogo
+      DB_USER: svc_catalogo
+      DB_PASSWORD: ${DB_SENHA_CATALOGO}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     volumes:
-      - produto_fotos:/app/produto_fotos
-      - avaliacao_fotos:/app/avaliacao_fotos
-    networks:
-      - app
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - produto_fotos:/app/catalogo/produto_fotos
 
-  # Consumidor dos eventos publicados pela API no Redis Pub/Sub (mesma imagem, outro processo).
-  worker:
-    image: agnus-backend:local
-    pull_policy: never
-    container_name: agnus-worker
-    restart: unless-stopped
-    command: ["node", "dist/worker.js"]
-    env_file:
-      - ./agnus-back/.env
+  busca:
+    <<: *servico
+    image: agnus-busca:local
+    container_name: agnus-busca
+    build:
+      context: ./services
+      dockerfile: busca/Dockerfile
     environment:
-      REDIS_URL: redis://redis:6379
-      SERVICE_NAME: agnus-worker
+      <<: *ambiente
+      SERVICE_NAME: agnus-busca
     depends_on:
       redis:
         condition: service_healthy
-      backend:
+      meilisearch:
         condition: service_started
-    networks:
-      - data
+
+  avaliacoes:
+    <<: *servico
+    image: agnus-avaliacoes:local
+    container_name: agnus-avaliacoes
+    build:
+      context: ./services
+      dockerfile: avaliacoes/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-avaliacoes
+      DB_NAME: agnus_avaliacoes
+      DB_USER: svc_avaliacoes
+      DB_PASSWORD: ${DB_SENHA_AVALIACOES}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    volumes:
+      - avaliacao_fotos:/app/avaliacoes/avaliacao_fotos
+
+  carrinho:
+    <<: *servico
+    image: agnus-carrinho:local
+    container_name: agnus-carrinho
+    build:
+      context: ./services
+      dockerfile: carrinho/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-carrinho
+      DB_NAME: agnus_carrinho
+      DB_USER: svc_carrinho
+      DB_PASSWORD: ${DB_SENHA_CARRINHO}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  pedidos:
+    <<: *servico
+    image: agnus-pedidos:local
+    container_name: agnus-pedidos
+    build:
+      context: ./services
+      dockerfile: pedidos/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-pedidos
+      DB_NAME: agnus_pedidos
+      DB_USER: svc_pedidos
+      DB_PASSWORD: ${DB_SENHA_PEDIDOS}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  notificacoes:
+    <<: *servico
+    image: agnus-notificacoes:local
+    container_name: agnus-notificacoes
+    build:
+      context: ./services
+      dockerfile: notificacoes/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-notificacoes
+      DB_NAME: agnus_notificacoes
+      DB_USER: svc_notificacoes
+      DB_PASSWORD: ${DB_SENHA_NOTIFICACOES}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  admin:
+    <<: *servico
+    image: agnus-admin:local
+    container_name: agnus-admin
+    build:
+      context: ./services
+      dockerfile: admin/Dockerfile
+    environment:
+      <<: *ambiente
+      SERVICE_NAME: agnus-admin
+    depends_on:
+      redis:
+        condition: service_healthy
 
   ngrok:
     image: ngrok/ngrok:latest
@@ -103,12 +241,12 @@ services:
     command:
       - "http"
       - "--url=${NGROK_DOMAIN}"
-      - "backend:3000"
+      - "nginx:8080"
     ports:
       # Painel do ngrok mostra senhas e tokens que passam pelo tunel: so na maquina local.
       - "127.0.0.1:4040:4040"
     depends_on:
-      backend:
+      nginx:
         condition: service_healthy
     networks:
       - app
@@ -116,25 +254,53 @@ services:
   frontend:
     build:
       context: ./agnus-front
+    image: agnus-frontend:local
     container_name: agnus-frontend
     volumes:
       - frontend_build:/output
 
+  admin-front:
+    build:
+      context: ./agnus-admin-front
+    image: agnus-admin-frontend:local
+    container_name: agnus-admin-front
+    volumes:
+      - admin_build:/output
+
   nginx:
-    image: nginx:alpine
+    # 1.27.3+ e necessario para o "resolve" nos upstreams
+    image: nginx:1.31-alpine
     container_name: agnus-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./agnus-front/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gateway/rotas.conf:/etc/nginx/agnus/rotas.conf:ro
       - ./certs:/etc/nginx/certs:ro
       - frontend_build:/usr/share/nginx/html:ro
+      - admin_build:/usr/share/nginx/apps/admin:ro
     depends_on:
-      backend:
+      identidade:
+        condition: service_healthy
+      catalogo:
+        condition: service_healthy
+      busca:
+        condition: service_healthy
+      avaliacoes:
+        condition: service_healthy
+      carrinho:
+        condition: service_healthy
+      pedidos:
+        condition: service_healthy
+      notificacoes:
+        condition: service_healthy
+      admin:
         condition: service_healthy
       frontend:
+        condition: service_completed_successfully
+      admin-front:
         condition: service_completed_successfully
     networks:
       - app
@@ -150,6 +316,7 @@ volumes:
   produto_fotos:
   avaliacao_fotos:
   frontend_build:
+  admin_build:
 
 networks:
   app:

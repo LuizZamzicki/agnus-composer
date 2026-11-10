@@ -2,10 +2,10 @@
 
 ## Contrato da API (OpenAPI)
 
-- **Arquivo:** [`agnus-back/openapi.yaml`](../../agnus-back/openapi.yaml) (OpenAPI 3.0.3)
-- **Swagger UI interativo:** `https://localhost/api/docs/` (com `docker compose up`), ou `http://localhost:3000/docs/` direto no backend
+- **Arquivo:** [`services/catalogo/openapi.yaml`](../../services/catalogo/openapi.yaml) (OpenAPI 3.0.3)
+- **Swagger UI interativo:** `https://localhost/api/docs/` (com `docker compose up`)
 - **JSON da especificação:** `https://localhost/api/openapi.json`
-- **Coleção Postman:** gerada a partir das rotas com `npm run postman:generate` (pasta `agnus-back/postman`)
+- **Coleção Postman:** gerada a partir das rotas com `npm run postman:generate` (pasta `services/postman`)
 
 Endpoints documentados, agrupados por recurso:
 

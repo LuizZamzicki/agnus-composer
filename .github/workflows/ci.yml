@@ -7,25 +7,26 @@ on:
     branches: [main]
 
 jobs:
-  backend:
-    name: Backend (lint + testes)
+  servicos:
+    name: Microsservicos (lint + build + testes)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: agnus-back
+        working-directory: services
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: agnus-back/package-lock.json
+          cache-dependency-path: services/package-lock.json
       - run: npm ci
+      - run: npm run build
       - run: npm run lint
       - run: npm test
 
   frontend:
-    name: Frontend (lint + testes + build)
+    name: Loja (lint + testes + build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,6 +53,27 @@ jobs:
         env:
           CI: false
 
+  admin-front:
+    name: Painel admin (testes + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agnus-admin-front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agnus-admin-front/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm test -- --watchAll=false
+        env:
+          CI: true
+      - run: npm run build
+        env:
+          CI: false
+
   compose:
     name: docker-compose valido
     runs-on: ubuntu-latest
@@ -59,6 +81,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Gerar arquivos .env de exemplo
         run: |
-          printf 'MYSQL_ROOT_PASSWORD=ci\nMYSQL_DATABASE=ci\n' > .env
-          touch agnus-back/.env
+          cp .env.example .env
+          touch services/.env
       - run: docker compose config --quiet
+      - run: AGNUS_VERSION=ci docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet

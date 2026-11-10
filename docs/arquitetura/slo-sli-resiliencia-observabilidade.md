@@ -18,6 +18,8 @@
 
 ### Teste de carga
 
+> Medição feita antes da separação em microsserviços. Refazer para ter o número atual, que inclui as chamadas entre serviços.
+
 Medição local (MacBook, Docker/OrbStack), **200 produtos** no catálogo, `ab -k -n 3000 -c 20` em `GET /products/catalog?page=1&limit=24`, direto no backend:
 
 | Cenário | Throughput | p50 | p95 | p99 | Erros |
@@ -39,8 +41,8 @@ O cache multiplicou o throughput por **≈ 2,9×** e reduziu o p99 **≈ 7×**. 
 | **Fallback / degradação graciosa** | Cache | Sem Redis, `getOrSet` chama o loader direto no MySQL |
 | **Fallback / degradação graciosa** | Busca | Sem Meilisearch, a busca usa SQL local |
 | **Fire-and-forget** | Eventos | Falha ao publicar não derruba a operação de negócio (`evento.falha_publicacao`) |
-| **Isolamento de falhas (bulkhead)** | Worker | Notificações rodam em outro container: se o worker travar, a API não sente. Erros de um handler não afetam o próximo evento |
-| **Health checks** | Docker Compose | `mysql` (`mysqladmin ping`), `redis` (`redis-cli ping`), `backend` (`/health`), `nginx` (HTTPS local) |
+| **Isolamento de falhas (bulkhead)** | Microsserviços | Cada contexto roda em outro container; o circuit breaker de [`clienteInterno.ts`](../../services/comum/src/utils/clienteInterno.ts) corta chamadas a um serviço fora do ar. Notificações rodam em outro container: se o consumidor travar, a API não sente. Erros de um handler não afetam o próximo evento |
+| **Health checks** | Docker Compose | `mysql` (`mysqladmin ping`), `redis` (`redis-cli ping`), cada serviço (`/health`), `nginx` (HTTPS local) |
 | **Auto-restart** | Docker Compose | `restart: unless-stopped` em todos os serviços de longa duração |
 | **Ordem de inicialização** | Docker Compose | `depends_on: condition: service_healthy`: a API só sobe com MySQL e Redis saudáveis |
 | **Transações** | Produto | Produto + cores + grades + fotos gravados atomicamente (`sequelize.transaction`) |
@@ -73,9 +75,9 @@ Todos os containers Node escrevem **JSON por linha** em stdout ([ADR 0007](adr/0
 **Como consultar hoje:**
 
 ```bash
-docker compose logs -f backend worker                         # tempo real
-docker compose logs backend | grep '"level":"error"'          # só erros
-docker compose logs backend worker | grep <requestId>         # um fluxo inteiro
+docker compose logs -f pedidos notificacoes                         # tempo real
+docker compose logs catalogo | grep '"level":"error"'          # só erros
+docker compose logs catalogo pedidos notificacoes | grep <requestId>         # um fluxo inteiro
 ```
 
 ### 3.2 Métricas
@@ -98,9 +100,9 @@ Métricas de infraestrutura a coletar: CPU/memória por container (`docker stats
 | --- | --- | --- | --- |
 | API fora | `/health` falhando por 2 min | **P1** | [Runbook §1](../operacao/runbook.md#1-site-fora-do-ar) |
 | Taxa de 5xx alta | > 2% por 5 min | **P1** | [Runbook §2](../operacao/runbook.md#2-muitos-erros-500) |
-| Latência alta | p95 > 500 ms por 10 min | P2 | [Runbook §3](../operacao/runbook.md#3-lentidao) |
+| Latência alta | p95 > 500 ms por 10 min | P2 | [Runbook §3](../operacao/runbook.md#3-lentidão) |
 | Circuito do cache aberto | log `cache.circuito_aberto` | P2 | [Runbook §4](../operacao/runbook.md#4-redis-fora-do-ar) |
-| Worker parado | 0 `evento.recebido` em 30 min, com `evento.publicado` > 0 | P3 | [Runbook §5](../operacao/runbook.md#5-worker-nao-processa-eventos) |
+| Worker parado | 0 `evento.recebido` em 30 min, com `evento.publicado` > 0 | P3 | [Runbook §5](../operacao/runbook.md#5-worker-não-processa-eventos) |
 
 ### 3.4 Evolução (próximos passos)
 

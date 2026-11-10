@@ -1,110 +1,334 @@
-Issue Id,Issue Type,Epic Name,Summary,Description,Priority,Labels,Labels,Story Points,Parent Id,Status,Fix Version,Assignee,Sprint
-1,Epic,EP-01 Identidade e Acesso,EP-01 Identidade e Acesso,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
-2,Epic,EP-02 Catálogo,EP-02 Catálogo,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
-3,Epic,EP-03 Carrinho,EP-03 Carrinho,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
-4,Epic,EP-04 Pedidos e Checkout,EP-04 Pedidos e Checkout,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
-5,Epic,EP-05 Pagamento online,EP-05 Pagamento online,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
-6,Epic,EP-06 Avaliações,EP-06 Avaliações,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
-7,Epic,EP-07 Painel administrativo,EP-07 Painel administrativo,Ver docs/gestao/product-backlog.md,High,,,,,Done,,,
-8,Epic,EP-08 Plataforma e Qualidade,EP-08 Plataforma e Qualidade,Ver docs/gestao/product-backlog.md,High,,,,,In Progress,,,
+Issue Id,Issue Type,Epic Name,Summary,Description,Priority,Labels,Labels,Story Points,Parent Id,Status,Fix Version,Assignee,Sprint,Labels,Created,Resolved
+1,Epic,EP-01 Identidade e Acesso,EP-01 Identidade e Acesso,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico).",High,,,,,In Progress,,,,retroativo,2026-06-16 08:58,
+2,Epic,EP-02 Catálogo,EP-02 Catálogo,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico).",High,,,,,In Progress,,,,retroativo,2026-06-16 08:58,
+3,Epic,EP-03 Carrinho,EP-03 Carrinho,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico); resolvida em 2026-11-09 20:30 (última issue do épico).",High,,,,,Done,,,,retroativo,2026-06-16 08:58,2026-11-09 20:30
+4,Epic,EP-04 Pedidos e Checkout,EP-04 Pedidos e Checkout,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico).",High,,,,,In Progress,,,,retroativo,2026-06-16 08:58,
+5,Epic,EP-05 Pagamento online,EP-05 Pagamento online,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (primeira issue do épico).",High,,,,,In Progress,,,,retroativo,2026-11-03 10:38,
+6,Epic,EP-06 Avaliações,EP-06 Avaliações,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico); resolvida em 2026-11-06 16:53 (última issue do épico).",High,,,,,Done,,,,retroativo,2026-06-16 08:58,2026-11-06 16:53
+7,Epic,EP-07 Painel administrativo,EP-07 Painel administrativo,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeira issue do épico); resolvida em 2026-06-16 08:58 (última issue do épico).",High,,,,,Done,,,,retroativo,2026-06-16 08:58,2026-06-16 08:58
+8,Epic,EP-08 Plataforma e Qualidade,EP-08 Plataforma e Qualidade,"Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 09:23 (primeira issue do épico).",High,,,,,In Progress,,,,retroativo,2026-06-16 09:23,
+9,Epic,EP-09 Microsserviços,EP-09 Microsserviços,"Ver docs/arquitetura/microsservicos.md e ADR 0008
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (primeira issue do épico); resolvida em 2026-11-09 20:30 (última issue do épico).",High,,,,,Done,,,,retroativo,2026-11-09 20:19,2026-11-09 20:30
 101,Story,,US-01 Cadastro de cliente,"Como visitante, quero me cadastrar para comprar.
-CA: e-mail único; senha forte; CPF válido.",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,
+CA: e-mail único; senha forte; CPF válido.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 102,Story,,US-02 Login com e-mail e senha,"Como cliente, quero entrar com e-mail e senha.
-CA: JWT; mensagem genérica para credenciais erradas.",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,
+CA: JWT; mensagem genérica para credenciais erradas.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,1,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 103,Story,,US-03 Login com Google (web e app),"Como cliente, quero entrar com o Google.
-CA: OAuth com state assinado; redirect do app validado por allowlist; vincula conta existente.",High,,,5,1,Done,3.0.0,Luiz Zamzicki,
+CA: OAuth com state assinado; redirect do app validado por allowlist; vincula conta existente.
+
+Datas reconstruídas do Git: criada em 2026-09-08 21:36 (primeiro commit do ciclo da 3.0.0, 7d07f164); resolvida em 2026-09-08 22:13 (tag v3.0.0, commit f6fa1bf5).",High,,,5,1,Done,3.0.0,Luiz Zamzicki,,retroativo,2026-09-08 21:36,2026-09-08 22:13
 104,Story,,US-04 Controle de acesso cliente/admin (RBAC),"Como dono da loja, quero que só admins alterem produtos e pedidos.
-CA: JWT + permissão; 403 para quem não pode.",Highest,,,5,1,Done,3.2.0,Luiz Zamzicki,
+CA: JWT + permissão; 403 para quem não pode.
+
+Datas reconstruídas do Git: criada em 2026-09-17 09:32 (primeiro commit do ciclo da 3.2.0, d55226c8); resolvida em 2026-09-17 09:55 (tag v3.2.0, commit cbc87c9b).",Highest,,,5,1,Done,3.2.0,Luiz Zamzicki,,retroativo,2026-09-17 09:32,2026-09-17 09:55
 105,Story,,US-05 Troca de senha com histórico,"Como cliente, quero trocar minha senha.
-CA: exige a senha atual; bloqueia senhas recentes.",High,,,3,1,Done,2.0.0,Luiz Zamzicki,
+CA: exige a senha atual; bloqueia senhas recentes.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",High,,,3,1,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 106,Story,,"US-06 Cargos vendas, atendimento e auditor","Como admin, quero dar acesso parcial à equipe.
-CA: novos cargos em ROLE_PERMISSIONS; 403 sem permissão.",Medium,,,5,1,To Do,4.0.0,Bruno Medeiros,
+CA: novos cargos em ROLE_PERMISSIONS; 403 sem permissão.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Medium,,,5,1,To Do,4.0.0,Bruno Medeiros,,retroativo,2026-11-03 10:38,
 201,Story,,"US-07 Cadastro de produto com cores, grades e fotos","Como admin, quero cadastrar produto completo.
-CA: transação única; ao menos uma cor com foto.",Highest,,,8,2,Done,2.0.0,Luiz Zamzicki,
+CA: transação única; ao menos uma cor com foto.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,8,2,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 202,Story,,US-08 Upload de fotos de produto,"Como admin, quero enviar fotos do computador.
-CA: JPEG/PNG/GIF/WebP/BMP até 20MB, formato conferido pelos magic bytes; 400 para arquivo inválido.",Highest,,,5,2,Done,3.2.0,Luiz Zamzicki,
+CA: JPEG/PNG/GIF/WebP/BMP até 20MB, formato conferido pelos magic bytes; 400 para arquivo inválido.
+
+Datas reconstruídas do Git: criada em 2026-09-17 09:32 (primeiro commit do ciclo da 3.2.0, d55226c8); resolvida em 2026-09-17 09:55 (tag v3.2.0, commit cbc87c9b).",Highest,,,5,2,Done,3.2.0,Luiz Zamzicki,,retroativo,2026-09-17 09:32,2026-09-17 09:55
 203,Story,,US-09 Busca tolerante a erros,"Como cliente, quero buscar mesmo digitando errado.
-CA: Meilisearch + sinônimos; fallback SQL.",High,,,5,2,Done,2.0.0,Luiz Zamzicki,
+CA: Meilisearch + sinônimos; fallback SQL.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",High,,,5,2,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 204,Story,,US-10 Ordenar catálogo por preço,"Como cliente, quero ordenar por preço.
-CA: sort=preco_asc|preco_desc com paginação.",High,,,3,2,Done,3.1.0,Luiz Zamzicki,
+CA: sort=preco_asc|preco_desc com paginação.
+
+Datas reconstruídas do Git: criada em 2026-08-31 19:44 (primeiro commit do ciclo da 3.1.0, d2a312e0); resolvida em 2026-09-16 15:46 (tag v3.1.0, commit a027f047).",High,,,3,2,Done,3.1.0,Luiz Zamzicki,,retroativo,2026-08-31 19:44,2026-09-16 15:46
 205,Story,,US-11 Filtrar por categoria,"Como cliente, quero filtrar por categoria.
-CA: ?id_categoria=; paginação.",Highest,,,2,2,Done,2.0.0,Luiz Zamzicki,
+CA: ?id_categoria=; paginação.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,2,2,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 206,Story,,US-12 Catálogo rápido com cache Redis,"Como cliente, quero que o catálogo abra rápido.
-CA: cache-aside com TTL; invalidação ao editar produto, cor, grade, foto ou categoria; funciona sem Redis; p95 < 150ms.",Highest,,,8,2,Done,3.3.0,Luiz Zamzicki,
+CA: cache-aside com TTL; invalidação ao editar produto, cor, grade, foto ou categoria; funciona sem Redis; p95 < 150ms.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Highest,,,8,2,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
 207,Story,,US-13 Produtos em destaque na home,"Como dono, quero marcar destaques.
-CA: campo destaque; home lista até 8.",Medium,,,3,2,To Do,4.0.0,Bruno Medeiros,
-208,Story,,US-14 Cadastro de marcas,Won't por ora: todas as peças são da marca Agnus.,Lowest,,,,2,Won't Do,,,
-209,Story,,US-30 Coleções por tempo litúrgico,Faixa do calendário litúrgico e coleções por tempo. Adiada até haver mais estampas.,Medium,,,8,2,To Do,,Luiz Zamzicki,
+CA: campo destaque; home lista até 8.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Medium,,,3,2,To Do,4.0.0,Bruno Medeiros,,retroativo,2026-11-03 10:38,
+208,Story,,US-14 Cadastro de marcas,"Won't por ora: todas as peças são da marca Agnus.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (decisão registrada em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:38 (decisão registrada em product-backlog.md, commit e94528ec).",Lowest,,,,2,Won't Do,,,,retroativo,2026-11-03 10:38,2026-11-03 10:38
+209,Story,,US-30 Coleções por tempo litúrgico,"Faixa do calendário litúrgico e coleções por tempo. Adiada até haver mais estampas.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Medium,,,8,2,To Do,,Luiz Zamzicki,,retroativo,2026-11-03 10:38,
 301,Story,,US-15 Adicionar ao carrinho com cor e tamanho,"Como cliente, quero escolher cor e tamanho.
-CA: cor e grade do mesmo produto.",Highest,,,5,3,Done,2.0.0,Luiz Zamzicki,
+CA: cor e grade do mesmo produto.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,5,3,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 302,Story,,US-16 Alterar e remover itens do carrinho,"Como cliente, quero ajustar o carrinho.
-CA: subtotal e total recalculados.",Highest,,,3,3,Done,2.0.0,Luiz Zamzicki,
+CA: subtotal e total recalculados.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,3,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 401,Story,,US-17 Finalizar compra escolhendo endereço,"Como cliente, quero finalizar a compra.
-CA: endereço do próprio cliente; status inicial aguardando_pagamento.",Highest,,,5,4,Done,2.0.0,Luiz Zamzicki,
+CA: endereço do próprio cliente; status inicial aguardando_pagamento.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,5,4,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 402,Story,,US-18 Histórico de pedidos do cliente,"Como cliente, quero ver meus pedidos.
-CA: só os meus (GET /orders/me); com itens.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+CA: só os meus (GET /orders/me); com itens.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 403,Story,,US-19 Avisar equipe sobre pedidos (eventos),"Como equipe, quero ser avisada de pedidos novos.
-CA: evento no Redis Pub/Sub; worker registra notificação; falha no Redis não bloqueia pedido.",High,,,5,4,Done,3.3.0,Luiz Zamzicki,
+CA: evento no Redis Pub/Sub; worker registra notificação; falha no Redis não bloqueia pedido.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,,,5,4,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
 404,Story,,US-20 Admin atualiza status do pedido,"Como admin, quero atualizar status.
-CA: permissão pedidos:atualizar; filtro por status.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+CA: permissão pedidos:atualizar; filtro por status.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 405,Story,,US-21 Vários endereços de entrega,"Como cliente, quero cadastrar endereços.
-CA: CRUD; um principal.",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,
+CA: CRUD; um principal.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",Highest,,,3,4,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 406,Story,,US-22 Total do pedido calculado no servidor,"Como dono, quero impedir adulteração de preço.
-CA: total = itens + frete calculado no backend; valor enviado pelo cliente ignorado; pedido+itens na mesma transação (POST /orders/checkout); total refeito quando itens ou frete mudam.",Highest,,,5,4,Done,3.4.0,Luiz Zamzicki,
+CA: total = itens + frete calculado no backend; valor enviado pelo cliente ignorado; pedido+itens na mesma transação (POST /orders/checkout); total refeito quando itens ou frete mudam.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Highest,,,5,4,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-06 16:53
 407,Story,,US-23 Máquina de estados do pedido,"Como equipe, quero impedir transições inválidas.
-CA: aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue; cancelado antes do envio; 409 para transição inválida.",High,,,3,4,Done,3.4.0,Luiz Zamzicki,
+CA: aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue; cancelado antes do envio; 409 para transição inválida.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,,,3,4,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-06 16:53
 408,Story,,US-24 E-mail ao cliente quando o status mudar,"Como cliente, quero receber e-mail.
-CA: worker consome pedido.atualizado; falha não afeta pedido.",High,,,5,4,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
-409,Story,,US-29 Controle de estoque,Repensado: print on demand não tem estoque físico. RFs de estoque marcados como substituídos no readme.,Lowest,,,,4,Won't Do,,,
+CA: worker consome pedido.atualizado; falha não afeta pedido.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",High,,,5,4,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1,retroativo,2026-11-03 10:38,
+409,Story,,US-29 Controle de estoque,"Repensado: print on demand não tem estoque físico. RFs de estoque marcados como substituídos no readme.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (decisão registrada em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:38 (decisão registrada em product-backlog.md, commit e94528ec).",Lowest,,,,4,Won't Do,,,,retroativo,2026-11-03 10:38,2026-11-03 10:38
 501,Story,,US-25 Pagar pelo Mercado Pago,"Como cliente, quero pagar com Pix/cartão.
-CA: valor exato; aprovado -> pago; recusado -> tenta de novo; sem dados de cartão no Agnus.",Highest,,,8,5,In Progress,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
+CA: valor exato; aprovado -> pago; recusado -> tenta de novo; sem dados de cartão no Agnus.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Highest,,,8,5,In Progress,4.0.0,Luiz Zamzicki,AGNUS Sprint 1,retroativo,2026-11-03 10:38,
 502,Story,,US-26 Webhook de confirmação de pagamento,"Como equipe, quero status pago automático.
-CA: assinatura validada; idempotente; fila durável.",Highest,,,5,5,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
+CA: assinatura validada; idempotente; fila durável.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Highest,,,5,5,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1,retroativo,2026-11-03 10:38,
 601,Story,,US-27 Avaliar produto com nota e fotos,"Como cliente, quero avaliar produtos.
-CA: nota de 0,5 a 5; fotos opcionais.",High,,,5,6,Done,2.0.0,Luiz Zamzicki,
+CA: nota de 0,5 a 5; fotos opcionais.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",High,,,5,6,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
 701,Story,,US-28 Painel com pedidos e mais vendidos,"Como admin, quero acompanhar vendas.
-CA: totais de pedidos; mais vendidos.",High,,,5,7,Done,2.0.0,Luiz Zamzicki,
-801,Task,,"TS-01 Docker Compose com Nginx, TLS e redes isoladas",Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,5,8,Done,2.2.0,Luiz Zamzicki,
-802,Task,,TS-02 Husky + ESLint + Commitlint,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,2,8,Done,2.1.0,Bruno Medeiros,
-803,Task,,TS-03 CI no GitHub Actions + template de PR,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,3,8,Done,2.2.0,Luiz Zamzicki,
-804,Task,,TS-04 Documentar requisitos funcionais e não funcionais,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,3,8,Done,3.1.0,Bruno Medeiros,
-805,Task,,TS-05 ngrok no docker compose,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,,2,8,Done,3.2.1,Luiz Zamzicki,
-806,Task,,TS-06 Logs estruturados JSON + métricas,Enabler técnico. Ver docs/gestao/product-backlog.md,Highest,tecnico,,5,8,Done,3.3.0,Luiz Zamzicki,
-807,Task,,TS-07 Documentação OpenAPI + Swagger UI,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,
-808,Task,,TS-08 Pipeline de CD com rollback,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,
-809,Task,,TS-09 Migrar sequelize.sync para migrations,Enabler técnico. Ver docs/gestao/product-backlog.md,High,tecnico,,5,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
-810,Task,,TS-10 Exportar métricas para Prometheus/Grafana,Enabler técnico. Ver docs/gestao/product-backlog.md,Medium,tecnico,,5,8,To Do,,Bruno Medeiros,
-811,Task,,TS-11 Aplicação do logotipo oficial no site,"Cabeçalho, rodapé, login, 404, painel e ícones do site.",High,tecnico,,,8,Done,3.3.0,Luiz Zamzicki,
-812,Task,,TS-12 Rotas da API por bounded context,"app.ts dividido em src/routes/*.routes.ts (identidade, clientes, catálogo, avaliações, carrinho, pedidos). Coleção Postman gerada a partir dos módulos.",Medium,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,
-813,Task,,TS-13 Endurecer o Nginx,"Upstream com keepalive, timeouts de proxy, gzip, cache de estáticos e rate limit no login (429). Porta 3000 da API só em 127.0.0.1.",High,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,
-814,Task,,TS-14 Tags SemVer e Releases no GitHub,Tags anotadas v2.0.0 a v3.4.0 e uma Release por versão com as notas do CHANGELOG. A tag dispara o cd.yml.,High,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,
-815,Task,,TS-15 Roteiro de validação da rubrica,docs/validacao-rubrica.md: como verificar cada item com comandos e evidências. Script npm run validar:rubrica com 16 verificações automáticas.,Medium,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,
-816,Task,,TS-16 Publicar a loja em um endereço público,Servidor com docker compose + segredos DEPLOY_* no ambiente producao do GitHub para o job de deploy do cd.yml. Entrega o LINK DO SITE.,Highest,tecnico,,5,8,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1
-817,Task,,TS-17 Integrar Jira e GitHub,"Instalar o app GitHub for Jira e citar a chave AGNUS-n em branches, commits e PRs.",Medium,tecnico,,1,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1
-901,Bug,,Healthcheck do nginx sempre 'unhealthy',localhost resolve para IPv6 (::1) dentro do container e o nginx só escuta IPv4. Correção: usar 127.0.0.1 no healthcheck.,High,bug,,,8,Done,3.3.0,Luiz Zamzicki,
-902,Bug,,Erros 500 não eram registrados em log,errorHandler respondia 500 sem registrar o erro. Correção: log http.erro_nao_tratado com stack.,High,bug,,,8,Done,3.3.0,Luiz Zamzicki,
-903,Bug,,.env vindo do Windows quebra senhas (CRLF),Arquivos .env com CRLF deixam \r no fim dos valores. Correção: converter para LF; documentar no readme.,Medium,bug,,,8,Done,3.3.0,Luiz Zamzicki,
-904,Bug,,Cliente cria pedido com valor_total e status escolhidos (POST /orders),"Qualquer cliente autenticado criava pedido para si com {status: pago, valor_total: 0}. Correção: POST /orders exclusivo da equipe (pedidos:criar), pedido nasce aberto e valor enviado é ignorado. Ver US-22.",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,
-905,Bug,,Rotas de dados pessoais sem autenticação (IDOR),"Endereços, contatos, avaliações, carrinhos e itens de pedido acessíveis sem token e sem checagem de dono. Correção: ownership.middleware + token no frontend.",Highest,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
-906,Bug,,Upload aceita qualquer arquivo renomeado como imagem,Tipo era decidido pelo MIME/extensão do cliente. Correção: validação por magic bytes (imageSignature.ts).,High,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
-907,Bug,,Login revela se a senha errada já foi usada,Mensagem de reutilização de senha confirmava senhas antigas. Correção: mensagem única.,Medium,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
-908,Bug,,/metrics público,Métricas internas expostas. Correção: somente administradores.,Low,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,
-909,Bug,,CI vermelho na main após remover node_modules do Git,"O ESLint do front usa o eslint.config.js da raiz, cujas dependências (@eslint/js, globals) não eram instaladas no job. Correção: declarar no package.json da raiz e instalar no CI.",Highest,bug,,,8,Done,3.4.0,Luiz Zamzicki,
-910,Bug,,Cliente inclui itens no pedido depois do checkout sem pagar por eles,"POST /order-items aceitava itens do dono em pedido aberto sem recalcular valor_total. Correção: itens só pela equipe, só com pedido aberto (409) e total recalculado.",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,
-911,Bug,,Cache de produtos não invalida ao editar cor ou grade,Acréscimo de preço da cor/grade levava até 5 min para aparecer no catálogo. Correção: invalidar o namespace produtos nas escritas de cor e grade.,High,bug,,,2,Done,3.4.0,Luiz Zamzicki,
-912,Bug,,Worker perde o primeiro evento depois de reiniciar,"A conexão de comandos do Redis só abria no primeiro evento; sem fila offline, o LPUSH da auditoria falhava e a notificação não era disparada. Correção: aguardar a conexão antes de assinar e isolar a falha da auditoria.",High,bug,,,8,Done,3.4.0,Luiz Zamzicki,
-913,Bug,,Token de sessão vaza pelo redirect do login Google,A allowlist comparava só o início do texto: http://localhost.atacante.com recebia o token. Correção: interpretar a URL e comparar o host exato; Expo e localhost só fora de produção.,Highest,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,
-914,Bug,,Conta criada antes com o e-mail da vítima continua acessível após o login Google,O cadastro não comprova o e-mail e a vinculação mantinha a senha de quem criou a conta. Correção: a primeira vinculação descarta a senha local.,High,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,
-915,Bug,,Link com ?token= troca a sessão do visitante,A tela de login aceitava qualquer token da URL. Correção: nonce gerado pelo navegador e conferido no retorno do Google.,High,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,
-916,Bug,,Troca de senha sem a senha atual por PUT /users/:id,A rota de perfil aceitava senha sem conferir a atual nem o histórico. Correção: senha só por PATCH /users/:id/password.,Medium,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,
-917,Bug,,"Avaliação sem compra, sem limite e movível para outro produto","A regra existia só no front. Correção: pedido entregue obrigatório, uma por produto, nota de 0,5 a 5 e produto imutável.",High,bug,,,6,Done,3.4.0,Luiz Zamzicki,
-918,Bug,,Fotos de avaliação ficam órfãs no disco,O arquivo era gravado antes do 404 e nunca apagado. Correção: gravar depois das validações e apagar ao trocar ou remover.,Medium,bug,,,6,Done,3.4.0,Luiz Zamzicki,
-919,Bug,,Custo e margem expostos em GET /products,"Rotas públicas devolviam preco_custo e margem_lucro. Correção: campos só para administradores, com cache separado.",High,bug,seguranca,,2,Done,3.4.0,Luiz Zamzicki,
-920,Bug,,Login e cadastro sem limite fora do Nginx e painel do ngrok aberto,"O limite do Nginx era burlável por variações da rota e pelo túnel. Correção: limite por IP na API, tamanho máximo de e-mail e de fotos por requisição, painel 4040 só local, chave de cache codificada e redirect pós-login restrito ao site.",High,bug,seguranca,,8,Done,3.4.0,Luiz Zamzicki,
+CA: totais de pedidos; mais vendidos.
+
+Datas reconstruídas do Git: criada em 2026-06-16 08:58 (primeiro commit do ciclo da 2.0.0, c646f5ce); resolvida em 2026-06-16 08:58 (tag v2.0.0, commit c646f5ce).",High,,,5,7,Done,2.0.0,Luiz Zamzicki,,retroativo,2026-06-16 08:58,2026-06-16 08:58
+801,Task,,"TS-01 Docker Compose com Nginx, TLS e redes isoladas","Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 09:23 (primeiro commit do ciclo da 2.2.0, 15d608e2); resolvida em 2026-08-31 19:44 (tag v2.2.0, commit d2a312e0).",Highest,tecnico,,5,8,Done,2.2.0,Luiz Zamzicki,,retroativo,2026-06-16 09:23,2026-08-31 19:44
+802,Task,,TS-02 Husky + ESLint + Commitlint,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-25 08:10 (primeiro commit do ciclo da 2.1.0, 2e62eb2c); resolvida em 2026-06-25 10:16 (tag v2.1.0, commit 4eaa4ce0).",High,tecnico,,2,8,Done,2.1.0,Bruno Medeiros,,retroativo,2026-06-25 08:10,2026-06-25 10:16
+803,Task,,TS-03 CI no GitHub Actions + template de PR,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-06-16 09:23 (primeiro commit do ciclo da 2.2.0, 15d608e2); resolvida em 2026-08-31 19:44 (tag v2.2.0, commit d2a312e0).",Highest,tecnico,,3,8,Done,2.2.0,Luiz Zamzicki,,retroativo,2026-06-16 09:23,2026-08-31 19:44
+804,Task,,TS-04 Documentar requisitos funcionais e não funcionais,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-08-31 19:44 (primeiro commit do ciclo da 3.1.0, d2a312e0); resolvida em 2026-09-16 15:46 (tag v3.1.0, commit a027f047).",Highest,tecnico,,3,8,Done,3.1.0,Bruno Medeiros,,retroativo,2026-08-31 19:44,2026-09-16 15:46
+805,Task,,TS-05 ngrok no docker compose,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-09-17 13:57 (primeiro commit do ciclo da 3.2.1, 3c9007a8); resolvida em 2026-09-17 16:54 (tag v3.2.1, commit 7b3d2b39).",Medium,tecnico,,2,8,Done,3.2.1,Luiz Zamzicki,,retroativo,2026-09-17 13:57,2026-09-17 16:54
+806,Task,,TS-06 Logs estruturados JSON + métricas,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Highest,tecnico,,5,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+807,Task,,TS-07 Documentação OpenAPI + Swagger UI,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+808,Task,,TS-08 Pipeline de CD com rollback,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,tecnico,,3,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+809,Task,,TS-09 Migrar sequelize.sync para migrations,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",High,tecnico,,5,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1,retroativo,2026-11-03 10:38,
+810,Task,,TS-10 Exportar métricas para Prometheus/Grafana,"Enabler técnico. Ver docs/gestao/product-backlog.md
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec).",Medium,tecnico,,5,8,To Do,,Bruno Medeiros,,retroativo,2026-11-03 10:38,
+811,Task,,TS-11 Aplicação do logotipo oficial no site,"Cabeçalho, rodapé, login, 404, painel e ícones do site.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em product-backlog.md, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,tecnico,,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+812,Task,,TS-12 Rotas da API por bounded context,"app.ts dividido em src/routes/*.routes.ts (identidade, clientes, catálogo, avaliações, carrinho, pedidos). Coleção Postman gerada a partir dos módulos.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Medium,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+813,Task,,TS-13 Endurecer o Nginx,"Upstream com keepalive, timeouts de proxy, gzip, cache de estáticos e rate limit no login (429). Porta 3000 da API só em 127.0.0.1.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,tecnico,,2,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+814,Task,,TS-14 Tags SemVer e Releases no GitHub,"Tags anotadas v2.0.0 a v3.4.0 e uma Release por versão com as notas do CHANGELOG. A tag dispara o cd.yml.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+815,Task,,TS-15 Roteiro de validação da rubrica,"docs/validacao-rubrica.md: como verificar cada item com comandos e evidências. Script npm run validar:rubrica com 16 verificações automáticas.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Medium,tecnico,,1,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+816,Task,,TS-16 Publicar a loja em um endereço público,"Servidor com docker compose + segredos DEPLOY_* no ambiente producao do GitHub para o job de deploy do cd.yml. Entrega o LINK DO SITE.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de).",Highest,tecnico,,5,8,To Do,4.0.0,Luiz Zamzicki,AGNUS Sprint 1,retroativo,2026-11-06 16:53,
+817,Task,,TS-17 Integrar Jira e GitHub,"Instalar o app GitHub for Jira e citar a chave AGNUS-n em branches, commits e PRs.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em product-backlog.md, commit 4c0618de).",Medium,tecnico,,1,8,To Do,4.0.0,Bruno Medeiros,AGNUS Sprint 1,retroativo,2026-11-06 16:53,
+901,Bug,,Healthcheck do nginx sempre 'unhealthy',"localhost resolve para IPv6 (::1) dentro do container e o nginx só escuta IPv4. Correção: usar 127.0.0.1 no healthcheck.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,bug,,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+902,Bug,,Erros 500 não eram registrados em log,"errorHandler respondia 500 sem registrar o erro. Correção: log http.erro_nao_tratado com stack.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,bug,,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+903,Bug,,.env vindo do Windows quebra senhas (CRLF),"Arquivos .env com CRLF deixam \r no fim dos valores. Correção: converter para LF; documentar no readme.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Medium,bug,,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+904,Bug,,Cliente cria pedido com valor_total e status escolhidos (POST /orders),"Qualquer cliente autenticado criava pedido para si com {status: pago, valor_total: 0}. Correção: POST /orders exclusivo da equipe (pedidos:criar), pedido nasce aberto e valor enviado é ignorado. Ver US-22.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em jira-import.csv, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+905,Bug,,Rotas de dados pessoais sem autenticação (IDOR),"Endereços, contatos, avaliações, carrinhos e itens de pedido acessíveis sem token e sem checagem de dono. Correção: ownership.middleware + token no frontend.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Highest,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+906,Bug,,Upload aceita qualquer arquivo renomeado como imagem,"Tipo era decidido pelo MIME/extensão do cliente. Correção: validação por magic bytes (imageSignature.ts).
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",High,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+907,Bug,,Login revela se a senha errada já foi usada,"Mensagem de reutilização de senha confirmava senhas antigas. Correção: mensagem única.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Medium,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+908,Bug,,/metrics público,"Métricas internas expostas. Correção: somente administradores.
+
+Datas reconstruídas do Git: criada em 2026-11-03 10:38 (registro em jira-import.csv, commit e94528ec); resolvida em 2026-11-03 10:51 (tag v3.3.0, commit ecbb0ac8).",Low,bug,seguranca,,8,Done,3.3.0,Luiz Zamzicki,,retroativo,2026-11-03 10:38,2026-11-03 10:51
+909,Bug,,CI vermelho na main após remover node_modules do Git,"O ESLint do front usa o eslint.config.js da raiz, cujas dependências (@eslint/js, globals) não eram instaladas no job. Correção: declarar no package.json da raiz e instalar no CI.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em jira-import.csv, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Highest,bug,,,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+910,Bug,,Cliente inclui itens no pedido depois do checkout sem pagar por eles,"POST /order-items aceitava itens do dono em pedido aberto sem recalcular valor_total. Correção: itens só pela equipe, só com pedido aberto (409) e total recalculado.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em jira-import.csv, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Highest,bug,seguranca,,4,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+911,Bug,,Cache de produtos não invalida ao editar cor ou grade,"Acréscimo de preço da cor/grade levava até 5 min para aparecer no catálogo. Correção: invalidar o namespace produtos nas escritas de cor e grade.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em jira-import.csv, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,,,2,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+912,Bug,,Worker perde o primeiro evento depois de reiniciar,"A conexão de comandos do Redis só abria no primeiro evento; sem fila offline, o LPUSH da auditoria falhava e a notificação não era disparada. Correção: aguardar a conexão antes de assinar e isolar a falha da auditoria.
+
+Datas reconstruídas do Git: criada em 2026-11-06 16:53 (registro em jira-import.csv, commit 4c0618de); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,,,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-06 16:53,2026-11-06 16:53
+913,Bug,,Token de sessão vaza pelo redirect do login Google,"A allowlist comparava só o início do texto: http://localhost.atacante.com recebia o token. Correção: interpretar a URL e comparar o host exato; Expo e localhost só fora de produção.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Highest,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+914,Bug,,Conta criada antes com o e-mail da vítima continua acessível após o login Google,"O cadastro não comprova o e-mail e a vinculação mantinha a senha de quem criou a conta. Correção: a primeira vinculação descarta a senha local.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+915,Bug,,Link com ?token= troca a sessão do visitante,"A tela de login aceitava qualquer token da URL. Correção: nonce gerado pelo navegador e conferido no retorno do Google.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+916,Bug,,Troca de senha sem a senha atual por PUT /users/:id,"A rota de perfil aceitava senha sem conferir a atual nem o histórico. Correção: senha só por PATCH /users/:id/password.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Medium,bug,seguranca,,1,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+917,Bug,,"Avaliação sem compra, sem limite e movível para outro produto","A regra existia só no front. Correção: pedido entregue obrigatório, uma por produto, nota de 0,5 a 5 e produto imutável.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,,,6,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+918,Bug,,Fotos de avaliação ficam órfãs no disco,"O arquivo era gravado antes do 404 e nunca apagado. Correção: gravar depois das validações e apagar ao trocar ou remover.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",Medium,bug,,,6,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+919,Bug,,Custo e margem expostos em GET /products,"Rotas públicas devolviam preco_custo e margem_lucro. Correção: campos só para administradores, com cache separado.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,seguranca,,2,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
+920,Bug,,Login e cadastro sem limite fora do Nginx e painel do ngrok aberto,"O limite do Nginx era burlável por variações da rota e pelo túnel. Correção: limite por IP na API, tamanho máximo de e-mail e de fotos por requisição, painel 4040 só local, chave de cache codificada e redirect pós-login restrito ao site.
+
+Datas reconstruídas do Git: criada em 2026-11-03 11:12 (primeiro commit do ciclo da 3.4.0, e6c83db4); resolvida em 2026-11-06 16:53 (PR #21, commit 4c0618de (a tag v3.4.0 foi criada antes do merge)).",High,bug,seguranca,,8,Done,3.4.0,Luiz Zamzicki,,retroativo,2026-11-03 11:12,2026-11-06 16:53
 410,Story,,US-31 Notificação de mudança no status do pedido,"Como cliente, quero ser avisado quando meu pedido mudar.
-CA: sino com não lidas; aviso leva ao pedido; só o próprio cliente vê.",High,,,5,4,Done,4.0.0,Luiz Zamzicki,
+CA: sino com não lidas; aviso leva ao pedido; só o próprio cliente vê.
+
+Datas reconstruídas do Git: criada em 2026-11-09 14:05 (registro em product-backlog.md, commit 075433fd); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,,,5,4,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 14:05,2026-11-09 20:30
 411,Story,,US-32 Ver e avaliar peças na tela de pedidos,"Como cliente, quero avaliar as peças pelo pedido.
-CA: só em pedido entregue; peça avaliada oferece apenas alterar; nota por estrelas, com meia estrela.",High,,,3,4,Done,4.0.0,Luiz Zamzicki,
+CA: só em pedido entregue; peça avaliada oferece apenas alterar; nota por estrelas, com meia estrela.
+
+Datas reconstruídas do Git: criada em 2026-11-09 14:05 (registro em product-backlog.md, commit 075433fd); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,,,3,4,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 14:05,2026-11-09 20:30
 303,Story,,US-33 Pop-up ao colocar peça na sacola,"Como cliente, quero confirmar o que entrou na sacola.
-CA: pop-up com peça, cor, tamanho e preço; caminho para a sacola.",Medium,,,1,3,Done,4.0.0,Luiz Zamzicki,
-921,Bug,,Textos e mensagens sem acento,Mensagens da API e rótulos do site estavam sem acentuação. Correção: acentos em todos os textos visíveis.,Medium,bug,,,8,Done,4.0.0,Luiz Zamzicki,
+CA: pop-up com peça, cor, tamanho e preço; caminho para a sacola.
+
+Datas reconstruídas do Git: criada em 2026-11-09 14:05 (registro em product-backlog.md, commit 075433fd); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,,,1,3,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 14:05,2026-11-09 20:30
+921,Bug,,Textos e mensagens sem acento,"Mensagens da API e rótulos do site estavam sem acentuação. Correção: acentos em todos os textos visíveis.
+
+Datas reconstruídas do Git: criada em 2026-11-09 14:05 (registro em jira-import.csv, commit 075433fd); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,bug,,,8,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 14:05,2026-11-09 20:30
+1001,Story,,US-34 Continuar comprando quando uma parte do site falha,"Como cliente, quero continuar navegando quando a pesquisa ou as avaliações saem do ar para não perder a compra. Critérios: sem o serviço de busca a vitrine responde normalmente e só a pesquisa informa indisponibilidade; sem avaliações o catálogo continua; a queda de um serviço não derruba os demais.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em product-backlog.md, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1002,Story,,US-35 Não gerar pedido em dobro,"Como cliente, quero que um clique repetido ao finalizar não crie dois pedidos para não ser cobrado em dobro. Critérios: duas finalizações simultâneas geram um só pedido e a outra responde 409; se a sacola não puder ser baixada, o pedido é desfeito; o total vem sempre do catálogo.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em product-backlog.md, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1003,Story,,US-36 Painel administrativo em site próprio,"Como admin, quero um painel separado da loja para que mudanças em um não afetem o outro. Critérios: painel publicado em /admin com build próprio; usa a sessão do login da loja; cliente sem permissão volta à loja; o dashboard mostra dados parciais quando uma fonte está fora.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em product-backlog.md, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1004,Task,,TS-18 Pacote comum dos serviços,"Biblioteca @agnus/comum: logs, Redis, eventos, autenticação e cliente interno com timeout, nova tentativa e circuit breaker. Só infraestrutura, sem regra de negócio.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1005,Task,,TS-19 Extrair o serviço de identidade,"Login, usuários, endereços e contatos em serviço e banco próprios. Exclusão consulta pedidos antes e publica usuario.removido.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1006,Task,,TS-20 Extrair o serviço de catálogo,"Produtos, categorias e cache em serviço e banco próprios, com projeção local de vendas para o ""mais vendidos"".
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1007,Task,,TS-21 Extrair o serviço de busca,"Índice do Meilisearch atualizado por eventos, com reindexação periódica e nova tentativa na subida.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1008,Task,,TS-22 Extrair o serviço de avaliações,"Avaliações e fotos em serviço e banco próprios; compra entregue confirmada pelo serviço de pedidos.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1009,Task,,TS-23 Extrair o serviço de carrinho,"Sacola em serviço e banco próprios, com baixa atômica que confirma quantos itens removeu.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1010,Task,,TS-24 Extrair pedidos e checkout em saga,"Pedidos em serviço e banco próprios. Checkout grava o pedido, baixa a sacola e compensa em caso de falha.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,8,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1011,Task,,TS-25 Extrair o serviço de notificações,"Sino do site e consumidor de eventos (antigo worker) em serviço e banco próprios.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1012,Task,,TS-26 BFF do painel administrativo,"Serviço admin que agrega o dashboard com o token de quem está logado, consolida as métricas e reúne o Swagger.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1013,Task,,TS-27 Nginx como API Gateway,"Roteamento por serviço, rotas internas não publicadas e entrada própria para o túnel ngrok.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1014,Task,,TS-28 Um banco por serviço e migração,"Bancos e usuários separados e container migrador que copia os dados do banco antigo sem alterá-lo.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,5,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1015,Task,,TS-29 CI/CD por serviço,"CI com todos os pacotes, CD com uma imagem por serviço e docker-compose.prod.yml com imagens versionadas.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,tecnico,,3,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+1016,Task,,TS-30 Documentar a arquitetura de microsserviços,"ADR 0008, mapa de serviços e contratos, C4, DDD, runbook por serviço e roteiro de validação.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,tecnico,,2,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+922,Bug,,CD falhava ao publicar as imagens,"O nome da imagem usava o dono do repositório com letra maiúscula, recusado pelo registro. Correção: prefixo em minúsculas.
+
+Datas reconstruídas do Git: criada em 2026-11-06 17:42 (execução do CD da tag v3.3.0 que falhou, run 42290676453); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,bug,,,8,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-06 17:42,2026-11-09 20:30
+923,Bug,,Rollback do deploy não trocava a versão,"O CD exportava AGNUS_VERSION, mas nenhum compose usava a variável. Correção: docker-compose.prod.yml com as imagens versionadas.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,bug,,,8,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+924,Bug,,Primeiro evento depois de subir o serviço se perdia,"A conexão com o Redis só abria no primeiro uso e não tem fila offline. Correção: conexão aberta na inicialização de cada serviço.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",High,bug,,,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+925,Bug,,Gateway enviava requisições ao serviço errado,"Ao recriar um container o IP mudava e o Nginx mantinha o antigo. Correção: resolução contínua pelo DNS do Docker.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Highest,bug,incidente,,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
+926,Bug,,Métricas consolidadas vinham vazias,"A rota padrão /metrics do serviço admin encobria a rota que agrega os demais. Correção: rota local desativada no BFF.
+
+Datas reconstruídas do Git: criada em 2026-11-09 20:19 (registro em jira-import.csv, commit 19f36d72); resolvida em 2026-11-09 20:30 (tag v3.5.0, commit 08fab1bc).",Medium,bug,,,9,Done,3.5.0,Luiz Zamzicki,,retroativo,2026-11-09 20:19,2026-11-09 20:30
