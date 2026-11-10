@@ -1,5 +1,5 @@
 .perfil {
-    padding: 40px;
+    padding: 40px clamp(16px, 4vw, 48px);
     background: var(--stone);
     min-height: 100vh;
 }
@@ -7,9 +7,9 @@
 .perfil-container {
     display: flex;
     gap: 30px;
-    max-width: 1200px;
+    max-width: calc(1280px - 2 * clamp(16px, 4vw, 48px));
     margin: auto;
-    margin-top: 60px;
+    margin-top: 24px;
 }
 
 .perfil-menu {
@@ -910,26 +910,23 @@ button[disabled] {
     cursor: not-allowed;
 }
 
+/* Pedido como linha do painel, não como outro cartão dentro do cartão. */
 .pedido-card {
-    background: var(--paper);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     padding: 16px 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
+    margin-bottom: 12px;
+    transition: border-color 0.2s var(--ease-out);
 }
 
-.pedido-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
+.pedido-card:hover { border-color: var(--line); }
 
 .pedido-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 10px 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--line-soft);
     margin-bottom: 12px;
@@ -938,6 +935,40 @@ button[disabled] {
 .pedido-header strong {
     font-size: 15px;
     color: var(--ink);
+    white-space: nowrap;
+}
+
+.pedido-header > [data-cy="abrir-pedido"] { flex: 1 1 auto; min-width: 0; }
+
+/* Pedido fechado: sem o filete de separação, que só faz sentido com as peças abertas embaixo. */
+.pedido-header:last-child { padding-bottom: 0; border-bottom: 0; margin-bottom: 0; }
+
+/* Status como selo, na cor do tempo litúrgico; aviso em latão, entregue em verde, cancelado em vermelho. */
+.pedido-header .status {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font: 13px/1.2 var(--f-caps);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    color: var(--lit);
+    background: color-mix(in oklab, var(--lit) 12%, var(--paper));
+}
+
+.pedido-header .status.aguardando_pagamento,
+.pedido-header .status.aguardando_calculo_frete {
+    color: #6b5115;
+    background: color-mix(in oklab, var(--brass) 16%, var(--paper));
+}
+
+.pedido-header .status.entregue { color: var(--ok); background: var(--ok-soft); }
+.pedido-header .status.cancelado { color: var(--danger); background: var(--danger-soft); }
+
+/* Celular: número e data em cima; selo, valor e botão embaixo, sem nada vazar do cartão. */
+@media (max-width: 560px) {
+    .pedido-header > [data-cy="abrir-pedido"] { flex-basis: 100%; }
+    .pedido-header .status { margin-left: 0; }
+    .pedido-valor { margin-left: auto; }
+    .pedido-ver-pecas { flex-basis: 100%; }
 }
 
 .pedido-header span {
