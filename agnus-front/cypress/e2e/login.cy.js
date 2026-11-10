@@ -156,7 +156,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy=password]')
@@ -181,7 +181,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy=nome]')
@@ -212,7 +212,7 @@ describe('Login', () => {
 
         cy.visit('/login');
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')
@@ -322,7 +322,7 @@ describe('Login', () => {
         cy.visit('/login');
 
 
-        cy.contains('CADASTRO')
+        cy.contains('Cadastro')
             .click();
 
         cy.get('[data-cy="nome"]')

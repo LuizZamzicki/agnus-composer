@@ -346,7 +346,7 @@ function Login() {
               setError("");
             }}
           >
-            LOGIN
+            Login
           </button>
           <button
             className={modoCadastro ? "active" : ""}
@@ -355,7 +355,7 @@ function Login() {
               setError("");
             }}
           >
-            CADASTRO
+            Cadastro
           </button>
         </div>
 
