@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import AvaliacaoProdutos from "../models/AvaliacaoProdutos";
+import PedidoItens from "../models/PedidoItens";
+import Pedidos from "../models/Pedidos";
+import ProdutoCores from "../models/ProdutoCores";
 import Produtos from "../models/Produtos";
 import Usuarios from "../models/Usuarios";
 import type {
@@ -84,7 +87,7 @@ class AvaliacaoProdutosController {
   private static hasValidNota(nota: AvaliacaoProdutoNotaValue) {
     return (
       nota !== "invalid" &&
-      (nota === undefined || nota === null || (nota >= 0 && nota <= 10))
+      (nota === undefined || nota === null || (nota >= 1 && nota <= 5))
     );
   }
 
@@ -102,7 +105,7 @@ class AvaliacaoProdutosController {
     }
 
     if (!AvaliacaoProdutosController.hasValidNota(payload.nota)) {
-      return "nota invalida. Use valor entre 0 e 10.";
+      return "nota invalida. Use valor entre 1 e 5.";
     }
 
     return null;
@@ -121,7 +124,7 @@ class AvaliacaoProdutosController {
       payload.hasNotaField() &&
       !AvaliacaoProdutosController.hasValidNota(payload.nota)
     ) {
-      return "nota invalida. Use valor entre 0 e 10.";
+      return "nota invalida. Use valor entre 1 e 5.";
     }
 
     return null;
@@ -137,6 +140,31 @@ class AvaliacaoProdutosController {
     }
 
     return null;
+  }
+
+  // Regra do dominio: so quem recebeu o produto avalia. O front esconde o formulario, mas quem decide e a API.
+  private static async hasDeliveredPurchase(userId: number, productId: number) {
+    const pedidos = await Pedidos.findAll({
+      where: { id_usuario: userId, status: "entregue" },
+      attributes: ["id_pedido"],
+    });
+    const cores = await ProdutoCores.findAll({
+      where: { id_produto: productId },
+      attributes: ["id_produto_cor"],
+    });
+
+    if (!pedidos.length || !cores.length) {
+      return false;
+    }
+
+    const itens = await PedidoItens.count({
+      where: {
+        id_pedido: pedidos.map((pedido) => pedido.id_pedido),
+        id_produto_cor: cores.map((cor) => cor.id_produto_cor),
+      },
+    });
+
+    return itens > 0;
   }
 
   private static normalizeNotaValue(nota: AvaliacaoProdutoNotaValue) {
@@ -158,8 +186,8 @@ class AvaliacaoProdutosController {
     payload: AvaliacaoProdutoPayload,
   ): AvaliacaoProdutoUpdateData {
     return {
-      id_produto: payload.productId ?? avaliacao.id_produto,
-      id_usuario: payload.userId ?? avaliacao.id_usuario,
+      id_produto: avaliacao.id_produto,
+      id_usuario: avaliacao.id_usuario,
       titulo: payload.hasTituloField() ? payload.titulo : avaliacao.titulo,
       comentario: payload.hasComentarioField() ? payload.comentario : avaliacao.comentario,
       nota: payload.hasNotaField()
@@ -199,6 +227,14 @@ class AvaliacaoProdutosController {
 
     if (referenceMessage) {
       return res.status(404).json({ message: referenceMessage });
+    }
+
+    if (!(await AvaliacaoProdutosController.hasDeliveredPurchase(payload.userId!, payload.productId!))) {
+      return res.status(403).json({ message: "Somente quem recebeu o produto pode avalia-lo." });
+    }
+
+    if (await AvaliacaoProdutos.findOne({ where: { id_produto: payload.productId!, id_usuario: payload.userId! } })) {
+      return res.status(409).json({ message: "Voce ja avaliou este produto." });
     }
 
     return res

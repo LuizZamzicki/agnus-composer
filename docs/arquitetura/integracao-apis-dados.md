@@ -41,7 +41,7 @@ Endpoints documentados, agrupados por recurso:
 
 | Sistema | Protocolo | Onde | Tratamento de falha |
 | --- | --- | --- | --- |
-| Google OAuth 2.0 | HTTPS / OAuth Authorization Code | `auth.service.ts` | `state` assinado (JWT, 10 min) contra CSRF; allowlist de redirect contra *open redirect* |
+| Google OAuth 2.0 | HTTPS / OAuth Authorization Code | `auth.service.ts` | `state` assinado (JWT, 10 min) contra CSRF; retorno do app validado com a URL interpretada (Expo e localhost só fora de produção); nonce do navegador no fluxo web |
 | Meilisearch | HTTP REST | `produtoSearchIndex.service.ts` | Fallback para busca SQL |
 | Redis | RESP | `config/redis.ts` | Timeout, circuit breaker, fallback para o MySQL |
 | Mercado Pago | HTTPS REST | planejado (v4) | Anticorruption Layer + eventos duráveis (Redis Streams) |

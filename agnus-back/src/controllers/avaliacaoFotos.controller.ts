@@ -6,7 +6,12 @@ import type {
   AvaliacaoFotoRouteParams,
   AvaliacaoFotoUpload,
 } from "../types/avaliacao-foto.types";
-import { normalizeFotoPath, saveAvaliacaoFotoFile, saveAvaliacaoFotoUpload } from "../utils/avaliacaoFotoStorage";
+import {
+  deleteAvaliacaoFotoFile,
+  normalizeFotoPath,
+  saveAvaliacaoFotoFile,
+  saveAvaliacaoFotoUpload,
+} from "../utils/avaliacaoFotoStorage";
 import { INVALID_IMAGE_MESSAGE } from "../utils/imageSignature";
 
 type AvaliacaoFotoRequest = Request<AvaliacaoFotoRouteParams, object, AvaliacaoFotoBody>;
@@ -48,9 +53,19 @@ class AvaliacaoFotosController {
       files.length ? files.map(saveAvaliacaoFotoFile) : uploads.map(saveAvaliacaoFotoUpload),
     );
 
-    return photoPaths.every((item) => item)
-      ? photoPaths as string[]
-      : null;
+    if (photoPaths.every((item) => item)) {
+      return photoPaths as string[];
+    }
+
+    await Promise.all(photoPaths.filter(Boolean).map((item) => deleteAvaliacaoFotoFile(item as string)));
+    return null;
+  }
+
+  // O mesmo caminho pode estar em outra linha, porque caminho_url e editavel.
+  private static async removeFileIfUnreferenced(photoPath: string | null) {
+    if (photoPath && !(await AvaliacaoFotos.count({ where: { caminho_url: photoPath } }))) {
+      await deleteAvaliacaoFotoFile(photoPath);
+    }
   }
 
   private static async createPhotos(reviewId: number, photoPaths: string[]) {
@@ -80,16 +95,11 @@ class AvaliacaoFotosController {
     return normalizeFotoPath(body.caminho_url);
   }
 
-  private static getUpdateErrorMessage(
+  private static getPhotoPathErrorMessage(
     body: AvaliacaoFotoBody,
-    reviewId: number | null,
     photoPath: string | null | undefined,
     hasFile: boolean,
   ) {
-    if (body.id_avaliacao_produto !== undefined && !reviewId) {
-      return "id_avaliacao_produto invalido.";
-    }
-
     if ((hasFile || body.foto_upload) && !photoPath) {
       return INVALID_IMAGE_MESSAGE;
     }
@@ -165,20 +175,13 @@ class AvaliacaoFotosController {
     }
 
     const foto = await AvaliacaoFotos.findByPk(photoId);
-    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(req.body, uploadedFile);
-    const message = AvaliacaoFotosController.getUpdateErrorMessage(
-      req.body,
-      reviewId,
-      photoPath,
-      Boolean(uploadedFile),
-    );
 
     if (!foto) {
       return res.status(404).json({ message: "Foto da avaliacao nao encontrada." });
     }
 
-    if (message) {
-      return res.status(400).json({ message });
+    if (req.body.id_avaliacao_produto !== undefined && !reviewId) {
+      return res.status(400).json({ message: "id_avaliacao_produto invalido." });
     }
 
     if (
@@ -188,6 +191,20 @@ class AvaliacaoFotosController {
       return res.status(404).json({ message: "Avaliacao de produto nao encontrada." });
     }
 
+    // O arquivo so e gravado depois de todas as checagens, para nao sobrar no disco sem registro.
+    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(req.body, uploadedFile);
+    const message = AvaliacaoFotosController.getPhotoPathErrorMessage(
+      req.body,
+      photoPath,
+      Boolean(uploadedFile),
+    );
+
+    if (message) {
+      return res.status(400).json({ message });
+    }
+
+    const previousPath = foto.caminho_url;
+
     await foto.update(
       AvaliacaoFotosController.buildUpdateData(
         foto,
@@ -195,6 +212,10 @@ class AvaliacaoFotosController {
         photoPath ?? undefined,
       ),
     );
+
+    if (foto.caminho_url !== previousPath) {
+      await AvaliacaoFotosController.removeFileIfUnreferenced(previousPath);
+    }
 
     return res.status(200).send(foto);
   }
@@ -213,6 +234,7 @@ class AvaliacaoFotosController {
     }
 
     await foto.destroy();
+    await AvaliacaoFotosController.removeFileIfUnreferenced(foto.caminho_url);
     return res.status(204).send();
   }
 }

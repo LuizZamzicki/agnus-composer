@@ -30,8 +30,15 @@ class ProdutosController {
       : res.status(successStatus).send(result.data);
   }
 
+  private static isAdmin(res: Response) {
+    return res.locals.authUser?.tipo === "administrador";
+  }
+
   static async findAll(req: ProdutoRequest, res: Response) {
-    return ProdutosController.sendResult(res, await ProdutoCatalogService.findAll(req.query));
+    return ProdutosController.sendResult(
+      res,
+      await ProdutoCatalogService.findAll(req.query, ProdutosController.isAdmin(res)),
+    );
   }
 
   static async catalog(req: ProdutoRequest, res: Response) {
@@ -49,7 +56,10 @@ class ProdutosController {
       return res.status(400).json({ message: "ID do produto invalido." });
     }
 
-    return ProdutosController.sendResult(res, await ProdutoCatalogService.findById(productId));
+    return ProdutosController.sendResult(
+      res,
+      await ProdutoCatalogService.findById(productId, ProdutosController.isAdmin(res)),
+    );
   }
 
   static async create(req: ProdutoRequest, res: Response) {

@@ -122,6 +122,27 @@ describe("ProdutosController", () => {
     });
   });
 
+  it("findAll e getById escondem custo e margem de quem nao e da equipe", async () => {
+    produtosModel.findAndCountAll.mockResolvedValueOnce({ count: 0, rows: [] });
+    produtosModel.findByPk.mockResolvedValueOnce({ id_produto: 2 });
+    await ProdutosController.findAll(mockRequest({ query: {} }), mockResponse());
+    await ProdutosController.getById(mockRequest({ params: { id: "2" } }), mockResponse());
+    const oculto = { exclude: ["preco_custo", "margem_lucro"] };
+    expect(produtosModel.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({ attributes: oculto }));
+    expect(produtosModel.findByPk).toHaveBeenCalledWith(2, { attributes: oculto });
+  });
+
+  it("findAll e getById mostram custo e margem para administrador", async () => {
+    const response = mockResponse();
+    response.locals.authUser = { id_usuario: 1, email: "a@a.com", tipo: "administrador" };
+    produtosModel.findAndCountAll.mockResolvedValueOnce({ count: 0, rows: [] });
+    produtosModel.findByPk.mockResolvedValueOnce({ id_produto: 2 });
+    await ProdutosController.findAll(mockRequest({ query: {} }), response);
+    await ProdutosController.getById(mockRequest({ params: { id: "2" } }), response);
+    expect(produtosModel.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({ attributes: undefined }));
+    expect(produtosModel.findByPk).toHaveBeenCalledWith(2, { attributes: undefined });
+  });
+
   it("findAll retorna 400 para categoria invalida", async () => {
     const response = mockResponse();
     await ProdutosController.findAll(mockRequest({ query: { id_categoria: "x" } }), response);

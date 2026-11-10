@@ -1,4 +1,6 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Limite da RFC 5321. Vem antes da regex, que fica lenta em textos muito longos.
+const EMAIL_MAX_LENGTH = 254;
 
 const stripDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -14,7 +16,7 @@ const calculateCpfDigit = (digits: string, weight: number) => {
 };
 
 export const isValidEmail = (email: string) => {
-  return EMAIL_REGEX.test(email);
+  return email.length <= EMAIL_MAX_LENGTH && EMAIL_REGEX.test(email);
 };
 
 export const isValidCpf = (cpf: string) => {

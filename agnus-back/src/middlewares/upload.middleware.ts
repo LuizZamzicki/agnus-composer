@@ -29,3 +29,13 @@ const upload = multer({
 });
 
 export const uploadAny = upload.any();
+
+// Rota aberta a qualquer cliente: mesmo limite de fotos do formulario, para nao segurar 1 GB em memoria.
+export const uploadFotosAvaliacao = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+    files: 4,
+  },
+  fileFilter,
+}).any();

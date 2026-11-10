@@ -5,14 +5,13 @@ import "../css/login.css";
 import hero from "../img/hero.png";
 import logoCompleto from "../img/marca/logo-completo.png";
 import { apiUrl } from "../utils/api";
+import { destinoSeguro } from "../utils/destinoSeguro";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
 
-const CHAVE_DESTINO = "agnus_destino_login";
-
 // O Google só devolve para /login, então o destino fica guardado durante a ida e a volta.
-function destinoSeguro(valor) {
-  return valor && valor.startsWith("/") && !valor.startsWith("//") ? valor : null;
-}
+const CHAVE_DESTINO = "agnus_destino_login";
+// Prova que foi este navegador que começou o login: sem ela, um link com ?token= trocaria a sessão.
+const CHAVE_NONCE = "agnus_nonce_login";
 
 function Login() {
   const navigate = useNavigate();
@@ -84,6 +83,16 @@ function Login() {
 
     if (token && tipo) {
       try {
+        const nonceEsperado = sessionStorage.getItem(CHAVE_NONCE);
+
+        if (!nonceEsperado || searchParams.get("nonce") !== nonceEsperado) {
+          setError("Não foi possível confirmar este login. Tente entrar novamente.");
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        sessionStorage.removeItem(CHAVE_NONCE);
+
         const payload = parseJwt(token);
 
         if (!payload?.id_usuario) {
@@ -287,10 +296,13 @@ function Login() {
   function handleGoogleLogin() {
     const redirect = searchParams.get("redirect") || "/";
 
+    const nonce = crypto.randomUUID();
+
     sessionStorage.setItem(CHAVE_DESTINO, redirect);
+    sessionStorage.setItem(CHAVE_NONCE, nonce);
 
     window.location.href =
-      apiUrl(`auth/google?redirect=${encodeURIComponent(redirect)}`);
+      apiUrl(`auth/google?redirect=${encodeURIComponent(redirect)}&nonce=${nonce}`);
   }
 
   return (

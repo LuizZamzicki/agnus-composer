@@ -12,27 +12,49 @@ class AuthController {
     return process.env.FRONTEND_URL || "http://localhost:3001";
   }
 
+  private static readonly LOOPBACK_HOSTS = ["localhost", "127.0.0.1"];
+  private static readonly CLIENT_NONCE = /^[A-Za-z0-9-]{16,64}$/;
+
   /**
-   * Esquemas de retorno aceitos pro app mobile. O `state` carrega um JWT
-   * assinado, mas o token de sessão vai na query da URL de retorno — sem
-   * allowlist isso seria open redirect com vazamento de token.
+   * Destinos de retorno aceitos pro app mobile. O token de sessão vai na query
+   * da URL de retorno, então a decisão é sobre a URL já interpretada: comparar
+   * texto deixaria passar hosts como localhost.atacante.com. Expo e loopback
+   * são de desenvolvimento e ficam desligados em produção.
    */
-  private static readonly APP_REDIRECT_ALLOWLIST = [
-    "exp://",
-    "exp+",
-    "agnusapp://",
-    "http://localhost",
-    "http://127.0.0.1",
-  ];
+  private static isAllowedAppRedirect(url: URL) {
+    if (url.username || url.password) {
+      return false;
+    }
+
+    if (url.protocol === "agnusapp:") {
+      return true;
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return false;
+    }
+
+    return (
+      url.protocol === "exp:" ||
+      url.protocol.startsWith("exp+") ||
+      (url.protocol === "http:" && AuthController.LOOPBACK_HOSTS.includes(url.hostname))
+    );
+  }
 
   private static sanitizeAppRedirect(raw: unknown): string | undefined {
     if (typeof raw !== "string" || !raw) {
       return undefined;
     }
 
-    return AuthController.APP_REDIRECT_ALLOWLIST.some((prefix) => raw.startsWith(prefix))
-      ? raw
-      : undefined;
+    try {
+      return AuthController.isAllowedAppRedirect(new URL(raw)) ? raw : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static sanitizeClientNonce(raw: unknown): string | undefined {
+    return typeof raw === "string" && AuthController.CLIENT_NONCE.test(raw) ? raw : undefined;
   }
 
   private static redirectBase(appRedirect?: string) {
@@ -40,8 +62,18 @@ class AuthController {
     return `${base}${base.includes("?") ? "&" : "?"}`;
   }
 
-  private static buildLoginSuccessRedirect(token: string, tipo: string, appRedirect?: string) {
-    const params = new URLSearchParams({ token, tipo, success: "1" });
+  private static buildLoginSuccessRedirect(
+    token: string,
+    tipo: string,
+    appRedirect?: string,
+    clientNonce?: string,
+  ) {
+    const params = new URLSearchParams({
+      token,
+      tipo,
+      success: "1",
+      ...(clientNonce ? { nonce: clientNonce } : {}),
+    });
     return `${AuthController.redirectBase(appRedirect)}${params.toString()}`;
   }
 
@@ -100,6 +132,7 @@ class AuthController {
       authResult.token,
       authResult.user.tipo,
       AuthController.sanitizeAppRedirect(authResult.redirect),
+      AuthController.sanitizeClientNonce(authResult.clientNonce),
     );
   }
 
@@ -110,7 +143,7 @@ class AuthController {
       return res.status(400).json({ message: "Email e senha sao obrigatorios." });
     }
 
-    if (!isValidEmail(String(email))) {
+    if (typeof email !== "string" || !isValidEmail(email)) {
       return res.status(400).json({ message: "email invalido." });
     }
 
@@ -144,7 +177,8 @@ class AuthController {
   static async googleStart(req: Request, res: Response) {
     try {
       const appRedirect = AuthController.sanitizeAppRedirect(req.query.redirect);
-      return res.redirect(AuthService.buildGoogleAuthorizationUrl(appRedirect));
+      const clientNonce = AuthController.sanitizeClientNonce(req.query.nonce);
+      return res.redirect(AuthService.buildGoogleAuthorizationUrl(appRedirect, clientNonce));
     } catch (error) {
       return res.status(500).json({
         message: AuthController.getErrorMessage(

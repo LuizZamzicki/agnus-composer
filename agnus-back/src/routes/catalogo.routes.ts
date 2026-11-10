@@ -5,7 +5,7 @@ import ProdutoFotosController from '../controllers/produtoFotos.controller';
 import ProdutoGradesController from '../controllers/produtoGrades.controller';
 import ProdutosController from '../controllers/produtos.controller';
 import { PERMISSIONS } from '../config/permissions';
-import authenticateToken from '../middlewares/auth.middleware';
+import authenticateToken, { identifyOptionalUser } from '../middlewares/auth.middleware';
 import { checarPermissao } from '../middlewares/permission.middleware';
 import { uploadAny } from '../middlewares/upload.middleware';
 
@@ -18,11 +18,11 @@ router.get('/categories/:id', CategoriasController.getById);
 router.put('/categories/:id', authenticateToken, checarPermissao(PERMISSIONS.CATEGORIA_EDITAR), CategoriasController.update);
 router.delete('/categories/:id', authenticateToken, checarPermissao(PERMISSIONS.CATEGORIA_EXCLUIR), CategoriasController.remove);
 
-router.get('/products', ProdutosController.findAll);
+router.get('/products', identifyOptionalUser, ProdutosController.findAll);
 router.get('/products/catalog', ProdutosController.catalog);
 router.get('/products/best-sellers', ProdutosController.bestSellers);
 router.post('/products', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_CRIAR), ProdutosController.create);
-router.get('/products/:id', ProdutosController.getById);
+router.get('/products/:id', identifyOptionalUser, ProdutosController.getById);
 router.put('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), ProdutosController.update);
 router.delete('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EXCLUIR), ProdutosController.remove);
 

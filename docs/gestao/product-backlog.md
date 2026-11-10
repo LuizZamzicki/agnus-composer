@@ -211,7 +211,7 @@ RF08–RF09, RF108–RF113
 | US-18 | Como cliente, quero ver meu histórico de pedidos | Must | 3 | Só os meus pedidos; detalhes com itens | RF65–RF66 |
 | US-20 | Como admin, quero atualizar o status dos pedidos | Must | 3 | Permissão `pedidos:atualizar`; filtro por status | RF67–RF74 |
 | US-21 | Como cliente, quero cadastrar vários endereços | Must | 3 | CRUD; um principal | RF77–RF83 |
-| US-27 | Como cliente, quero avaliar produtos com nota e fotos | Should | 5 | Nota de 1 a 5; fotos opcionais | — |
+| US-27 | Como cliente, quero avaliar produtos com nota e fotos | Should | 5 | Só com pedido entregue; uma por produto; nota de 1 a 5; fotos opcionais | — |
 | US-28 | Como admin, quero um painel com pedidos e mais vendidos | Should | 5 | Totais de pedidos; mais vendidos | RF98–RF102 |
 | TS-01 | Docker Compose com Nginx, TLS e redes isoladas | Must | 5 | `docker compose up` sobe tudo; dados em rede interna | RNF15, RNF42 |
 | TS-02 | Husky + ESLint + Commitlint | Should | 2 | Commit fora do padrão é bloqueado | — |

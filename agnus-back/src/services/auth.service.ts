@@ -117,12 +117,13 @@ class AuthService {
     return AuthService.buildAuthResponse(user);
   }
 
-  private static buildGoogleState(redirect?: string) {
+  private static buildGoogleState(redirect?: string, clientNonce?: string) {
     return jwt.sign(
       {
         nonce: crypto.randomBytes(16).toString("hex"),
         provider: "google",
         ...(redirect ? { redirect } : {}),
+        ...(clientNonce ? { clientNonce } : {}),
       },
       AuthService.getOAuthStateSecret(),
       { expiresIn: "10m" },
@@ -132,8 +133,10 @@ class AuthService {
   /**
    * @param redirect URL de retorno do app (mobile). Vai embutida no `state` e o
    *   callback redireciona pra ela com `?token=`. Sem isso, fluxo web normal.
+   * @param clientNonce Gerado pelo site antes de ir ao Google e devolvido no
+   *   retorno, para o navegador só aceitar um login que ele mesmo começou.
    */
-  static buildGoogleAuthorizationUrl(redirect?: string) {
+  static buildGoogleAuthorizationUrl(redirect?: string, clientNonce?: string) {
     AuthService.ensureGoogleOAuthConfig();
     const params = new URLSearchParams({
       client_id: AuthService.getGoogleClientId(),
@@ -142,7 +145,7 @@ class AuthService {
       scope: AuthService.getGoogleScopes(),
       access_type: "offline",
       prompt: "consent",
-      state: AuthService.buildGoogleState(redirect),
+      state: AuthService.buildGoogleState(redirect, clientNonce),
     });
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -162,6 +165,15 @@ class AuthService {
     try {
       const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
       return typeof decoded.redirect === "string" ? decoded.redirect : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static peekGoogleStateClientNonce(state: string): string | undefined {
+    try {
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      return typeof decoded.clientNonce === "string" ? decoded.clientNonce : undefined;
     } catch {
       return undefined;
     }
@@ -245,7 +257,22 @@ class AuthService {
     });
   }
 
+  // O cadastro local nao comprova o e-mail: quem criou a conta antes pode nao ser o dono dele.
+  // Por isso a primeira vinculacao descarta a senha existente, e so o Google continua dando acesso.
+  private static async linkGoogleAccount(user: Usuarios, googleId: string) {
+    await user.update({
+      google_id: googleId,
+      senha: await argon2.hash(crypto.randomBytes(32).toString("hex"), { type: argon2.argon2id }),
+    });
+
+    return user;
+  }
+
   private static async syncGoogleId(user: Usuarios, googleId: string) {
+    if (!user.google_id) {
+      return AuthService.linkGoogleAccount(user, googleId);
+    }
+
     if (user.google_id !== googleId) {
       await user.update({ google_id: googleId });
     }
@@ -273,6 +300,7 @@ class AuthService {
     return {
       ...AuthService.buildAuthResponse(user),
       redirect: appRedirect,
+      clientNonce: AuthService.peekGoogleStateClientNonce(state),
     };
   }
 }

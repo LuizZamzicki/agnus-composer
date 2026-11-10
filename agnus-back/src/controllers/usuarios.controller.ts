@@ -144,8 +144,8 @@ class UsuariosController {
     if (payload.hasNomeField() && !payload.nome)
       return "nome invalido.";
 
-    if (payload.hasSenhaField() && !payload.senha)
-      return "senha invalida.";
+    if (payload.hasSenhaField())
+      return "Use PATCH /users/:id/password para alterar a senha.";
 
     if (UsuariosController.getCpfMessage(payload))
       return UsuariosController.getCpfMessage(payload);
@@ -161,14 +161,13 @@ class UsuariosController {
 
   private static buildUpdateData(
     user: Usuarios,
-    payload: UsuarioPayload,
-    passwordHash: string
+    payload: UsuarioPayload
   ): UsuarioUpdateData {
     return {
       nome: payload.nome ?? user.nome,
       cpf: payload.hasCpfField() ? payload.cpf : user.cpf,
       email: user.email,
-      senha: passwordHash,
+      senha: user.senha,
       tipo: payload.hasTipoField() ? payload.tipo : user.tipo
     };
   }
@@ -309,20 +308,11 @@ class UsuariosController {
       return res.status(403).json({ message: "Apenas administradores podem alterar o tipo de usuario." });
 
     const message = UsuariosController.getUpdateErrorMessage(payload, user.email);
-    const passwordError = payload.senha ? UsuariosController.getPasswordError(payload.senha) : null;
 
     if (message)
       return res.status(400).json({ message });
 
-    if (passwordError)
-      return res.status(400).json(passwordError);
-
-    const passwordHash = payload.senha ? await UsuariosController.hashPassword(payload.senha) : user.senha;
-
-    if (payload.senha)
-      await UsuarioSenhasHistoricoController.create(user.id_usuario, passwordHash);
-
-    await user.update(UsuariosController.buildUpdateData(user, payload, passwordHash));
+    await user.update(UsuariosController.buildUpdateData(user, payload));
     return res.status(200).send(UsuariosController.sanitizeUser(user));
   }
 

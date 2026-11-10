@@ -127,8 +127,13 @@
           "name": "POST /product-review-photos",
           "request": {
             "method": "POST",
-            "header": [],
-            "description": "Requer Authorization: Bearer {{token}}.\nUsa multipart/form-data para upload de arquivos.\nHandler atual: AvaliacaoFotosController.create.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Requer Authorization: Bearer {{token}}.\nHandler atual: AvaliacaoFotosController.create.",
             "url": "{{baseUrl}}/product-review-photos",
             "auth": {
               "type": "bearer",
@@ -137,16 +142,6 @@
                   "key": "token",
                   "value": "{{token}}",
                   "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": ""
                 }
               ]
             }
@@ -165,8 +160,13 @@
           "name": "PUT /product-review-photos/:id",
           "request": {
             "method": "PUT",
-            "header": [],
-            "description": "Requer Authorization: Bearer {{token}}.\nUsa multipart/form-data para upload de arquivos.\nHandler atual: AvaliacaoFotosController.update.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Requer Authorization: Bearer {{token}}.\nHandler atual: AvaliacaoFotosController.update.",
             "url": "{{baseUrl}}/product-review-photos/{{id}}",
             "auth": {
               "type": "bearer",
@@ -175,16 +175,6 @@
                   "key": "token",
                   "value": "{{token}}",
                   "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": ""
                 }
               ]
             }
