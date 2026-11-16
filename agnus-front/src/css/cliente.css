@@ -1115,3 +1115,75 @@ button[disabled] {
 }
 
 .item-bloco .avaliacao-form { padding: 16px; border-color: var(--line-soft); }
+
+/* Pedido aguardando pagamento: leva à tela de pagamento (Mercado Pago). */
+.pedido-pagar {
+    padding: 8px 14px;
+    color: var(--on-acao);
+    background: var(--acao);
+    border-radius: var(--radius);
+    font: 15px/1.2 var(--f-text);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.pedido-pagar:hover { color: var(--on-acao-hover); background: var(--acao-hover); }
+
+/* Rastreio da entrega (página da YouDraw embutida) */
+.pedido-rastreio {
+    margin-top: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    overflow: hidden;
+    /* O iframe mistura as cores só com este fundo, não com o resto da página. */
+    isolation: isolate;
+}
+
+.pedido-rastreio-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink);
+}
+
+.pedido-rastreio-topo a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: var(--lit);
+}
+
+/* A página da YouDraw é sempre branca e fica em outro domínio (o CSS do site não entra nela).
+   Claro: "multiply" troca o branco pelo fundo do cartão (--paper) e mantém o texto escuro.
+   Escuro: inverte a página (branco vira preto, texto vira claro, hue-rotate preserva os tons) e
+   "screen" troca o preto pelo --paper escuro. */
+.pedido-rastreio-frame {
+    display: block;
+    width: 100%;
+    height: 640px;
+    border: 0;
+    background: transparent;
+    mix-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] .pedido-rastreio-frame {
+    filter: invert(1) hue-rotate(180deg);
+    mix-blend-mode: screen;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .pedido-rastreio-frame {
+        filter: invert(1) hue-rotate(180deg);
+        mix-blend-mode: screen;
+    }
+}
+
+@media (max-width: 600px) {
+    .pedido-rastreio-frame { height: 560px; }
+}

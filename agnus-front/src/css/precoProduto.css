@@ -1,0 +1,38 @@
+.preco-produto {
+    font-variant-numeric: tabular-nums;
+}
+
+.preco-produto--promo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.preco-produto__selo {
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    background: var(--ink);
+    color: var(--stone);
+    font: 11px/1.6 var(--f-caps);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.preco-produto__de {
+    color: var(--muted);
+    font-size: 0.85em;
+}
+
+.preco-produto__por {
+    color: var(--danger);
+}
+
+.preco-produto--destaque .preco-produto__de {
+    font-size: 15px;
+    letter-spacing: 0.06em;
+}
+
+.preco-produto--destaque .preco-produto__selo {
+    font-size: 12px;
+}

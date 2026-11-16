@@ -1,0 +1,265 @@
+/* Devolução em "Meus pedidos" (componentes/devolucaoPedido.jsx). Usa só os tokens do site, então
+   segue o tema claro/escuro. */
+.pedido-devolucao {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.devolucao-abrir {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+}
+
+.devolucao,
+.devolucao-form {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    padding: 14px 16px;
+    color: var(--ink);
+}
+
+.devolucao-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.devolucao-status {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    background: var(--stone-2);
+    color: var(--ink);
+}
+
+.devolucao-status--reembolsada { background: var(--ok); color: var(--stone); }
+.devolucao-status--recusada { background: var(--danger); color: var(--stone); }
+.devolucao-status--cancelada { color: var(--muted); }
+
+.devolucao-etapas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.devolucao-etapas li span {
+    display: block;
+    width: 22px;
+    height: 22px;
+    margin: 0 auto 4px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    line-height: 20px;
+    font-size: 12px;
+}
+
+.devolucao-etapas li.feita { color: var(--ink); }
+.devolucao-etapas li.feita span { background: var(--lit); border-color: var(--lit); color: var(--stone); }
+.devolucao-etapas li[aria-current="step"] { font-weight: 600; }
+
+.devolucao-itens {
+    margin: 0 0 10px;
+    padding-left: 18px;
+    font-size: 15px;
+}
+
+.devolucao-dados {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px 16px;
+    margin: 0 0 10px;
+}
+
+.devolucao-dados dt { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.devolucao-dados dd { margin: 2px 0 0; font-size: 15px; }
+.devolucao-codigo { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.04em; }
+
+.devolucao-resposta {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--lit);
+    background: var(--stone);
+    font-size: 15px;
+}
+
+.devolucao-resposta.recusa { border-left-color: var(--danger); }
+
+.devolucao-aviso {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.devolucao-form fieldset {
+    margin: 0 0 14px;
+    padding: 0;
+    border: 0;
+}
+
+.devolucao-form legend {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.devolucao-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.devolucao-item > label,
+.devolucao-motivo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.devolucao-item small,
+.devolucao-motivo small {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.devolucao-item.indisponivel,
+.devolucao-motivo.indisponivel { opacity: 0.55; cursor: not-allowed; }
+
+.devolucao-foto {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    object-fit: cover;
+    border-radius: var(--radius);
+    background: var(--stone-2);
+}
+
+.devolucao-qtd {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.devolucao-motivo { padding: 6px 0; }
+
+.devolucao-descricao {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.devolucao-descricao textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--stone);
+    color: var(--ink);
+    font: inherit;
+    resize: vertical;
+}
+
+.devolucao-total { margin: 0 0 10px; }
+.devolucao-total small { color: var(--muted); }
+
+.devolucao-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.devolucao-acoes .pedido-pagar { border: 0; cursor: pointer; }
+.devolucao-acoes .pedido-pagar:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+    .devolucao-etapas { font-size: 11px; }
+    .devolucao-acoes { justify-content: stretch; }
+    .devolucao-acoes > * { flex: 1; }
+}
+
+/* Fotos da devolução: miniaturas, prévia no formulário e botão de anexar. */
+.devolucao-fotos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
+.devolucao-foto-mini {
+    display: block;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--stone-2);
+}
+
+.foto-carregando,
+.foto-indisponivel { display: inline-block; }
+.foto-indisponivel { opacity: 0.5; }
+
+.devolucao-foto-previa { position: relative; }
+
+.devolucao-foto-previa button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.devolucao-foto-add {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 72px;
+    height: 72px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.devolucao-foto-add:hover { border-color: var(--lit); color: var(--lit); }
+
+/* O input fica por cima do quadrado inteiro (clicável e acessível pelo teclado). */
+.devolucao-foto-add input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}

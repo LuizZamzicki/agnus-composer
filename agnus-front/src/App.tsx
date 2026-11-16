@@ -12,6 +12,7 @@ import Carrinho from "./pages/cliente/carrinho";
 import Produto from "./pages/cliente/produto";
 import Finalizar from "./pages/cliente/finalizar";
 import PedidoConfirmado from "./pages/cliente/pedidoConfirmado";
+import Pagamento from "./pages/cliente/pagamento";
 
 import Cliente from "./pages/cliente/cliente";
 import ClientePerfil from "./pages/cliente/clientePerfil";
@@ -19,6 +20,8 @@ import ClientePedidos from "./pages/cliente/clientePedidos";
 import ClienteEnderecos from "./pages/cliente/clienteEnderecos";
 import ClienteSenha from "./pages/cliente/clienteSenha";
 import ClienteContatos from "./pages/cliente/clienteContatos";
+import ClienteAfiliados from "./pages/cliente/clienteAfiliados";
+import TermosAfiliados from "./pages/termosAfiliados";
 
 import Login from "./pages/login";
 import NotFound from "./pages/notFound";
@@ -60,6 +63,7 @@ function App() {
 
         <Route path="/carrinho" element={<Carrinho />} />
         <Route path="/finalizar" element={<Finalizar />} />
+        <Route path="/pagamento/:id" element={<Pagamento />} />
         <Route path="/pedido-confirmado/:id" element={<PedidoConfirmado />} />
         <Route path="/produto/:id_produto" element={<Produto />} />
 
@@ -69,7 +73,10 @@ function App() {
           <Route path="enderecos" element={<ClienteEnderecos />} />
           <Route path="contatos" element={<ClienteContatos />} />
           <Route path="senha" element={<ClienteSenha />} />
+          <Route path="afiliados" element={<ClienteAfiliados />} />
         </Route>
+
+        <Route path="/afiliados/termos" element={<TermosAfiliados />} />
 
         <Route path="/login" element={<Login />} />
 

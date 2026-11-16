@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Ruler, X } from "lucide-react";
 import "../../css/cliente/produto.css";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 import { EsqueletoProduto } from "../../components/esqueleto";
+import VerMedidas from "../../components/guiaMedidas";
+import PrecoProduto from "../../components/precoProduto";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
 function textoResumoAvaliacoes({ media, total }) {
@@ -66,10 +68,20 @@ function Produto() {
     const corObj = cores.find(c => Number(c.id_produto_cor) === Number(corSelecionada));
     const gradeObj = tamanhos.find(t => Number(t.id_produto_grade) === Number(tamanhoSelecionado));
 
-    const precoFinal =
-        Number(produto?.preco_base ?? produto?.preco ?? 0) +
-        Number(corObj?.acrescimo || 0) +
-        Number(gradeObj?.acrescimo || 0);
+    const acrescimos = Number(corObj?.acrescimo || 0) + Number(gradeObj?.acrescimo || 0);
+    const precoFinal = Number(produto?.preco_base ?? produto?.preco ?? 0) + acrescimos;
+    // Tabela de medidas cadastrada no admin (pode chegar como texto JSON, conforme o cache).
+    const tabelaMedidas = (() => {
+        const bruta = produto?.tabela_medidas;
+        if (!bruta) return null;
+        if (typeof bruta !== "string") return bruta;
+        try {
+            return JSON.parse(bruta);
+        } catch {
+            return null;
+        }
+    })();
+    const precoOriginalFinal = produto?.preco_original ? Number(produto.preco_original) + acrescimos : null;
 
     useEffect(() => {
         if (!adicionado) return undefined;
@@ -450,16 +462,17 @@ function Produto() {
 
                     <div className="preco-box">
                         <h2>
-                            R$ {precoFinal.toLocaleString("pt-BR", {
-                                minimumFractionDigits: 2
-                            })}
+                            <PrecoProduto destaque preco={precoFinal} precoOriginal={precoOriginalFinal} />
                         </h2>
                     </div>
 
                     <p>{produto.descricao}</p>
 
                     <div className={`produto-opcao ${faltaEscolher === "tamanho" ? "falta" : ""}`}>
-                        <span>Tamanho</span>
+                        <div className="produto-opcao-topo">
+                            <span>Tamanho</span>
+                            <VerMedidas variante="link" tabela={tabelaMedidas} nomeProduto={produto.nome} tamanhoSelecionado={gradeObj?.nome} />
+                        </div>
 
                         <div className="opcoes">
                             {tamanhos.length === 0 ? (
@@ -594,6 +607,21 @@ function Produto() {
                 </div>
             )}
 
+            {tabelaMedidas?.linhas?.length > 0 && (
+                <section className="medidas-chamada" aria-labelledby="medidas-chamada-titulo" data-cy="medidas-chamada">
+                    <div className="medidas-chamada-texto">
+                        <span className="medidas-chamada-icone" aria-hidden="true">
+                            <Ruler size={26} strokeWidth={1.5} />
+                        </span>
+                        <div>
+                            <h2 id="medidas-chamada-titulo">Qual é o meu tamanho?</h2>
+                            <p>Veja as medidas de cada tamanho, como medir e qual combina com você.</p>
+                        </div>
+                    </div>
+                    <VerMedidas tabela={tabelaMedidas} nomeProduto={produto.nome} tamanhoSelecionado={gradeObj?.nome} />
+                </section>
+            )}
+
             <div className="avaliacoes-section">
 
                 <div className="avaliacoes-header">
@@ -685,11 +713,7 @@ function Produto() {
 
                             <h3>{p.nome}</h3>
 
-                            <span>
-                                R$ {Number(p.preco_base ?? p.preco ?? 0).toLocaleString("pt-BR", {
-                                    minimumFractionDigits: 2
-                                })}
-                            </span>
+                            <PrecoProduto preco={p.preco_base ?? p.preco} precoOriginal={p.preco_original} />
                         </Link>
                     ))}
                 </div>

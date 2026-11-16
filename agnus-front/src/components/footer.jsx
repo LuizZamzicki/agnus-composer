@@ -26,6 +26,7 @@ function Footer() {
                         <Link to="/catalogo">Coleção</Link>
                         <Link to="/carrinho">Sacola</Link>
                         <Link to="/cliente">Minha conta</Link>
+                        <Link to="/cliente/afiliados">Seja afiliado</Link>
                     </nav>
 
                     <div className="footer-contato">
