@@ -1,7 +1,13 @@
 import CategoriasController from "../../src/controllers/categorias.controller";
 import Categorias from "../../src/models/Categorias";
+import Produtos from "../../src/models/Produtos";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 
+jest.mock("@agnus/comum/config/database", () => ({
+  __esModule: true,
+  default: { transaction: jest.fn((fn: (t: object) => unknown) => fn({ id: "tx" })) },
+}));
+jest.mock("../../src/models/Produtos", () => ({ __esModule: true, default: { count: jest.fn(), update: jest.fn() } }));
 jest.mock("../../src/models/Categorias", () => ({
   __esModule: true,
   default: {
@@ -125,6 +131,15 @@ describe("CategoriasController", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Já existe categoria com esse nome." });
   });
 
+  it("update permite só corrigir maiúsculas do próprio nome", async () => {
+    const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 1, nome: "camisetas" });
+    categoriasModel.findByPk.mockResolvedValueOnce(categoria);
+    categoriasModel.findOne.mockResolvedValueOnce(buildModelInstance({ id_categoria: 1, nome: "camisetas" }));
+    await CategoriasController.update(mockRequest({ params: { id: "1" }, body: { nome: "Camisetas" } }), res);
+    expect(categoria.update).toHaveBeenCalledWith({ nome: "Camisetas" });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it("update retorna 200 com a categoria atualizada", async () => {
     const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 1, nome: "A" });
     categoriasModel.findByPk.mockResolvedValueOnce(categoria);
@@ -150,11 +165,33 @@ describe("CategoriasController", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Categoria não encontrada." });
   });
 
-  it("remove retorna 204 quando exclui a categoria", async () => {
+  it("remove retorna 204 quando exclui a categoria sem produtos", async () => {
     const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 5 });
     categoriasModel.findByPk.mockResolvedValueOnce(categoria);
+    (Produtos.count as jest.Mock).mockResolvedValueOnce(0);
     await CategoriasController.remove(mockRequest({ params: { id: "5" } }), res);
     expect(categoria.destroy).toHaveBeenCalled();
+    expect(Produtos.update).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(204);
+  });
+
+  it("remove avisa (409) quantos produtos usam a categoria e não exclui sem confirmação", async () => {
+    const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 5, nome: "Camisetas" });
+    categoriasModel.findByPk.mockResolvedValueOnce(categoria);
+    (Produtos.count as jest.Mock).mockResolvedValueOnce(3);
+    await CategoriasController.remove(mockRequest({ params: { id: "5" } }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ produtos: 3 }));
+    expect(categoria.destroy).not.toHaveBeenCalled();
+  });
+
+  it("remove com mover_produtos=true deixa os produtos sem categoria e exclui", async () => {
+    const res = mockResponse(), categoria = buildModelInstance({ id_categoria: 5, nome: "Camisetas" });
+    categoriasModel.findByPk.mockResolvedValueOnce(categoria);
+    (Produtos.count as jest.Mock).mockResolvedValueOnce(3);
+    await CategoriasController.remove(mockRequest({ params: { id: "5" }, query: { mover_produtos: "true" } }), res);
+    expect(Produtos.update).toHaveBeenCalledWith({ id_categoria: null }, expect.objectContaining({ where: { id_categoria: 5 } }));
+    expect(categoria.destroy).toHaveBeenCalledWith(expect.objectContaining({ transaction: { id: "tx" } }));
     expect(res.status).toHaveBeenCalledWith(204);
   });
 });

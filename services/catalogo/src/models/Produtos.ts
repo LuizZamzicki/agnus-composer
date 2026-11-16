@@ -1,5 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "@agnus/comum/config/database";
+import type { TabelaMedidas } from "../utils/tabelaMedidas";
 
 class Produtos extends Model {
   declare id_produto: number;
@@ -8,6 +9,8 @@ class Produtos extends Model {
   declare descricao: string | null;
   declare preco_custo: number | null;
   declare preco_base: number;
+  declare preco_original: number | null;
+  declare tabela_medidas: TabelaMedidas | null;
   declare margem_lucro: number | null;
   declare ativo: boolean;
   declare data_criacao: Date;
@@ -47,6 +50,16 @@ Produtos.init(
     preco_base: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+    },
+    preco_original: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: null,
+    },
+    tabela_medidas: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
     },
     margem_lucro: {
       type: DataTypes.DECIMAL(5, 2),
