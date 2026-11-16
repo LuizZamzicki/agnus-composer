@@ -205,9 +205,6 @@ function Home() {
                         <Link data-cy="ver-colecao" to="/catalogo" className="btn-agnus">
                             Ver a coleção
                         </Link>
-                        <a href="#sob-encomenda" className="btn-agnus-ghost">
-                            Como fazemos
-                        </a>
                     </div>
                 </div>
 
