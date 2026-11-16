@@ -17,6 +17,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Edição e exclusão de categorias no admin; ao excluir uma categoria com produtos, eles ficam "Sem categoria" (AGNUS-231).
 - Guia de medidas ("Ver medidas") na página do produto, com desenho da peça, tabela por tamanho com as medidas da YouDraw, como medir e sugestão de tamanho; tabela editável por produto no admin (AGNUS-234).
 - Registro permanente de eventos (`registro_eventos`): pedidos, vendas, e-mails enviados ou que falharam, avisos no site, devoluções e afiliação, com tela no admin e histórico por pedido (AGNUS-235).
+- Pedidos criados sozinhos na YouDraw pela API oficial quando a venda é paga: SKUs por cor e tamanho no cadastro do produto (com "Buscar na YouDraw"), coluna YouDraw na lista de pedidos com reenvio, chave de idempotência, nova tentativa automática para falhas passageiras, webhook assinado e conferência a cada 10 minutos que trazem status e rastreio (enviado e entregue avisam o cliente) e tudo no registro de eventos. Sem `YOUDRAW_API_KEY` o pedido fica marcado como "manual" (AGNUS-236).
 ### Removido
 - Integração Shopify headless (ADR 0009) desativada: o serviço `loja` sai do `docker-compose`, do gateway e do CD, mas o código fica guardado (`services/loja/`, `agnus-front/shopify-desativado/`) com instruções para religar. Vitrine, sacola e pedidos voltam a usar `catalogo`, `carrinho` e `pedidos`.
 

@@ -34,6 +34,15 @@ x-sem-smtp: &sem-smtp
   SMTP_PASS: ""
   SMTP_USER: ""
 
+# Integração com a YouDraw (fornecedor): a chave vai só para pedidos (cria os pedidos) e catálogo
+# (importa SKUs); o segredo do webhook, só para pedidos.
+x-sem-youdraw: &sem-youdraw
+  YOUDRAW_API_KEY: ""
+  YOUDRAW_WEBHOOK_SECRET: ""
+
+x-sem-youdraw-webhook: &sem-youdraw-webhook
+  YOUDRAW_WEBHOOK_SECRET: ""
+
 # Segredo do programa de afiliados (assina o cookie de clique e cifra as credenciais da API).
 x-sem-afiliados: &sem-afiliados
   AFILIADOS_SEGREDO: ""
@@ -148,7 +157,7 @@ services:
       context: ./services
       dockerfile: identidade/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-identidade
       DB_NAME: agnus_identidade
       DB_USER: svc_identidade
@@ -167,7 +176,7 @@ services:
       context: ./services
       dockerfile: catalogo/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw-webhook]
       SERVICE_NAME: agnus-catalogo
       DB_NAME: agnus_catalogo
       DB_USER: svc_catalogo
@@ -188,7 +197,7 @@ services:
       context: ./services
       dockerfile: busca/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-banco, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-banco, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-busca
     depends_on:
       redis:
@@ -204,7 +213,7 @@ services:
       context: ./services
       dockerfile: avaliacoes/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-avaliacoes
       DB_NAME: agnus_avaliacoes
       DB_USER: svc_avaliacoes
@@ -225,7 +234,7 @@ services:
       context: ./services
       dockerfile: carrinho/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-carrinho
       DB_NAME: agnus_carrinho
       DB_USER: svc_carrinho
@@ -266,7 +275,7 @@ services:
       context: ./services
       dockerfile: notificacoes/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-notificacoes
       DB_NAME: agnus_notificacoes
       DB_USER: svc_notificacoes
@@ -286,7 +295,7 @@ services:
       context: ./services
       dockerfile: afiliados/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-youdraw]
       SERVICE_NAME: agnus-afiliados
       DB_NAME: agnus_afiliados
       DB_USER: svc_afiliados
@@ -321,7 +330,7 @@ services:
       context: ./services
       dockerfile: admin/Dockerfile
     environment:
-      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-banco, *sem-smtp, *sem-afiliados]
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-banco, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-admin
     depends_on:
       redis:
