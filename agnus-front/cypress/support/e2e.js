@@ -15,3 +15,11 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands.js'
+
+// SKUs da YouDraw (seção do produto no admin): resposta vazia por padrão, para a tela não chamar a API
+// real. Um spec que precise de outro retorno registra o próprio cy.intercept (o mais recente vence).
+beforeEach(() => {
+  cy.intercept('GET', '**/products/*/skus', {
+    body: { combinacoes: [], faltando: 0, integracao_ativa: false },
+  });
+});
