@@ -6,13 +6,15 @@ type PaginationResult = {
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
+// Sem teto, page=1e20 vira um OFFSET em notação exponencial que o banco e a busca recusam (500).
+const MAX_PAGE = 10000;
 
 export const parsePagination = (query: Record<string, unknown>): PaginationResult | null => {
   const page = Number(query.page ?? 1);
   const limit = Number(query.limit ?? DEFAULT_LIMIT);
   const normalizedLimit = Math.min(limit, MAX_LIMIT);
 
-  if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
+  if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || page > MAX_PAGE || limit < 1) {
     return null;
   }
 

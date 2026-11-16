@@ -47,6 +47,25 @@ describe("clienteInterno", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("500 causado pela requisição não abre o circuito para os outros", async () => {
+    fetchMock.mockResolvedValue(resposta(500));
+
+    for (let i = 0; i < 6; i += 1) {
+      await chamarServico("catalogo", "/x").catch(() => undefined);
+    }
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce(resposta(200, { ok: true }));
+    await expect(chamarServico("catalogo", "/x")).resolves.toMatchObject({ status: 200 });
+  });
+
+  it("não repete uma leitura que deu timeout", async () => {
+    const timeout = Object.assign(new Error("tempo esgotado"), { name: "TimeoutError" });
+    fetchMock.mockRejectedValue(timeout);
+    await expect(chamarServico("catalogo", "/x")).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("consultarOuNull transforma 404 em null", async () => {
     fetchMock.mockResolvedValueOnce(resposta(404, { message: "não existe" }));
     await expect(consultarOuNull("identidade", "/usuarios/1")).resolves.toBeNull();

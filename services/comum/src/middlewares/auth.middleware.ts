@@ -44,9 +44,16 @@ export const buscarUsuario: BuscaDeUsuario = async (id_usuario) => {
   return valor;
 };
 
+// Além de e-mail e perfil, a marca da credencial: trocar a senha derruba as sessões antigas.
 const isCurrentToken = (tokenPayload: AuthUserPayload, authUser: AuthUserPayload) => {
-  return authUser.email === tokenPayload.email && authUser.tipo === tokenPayload.tipo;
+  return (
+    authUser.email === tokenPayload.email &&
+    authUser.tipo === tokenPayload.tipo &&
+    (authUser.sessao === undefined || authUser.sessao === tokenPayload.sessao)
+  );
 };
+
+const semMarca = ({ id_usuario, email, tipo }: AuthUserPayload): AuthUserPayload => ({ id_usuario, email, tipo });
 
 const authenticateToken = async (req: Request, res: AuthResponse, next: NextFunction) => {
   const token = getBearerToken(req);
@@ -70,7 +77,7 @@ const authenticateToken = async (req: Request, res: AuthResponse, next: NextFunc
     return res.status(401).json({ message: "Token desatualizado. Faça login novamente." });
   }
 
-  res.locals.authUser = authUser;
+  res.locals.authUser = semMarca(authUser);
   return next();
 };
 
@@ -82,7 +89,7 @@ export const identifyOptionalUser = async (req: Request, res: AuthResponse, next
   const authUser = tokenPayload ? await buscarUsuario(tokenPayload.id_usuario).catch(() => null) : null;
 
   if (tokenPayload && authUser && isCurrentToken(tokenPayload, authUser)) {
-    res.locals.authUser = authUser;
+    res.locals.authUser = semMarca(authUser);
   }
 
   return next();

@@ -20,6 +20,38 @@ type ConfiguracaoApp = {
   estaticos?: string[];
   // O BFF do admin troca esta rota pela consolidada de todos os serviços.
   metricasLocais?: boolean;
+  // Prefixos que recebem fotos em base64 no JSON; o resto fica no limite pequeno.
+  rotasComCorpoGrande?: string[];
+};
+
+const LIMITE_CORPO_PADRAO = "1mb";
+const LIMITE_CORPO_GRANDE = "20mb";
+
+// inflate: false — navegador não comprime corpo de requisição; aceitar gzip deixaria um corpo
+// pequeno virar 20 MB de JSON antes mesmo da autenticação.
+// O corpo bruto fica em req.rawBody: assinaturas (ex.: API de afiliados, estilo Shopee) são
+// calculadas sobre os bytes exatos enviados, não sobre o JSON reserializado.
+const parsersDoCorpo = (limit: string) => [
+  express.json({
+    limit,
+    inflate: false,
+    verify: (req, _res, buf) => {
+      (req as unknown as { rawBody?: Buffer }).rawBody = buf;
+    },
+  }),
+  express.urlencoded({ extended: true, limit, inflate: false }),
+];
+
+const lerCorpo = (rotasComCorpoGrande: string[]) => {
+  const [jsonPadrao, formPadrao] = parsersDoCorpo(LIMITE_CORPO_PADRAO);
+  const [jsonGrande, formGrande] = parsersDoCorpo(LIMITE_CORPO_GRANDE);
+  const ehGrande = (req: Request) =>
+    rotasComCorpoGrande.some((prefixo) => req.path === prefixo || req.path.startsWith(`${prefixo}/`));
+
+  return [
+    (req: Request, res: Response, next: NextFunction) => (ehGrande(req) ? jsonGrande : jsonPadrao)(req, res, next),
+    (req: Request, res: Response, next: NextFunction) => (ehGrande(req) ? formGrande : formPadrao)(req, res, next),
+  ];
 };
 
 // Rotas /internal só aceitam chamadas de outros serviços; o gateway não as publica.
@@ -32,15 +64,20 @@ export const exigirTokenInterno = (req: Request, res: Response, next: NextFuncti
     : res.status(403).json({ message: "Acesso restrito aos serviços internos." });
 };
 
-export const criarApp = ({ rotas, interno, estaticos = [], metricasLocais = true }: ConfiguracaoApp) => {
+export const criarApp = ({
+  rotas,
+  interno,
+  estaticos = [],
+  metricasLocais = true,
+  rotasComCorpoGrande = [],
+}: ConfiguracaoApp) => {
   const app = express();
 
   // Um proxy na frente (Nginx ou ngrok): o IP real do cliente e o ultimo do X-Forwarded-For.
   app.set("trust proxy", 1);
   app.use(requestLogger);
   app.use(cors());
-  app.use(express.json({ limit: "20mb" }));
-  app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+  app.use(...lerCorpo(rotasComCorpoGrande));
 
   for (const pasta of estaticos) {
     app.use(`/${pasta}`, express.static(path.resolve(process.cwd(), pasta)));
@@ -112,6 +149,11 @@ export const iniciarServico = async ({ app, banco, migracoes = [], aoIniciar }: 
   const porta = Number(process.env.PORT || 3000);
 
   try {
+    // Sem nenhuma das duas, todo login cairia em erro 500; melhor nem subir.
+    if (!process.env.JWT_PUBLIC_KEY && !process.env.JWT_SECRET) {
+      throw new Error("Configure JWT_PUBLIC_KEY (ou JWT_SECRET) para conferir os tokens de sessão.");
+    }
+
     if (banco) {
       await prepararBanco(banco, migracoes);
     }

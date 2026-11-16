@@ -50,6 +50,24 @@ describe("auth.middleware", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "Token desatualizado. Faça login novamente." });
   });
 
+  it("authenticateToken recusa token emitido antes da troca de senha", async () => {
+    const next = jest.fn(), response = mockResponse();
+    authService.verifyToken.mockReturnValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "cliente", sessao: "antiga" });
+    usuariosModel.findByPk.mockResolvedValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "cliente", sessao: "nova" });
+    await authenticateToken(mockRequest({ headers: { authorization: "Bearer token" } }), response, next);
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("authenticateToken aceita a marca atual e não a expõe em authUser", async () => {
+    const next = jest.fn(), response = mockResponse();
+    authService.verifyToken.mockReturnValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "cliente", sessao: "s1" });
+    usuariosModel.findByPk.mockResolvedValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "cliente", sessao: "s1" });
+    await authenticateToken(mockRequest({ headers: { authorization: "Bearer token" } }), response, next);
+    expect(response.locals.authUser).toEqual({ id_usuario: 1, email: "a@a.com", tipo: "cliente" });
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
   it("authenticateToken define authUser e chama next no sucesso", async () => {
     const next = jest.fn(), response = mockResponse();
     authService.verifyToken.mockReturnValueOnce({ id_usuario: 1, email: "a@a.com", tipo: "administrador" });
