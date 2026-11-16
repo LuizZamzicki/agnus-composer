@@ -12,6 +12,8 @@ export type PedidoBody = {
   status?: PedidoStatus | string | null;
   valor_total?: number | string | null;
   valor_frete?: number | string | null;
+  // Link de acompanhamento da YouDraw ou só o código; vazio/null remove.
+  rastreio?: string | null;
 };
 
 export type PedidoRouteParams = {
@@ -28,4 +30,6 @@ export type PedidoUpdateData = {
   id_usuario_endereco: number;
   status: PedidoStatus;
   valor_frete: number | string | null;
+  codigo_rastreio: string | null;
+  data_entrega: Date | null;
 };

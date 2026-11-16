@@ -1,6 +1,7 @@
 import { chamarServico } from "@agnus/comum/utils/clienteInterno";
 import logger from "@agnus/comum/utils/logger";
 import type Pedidos from "../models/Pedidos";
+import AfiliacaoService from "./afiliacao.service";
 import type { PedidoStatus } from "../types/pedido.types";
 
 class AvisoPedidoService {
@@ -14,11 +15,18 @@ class AvisoPedidoService {
     try {
       await chamarServico("notificacoes", "/status-pedido", {
         method: "POST",
-        body: { id_usuario: pedido.id_usuario, id_pedido: pedido.id_pedido, status: pedido.status },
+        body: {
+          id_usuario: pedido.id_usuario,
+          id_pedido: pedido.id_pedido,
+          status: pedido.status,
+          valor_total: pedido.valor_total == null ? null : Number(pedido.valor_total),
+        },
       });
     } catch (error) {
       logger.error("notificacao.falha_ao_avisar", { pedido: pedido.id_pedido, error });
     }
+
+    await AfiliacaoService.avisarStatus(pedido);
   }
 }
 

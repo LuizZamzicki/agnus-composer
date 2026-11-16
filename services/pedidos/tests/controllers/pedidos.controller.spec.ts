@@ -100,7 +100,8 @@ describe("PedidosController", () => {
   it("findMine lista só os pedidos do usuário do token, ignorando id_usuario da query", async () => {
     const response = mockResponse();
     response.locals = { authUser: { id_usuario: 7, email: "c@a.com", tipo: "cliente" } };
-    pedidosModel.findAll.mockResolvedValueOnce([{ id_pedido: 1, id_usuario: 7 }]);
+    process.env.YOUDRAW_LOJA_TOKEN = "0f1e2d3c-4b5a-4697-8877-665544332211";
+    pedidosModel.findAll.mockResolvedValueOnce([buildModelInstance({ id_pedido: 1, id_usuario: 7, status: "entregue", codigo_rastreio: null })]);
 
     await PedidosController.findMine(mockRequest({ query: { id_usuario: "99", status: "entregue" } }), response);
 
@@ -109,7 +110,11 @@ describe("PedidosController", () => {
       order: [["data_criacao", "DESC"]],
     });
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.send).toHaveBeenCalledWith([{ id_pedido: 1, id_usuario: 7 }]);
+    // Sem número da YouDraw, o rastreio busca pelo e-mail do dono do pedido.
+    expect(response.send).toHaveBeenCalledWith([
+      expect.objectContaining({ id_pedido: 1, url_rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=c%40a.com" }),
+    ]);
+    delete process.env.YOUDRAW_LOJA_TOKEN;
   });
 
   it("findMine retorna 400 para status inválido", async () => {
@@ -140,7 +145,7 @@ describe("PedidosController", () => {
     pedidosModel.findByPk.mockResolvedValueOnce(pedido);
     await PedidosController.getById(mockRequest({ params: { id: "1" } }), response);
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.send).toHaveBeenCalledWith(pedido);
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ id_pedido: 1, status: "pago", url_rastreio: null }));
   });
 
   it("create retorna 400 sem campos obrigatórios", async () => {
@@ -271,6 +276,44 @@ describe("PedidosController", () => {
     expect(response.json).toHaveBeenCalledWith({ message: "id_usuario_endereco inválido." });
   });
 
+  it("getById não usa o e-mail de quem não é o dono (equipe) na busca do rastreio", async () => {
+    process.env.YOUDRAW_LOJA_TOKEN = "0f1e2d3c-4b5a-4697-8877-665544332211";
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, status: "enviado", codigo_rastreio: null });
+    response.locals = { authUser: { id_usuario: 99, email: "admin@agnus.fit", tipo: "administrador" } };
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    await PedidosController.getById(mockRequest({ params: { id: "1" } }), response);
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ url_rastreio: null }));
+    delete process.env.YOUDRAW_LOJA_TOKEN;
+  });
+
+  it("update recusa link de rastreio que não é da YouDraw", async () => {
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "pago", valor_total: 10, valor_frete: 2 });
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    await PedidosController.update(mockRequest({ params: { id: "1" }, body: { rastreio: "https://site-malicioso.com/rastrear/x" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(pedido.update).not.toHaveBeenCalled();
+  });
+
+  it("update recusa o link geral da loja sem número de pedido", async () => {
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "pago", valor_total: 10, valor_frete: 2 });
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    await PedidosController.update(mockRequest({ params: { id: "1" }, body: { rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211" } }), response);
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({ message: expect.stringContaining("link geral de rastreio da loja") });
+  });
+
+  it("update grava só o código do link de rastreio da YouDraw", async () => {
+    const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "pago", valor_total: 10, valor_frete: 2 });
+    pedidosModel.findByPk.mockResolvedValueOnce(pedido);
+    enderecosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1 }));
+    await PedidosController.update(
+      mockRequest({ params: { id: "1" }, body: { rastreio: " https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=%23A1234 " } }),
+      response,
+    );
+    expect(pedido.update).toHaveBeenCalledWith(expect.objectContaining({ codigo_rastreio: "A1234", status: "pago" }));
+    expect(response.status).toHaveBeenCalledWith(200);
+  });
+
   it("update retorna 200 com o pedido atualizado", async () => {
     const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "pago", valor_total: 10, valor_frete: 2 });
     pedidosModel.findByPk.mockResolvedValueOnce(pedido);
@@ -288,7 +331,7 @@ describe("PedidosController", () => {
     });
     expect(AvisoPedidoService.avisarMudancaDeStatus).toHaveBeenCalledWith(pedido, "pago");
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.send).toHaveBeenCalledWith(pedido);
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ id_pedido: 1, status: "enviado" }));
   });
 
   it.each([
@@ -588,7 +631,7 @@ describe("PedidosController.checkout", () => {
       res as never,
     );
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3);
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 

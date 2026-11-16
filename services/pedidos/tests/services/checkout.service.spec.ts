@@ -76,7 +76,7 @@ describe("CheckoutService (saga)", () => {
 
     expect(pedido.id_pedido).toBe(7);
     expect(mocks.create).toHaveBeenCalledWith(
-      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 0 },
+      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 0, ref_afiliado: null },
       { transaction },
     );
     expect(mocks.bulkCreate).toHaveBeenCalledWith(
