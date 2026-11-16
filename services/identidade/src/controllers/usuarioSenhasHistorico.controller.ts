@@ -1,4 +1,5 @@
 import argon2 from "argon2";
+import { Op } from "sequelize";
 import UsuarioSenhasHistorico from "../models/UsuarioSenhasHistorico";
 import Usuarios from "../models/Usuarios";
 
@@ -13,11 +14,27 @@ class UsuarioSenhasHistoricoController {
     return Number.isInteger(userId) && userId > 0 ? userId : null;
   }
 
+  // Só as últimas senhas contam para "não repetir": cada uma custa um argon2.verify por troca.
+  static readonly SENHAS_LEMBRADAS = 5;
+
   private static async findHistoryList(id_usuario: number) {
-    return UsuarioSenhasHistorico.findAll({ 
-                                            where: { id_usuario }, 
-                                            order: [["data_criacao", "DESC"]] 
-                                         });
+    return UsuarioSenhasHistorico.findAll({
+      where: { id_usuario },
+      order: [["data_criacao", "DESC"]],
+      limit: UsuarioSenhasHistoricoController.SENHAS_LEMBRADAS,
+    });
+  }
+
+  // Apaga o que passou do limite, para o histórico não crescer sem fim.
+  private static async pruneHistory(id_usuario: number) {
+    const lembradas = await UsuarioSenhasHistoricoController.findHistoryList(id_usuario);
+
+    if (!Array.isArray(lembradas) || lembradas.length < UsuarioSenhasHistoricoController.SENHAS_LEMBRADAS) return;
+
+    const maisAntiga = lembradas[lembradas.length - 1];
+    await UsuarioSenhasHistorico.destroy({
+      where: { id_usuario, data_criacao: { [Op.lt]: maisAntiga.data_criacao } },
+    });
   }
 
   private static async findMatchedHistoryDate(id_usuario: number, senha: string) {
@@ -58,6 +75,7 @@ class UsuarioSenhasHistoricoController {
       return false;
     
     await UsuarioSenhasHistorico.create({ id_usuario: userId, senha: senhaHash });
+    await UsuarioSenhasHistoricoController.pruneHistory(userId);
     return true;
   }
 }

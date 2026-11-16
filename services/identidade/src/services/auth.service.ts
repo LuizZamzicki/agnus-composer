@@ -5,12 +5,12 @@ import Usuarios from "../models/Usuarios";
 import type { AuthResult, AuthUserPayload } from "@agnus/comum/types/auth.types";
 import type { GoogleTokenResponse, GoogleUserInfo } from "../types/google-oauth.types";
 import type { UsuarioPublicData } from "@agnus/comum/types/user.types";
+import { assinarToken, marcaDeSessao, verificarToken } from "@agnus/comum/utils/token";
+
+// Acima disso não é senha de gente: só serviria para gastar CPU com argon2.
+export const TAMANHO_MAXIMO_SENHA = 128;
 
 class AuthService {
-  private static getJwtSecret() {
-    return process.env.JWT_SECRET!;
-  }
-
   private static getJwtExpiresIn() {
     return process.env.JWT_EXPIRES_IN!;
   }
@@ -67,7 +67,13 @@ class AuthService {
       id_usuario: user.id_usuario,
       email: user.email,
       tipo: user.tipo,
+      sessao: marcaDeSessao(user.senha),
     };
+  }
+
+  /** Token novo com a marca da credencial atual (por exemplo, logo depois da troca de senha). */
+  static issueToken(user: Usuarios) {
+    return AuthService.signToken(AuthService.buildAuthPayload(user));
   }
 
   private static buildAuthResponse(user: Usuarios): AuthResult {
@@ -79,28 +85,13 @@ class AuthService {
     };
   }
 
+  // Com JWT_PRIVATE_KEY assina em ES256 (os outros serviços só têm a chave pública).
   static signToken(payload: AuthUserPayload) {
-    const options: SignOptions = {
-      expiresIn: AuthService.getJwtExpiresIn() as SignOptions["expiresIn"],
-    };
-
-    return jwt.sign(payload, AuthService.getJwtSecret(), options);
+    return assinarToken(payload, AuthService.getJwtExpiresIn() as SignOptions["expiresIn"]);
   }
 
   static verifyToken(token: string): AuthUserPayload | null {
-    try {
-      const decoded = jwt.verify(token, AuthService.getJwtSecret()) as JwtPayload & AuthUserPayload;
-
-      return decoded.id_usuario && decoded.email && decoded.tipo
-        ? {
-            id_usuario: decoded.id_usuario,
-            email: decoded.email,
-            tipo: decoded.tipo,
-          }
-        : null;
-    } catch {
-      return null;
-    }
+    return verificarToken(token);
   }
 
   private static async isValidPassword(user: Usuarios, password: string) {
@@ -108,6 +99,10 @@ class AuthService {
   }
 
   static async authenticate(email: string, password: string) {
+    if (typeof password !== "string" || password.length > TAMANHO_MAXIMO_SENHA) {
+      return null;
+    }
+
     const user = await Usuarios.findOne({ where: { email } });
 
     if (!user || !(await AuthService.isValidPassword(user, password))) {
@@ -153,7 +148,7 @@ class AuthService {
 
   private static verifyGoogleState(state: string) {
     try {
-      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret(), { algorithms: ["HS256"] }) as JwtPayload;
       return decoded.provider === "google";
     } catch {
       return false;
@@ -163,7 +158,7 @@ class AuthService {
   /** Redirect do app embutido no `state`, se o token for válido. Não lança. */
   static peekGoogleStateRedirect(state: string): string | undefined {
     try {
-      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret(), { algorithms: ["HS256"] }) as JwtPayload;
       return typeof decoded.redirect === "string" ? decoded.redirect : undefined;
     } catch {
       return undefined;
@@ -172,7 +167,7 @@ class AuthService {
 
   private static peekGoogleStateClientNonce(state: string): string | undefined {
     try {
-      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret()) as JwtPayload;
+      const decoded = jwt.verify(state, AuthService.getOAuthStateSecret(), { algorithms: ["HS256"] }) as JwtPayload;
       return typeof decoded.clientNonce === "string" ? decoded.clientNonce : undefined;
     } catch {
       return undefined;
@@ -273,8 +268,10 @@ class AuthService {
       return AuthService.linkGoogleAccount(user, googleId);
     }
 
+    // A conta já pertence a outra conta Google: trocar o vínculo pelo e-mail entregaria a conta
+    // a quem controla esse e-mail agora (domínio expirado, conta Google recriada etc.).
     if (user.google_id !== googleId) {
-      await user.update({ google_id: googleId });
+      throw new Error("Este e-mail já está vinculado a outra conta Google.");
     }
 
     return user;

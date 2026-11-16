@@ -18,6 +18,9 @@ type AvaliacaoFotoRequest = Request<AvaliacaoFotoRouteParams, object, AvaliacaoF
 type AvaliacaoFotoFiles = Express.Multer.File[] | Record<string, Express.Multer.File[]>;
 type AvaliacaoFotoRequestWithFiles = AvaliacaoFotoRequest & { files?: AvaliacaoFotoFiles };
 
+const MAX_FOTOS_POR_ENVIO = 4;
+const MAX_FOTOS_POR_AVALIACAO = 8;
+
 class AvaliacaoFotosController {
   private static parsePositiveId(value: number | string | undefined) {
     const parsedId = Number(value);
@@ -45,13 +48,20 @@ class AvaliacaoFotosController {
       return "fotos_upload (ou arquivos enviados) deve conter pelo menos uma foto.";
     }
 
+    // O multipart já para em 4 arquivos; o envio em base64 precisa do mesmo limite.
+    if (uploads.length > MAX_FOTOS_POR_ENVIO) {
+      return `Envie no máximo ${MAX_FOTOS_POR_ENVIO} fotos por vez.`;
+    }
+
     return null;
   }
 
   private static async buildPhotoPaths(files: Express.Multer.File[], uploads: AvaliacaoFotoUpload[]) {
-    const photoPaths = await Promise.all(
+    // allSettled: se uma foto falha, as que já foram gravadas são apagadas em vez de ficarem órfãs no disco.
+    const resultados = await Promise.allSettled(
       files.length ? files.map(saveAvaliacaoFotoFile) : uploads.map(saveAvaliacaoFotoUpload),
     );
+    const photoPaths = resultados.map((item) => (item.status === "fulfilled" ? item.value : null));
 
     if (photoPaths.every((item) => item)) {
       return photoPaths as string[];
@@ -59,6 +69,11 @@ class AvaliacaoFotosController {
 
     await Promise.all(photoPaths.filter(Boolean).map((item) => deleteAvaliacaoFotoFile(item as string)));
     return null;
+  }
+
+  private static async exceedsReviewLimit(reviewId: number, novas: number) {
+    const atuais = Number(await AvaliacaoFotos.count({ where: { id_avaliacao_produto: reviewId } })) || 0;
+    return atuais + novas > MAX_FOTOS_POR_AVALIACAO;
   }
 
   // O mesmo caminho pode estar em outra linha, porque caminho_url e editavel.
@@ -79,7 +94,11 @@ class AvaliacaoFotosController {
     );
   }
 
-  private static async resolveUpdatePath(body: AvaliacaoFotoBody, file?: Express.Multer.File) {
+  private static async resolveUpdatePath(
+    body: AvaliacaoFotoBody,
+    reviewId: number,
+    file?: Express.Multer.File,
+  ) {
     if (file) {
       return saveAvaliacaoFotoFile(file);
     }
@@ -92,7 +111,13 @@ class AvaliacaoFotosController {
       return undefined;
     }
 
-    return normalizeFotoPath(body.caminho_url);
+    // Só aceita um arquivo já enviado para a mesma avaliação: nem URL externa, nem foto de outra pessoa.
+    const caminho = normalizeFotoPath(body.caminho_url);
+    const daMesmaAvaliacao = caminho
+      ? await AvaliacaoFotos.count({ where: { caminho_url: caminho, id_avaliacao_produto: reviewId } })
+      : 0;
+
+    return daMesmaAvaliacao ? caminho : "";
   }
 
   private static getPhotoPathErrorMessage(
@@ -154,6 +179,10 @@ class AvaliacaoFotosController {
       return res.status(404).json({ message: "Avaliação de produto não encontrada." });
     }
 
+    if (await AvaliacaoFotosController.exceedsReviewLimit(reviewId!, files.length || uploads.length)) {
+      return res.status(400).json({ message: `Cada avaliação aceita no máximo ${MAX_FOTOS_POR_AVALIACAO} fotos.` });
+    }
+
     const photoPaths = await AvaliacaoFotosController.buildPhotoPaths(files, uploads);
 
     if (!photoPaths) {
@@ -192,7 +221,11 @@ class AvaliacaoFotosController {
     }
 
     // O arquivo so e gravado depois de todas as checagens, para nao sobrar no disco sem registro.
-    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(req.body, uploadedFile);
+    const photoPath = await AvaliacaoFotosController.resolveUpdatePath(
+      req.body,
+      reviewId ?? foto.id_avaliacao_produto,
+      uploadedFile,
+    );
     const message = AvaliacaoFotosController.getPhotoPathErrorMessage(
       req.body,
       photoPath,

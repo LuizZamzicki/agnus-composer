@@ -52,6 +52,10 @@ const historicoModel = UsuarioSenhasHistorico as typeof UsuarioSenhasHistorico &
 const argon2Mock = argon2 as typeof argon2 & Argon2Mock;
 
 describe("UsuariosController", () => {
+  beforeAll(() => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || "segredo-de-teste";
+    process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+  });
   it("findAll retorna usuários paginados", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 1, nome: "A", email: "a@a.com", senha: "hash", tipo: "cliente" });
     usuariosModel.findAndCountAll.mockResolvedValueOnce({ count: 1, rows: [user] });
@@ -336,7 +340,7 @@ describe("UsuariosController", () => {
     reusedSpy.mockRestore();
   });
 
-  it("updatePassword retorna 204 quando atualiza a senha", async () => {
+  it("updatePassword retorna 200 com token novo quando atualiza a senha", async () => {
     const response = mockResponse(), user = buildModelInstance({ id_usuario: 2, senha: "old" });
     const historicoSpy = jest.spyOn(UsuarioSenhasHistoricoController, "create").mockResolvedValueOnce(true);
     const reusedSpy = jest.spyOn(UsuarioSenhasHistoricoController, "findByUserIdAndPassword").mockResolvedValueOnce(null);
@@ -347,7 +351,8 @@ describe("UsuariosController", () => {
     expect(user.update).toHaveBeenCalled();
     expect(reusedSpy).toHaveBeenCalledWith(2, "Senha456!");
     expect(historicoSpy).toHaveBeenCalled();
-    expect(response.status).toHaveBeenCalledWith(204);
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({ token: expect.any(String) });
     reusedSpy.mockRestore();
     historicoSpy.mockRestore();
   });

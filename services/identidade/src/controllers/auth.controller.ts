@@ -81,6 +81,21 @@ class AuthController {
     return `${AuthController.redirectBase(appRedirect)}error=${encodeURIComponent(message)}`;
   }
 
+  // A mensagem vai na URL do redirect: só textos conhecidos. Erros de rede trazem a resposta
+  // crua do Google, que não deve ir para o histórico do navegador.
+  private static readonly MENSAGENS_GOOGLE_SEGURAS = new Set([
+    "Estado OAuth inválido ou expirado.",
+    "Conta Google sem email verificado.",
+    "Este e-mail já está vinculado a outra conta Google.",
+  ]);
+
+  private static mensagemSeguraDoGoogle(error: ErrorLike) {
+    const mensagem = AuthController.getErrorMessage(error, "");
+    return AuthController.MENSAGENS_GOOGLE_SEGURAS.has(mensagem)
+      ? mensagem
+      : "Não foi possível entrar com o Google. Tente novamente.";
+  }
+
   private static getGoogleErrorRedirect(query: Request["query"]) {
     if (!query.error) {
       return null;
@@ -91,7 +106,7 @@ class AuthController {
     );
 
     return AuthController.buildLoginErrorRedirect(
-      `Google OAuth retornou erro: ${String(query.error)}`,
+      "Não foi possível entrar com o Google. Tente novamente.",
       appRedirect,
     );
   }
@@ -208,10 +223,7 @@ class AuthController {
     } catch (error) {
       return res.redirect(
         AuthController.buildLoginErrorRedirect(
-          AuthController.getErrorMessage(
-            error as ErrorLike,
-            "Falha no callback do Google OAuth.",
-          ),
+          AuthController.mensagemSeguraDoGoogle(error as ErrorLike),
           AuthController.sanitizeAppRedirect(AuthService.peekGoogleStateRedirect(params.state)),
         ),
       );

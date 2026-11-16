@@ -4,7 +4,7 @@ import UsersController from '../controllers/usuarios.controller';
 import { PERMISSIONS } from '@agnus/comum/config/permissions';
 import authenticateToken, { authorizeSelfOrAdmin } from '@agnus/comum/middlewares/auth.middleware';
 import { checarPermissao } from '@agnus/comum/middlewares/permission.middleware';
-import { limitarCadastro, limitarLogin } from '../middlewares/rateLimit.middleware';
+import { limitarCadastro, limitarLogin, limitarTrocaSenha } from '../middlewares/rateLimit.middleware';
 
 // Bounded context Identidade e Acesso: cadastro, login (senha e Google) e conta do usuario.
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/users', authenticateToken, checarPermissao(PERMISSIONS.USUARIO_LIST
 router.get('/users/:id', authenticateToken, authorizeSelfOrAdmin('id'), UsersController.getById);
 router.delete('/users/:id', authenticateToken, checarPermissao(PERMISSIONS.USUARIO_EXCLUIR), UsersController.remove);
 router.put('/users/:id', authenticateToken, authorizeSelfOrAdmin('id'), UsersController.update);
-router.patch('/users/:id/password', authenticateToken, authorizeSelfOrAdmin('id'), UsersController.updatePassword);
+router.patch('/users/:id/password', authenticateToken, authorizeSelfOrAdmin('id'), limitarTrocaSenha, UsersController.updatePassword);
 
 router.post('/auth/login', limitarLogin, AuthController.login);
 router.get('/auth/me', authenticateToken, AuthController.me);

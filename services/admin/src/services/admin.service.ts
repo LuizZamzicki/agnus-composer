@@ -2,7 +2,7 @@ import type { NomeServico } from "@agnus/comum/utils/clienteInterno";
 import logger from "@agnus/comum/utils/logger";
 
 export const SERVICOS_COM_METRICAS: (NomeServico | "admin")[] = [
-  "identidade", "catalogo", "busca", "avaliacoes", "carrinho", "pedidos", "notificacoes",
+  "identidade", "catalogo", "busca", "avaliacoes", "carrinho", "pedidos", "notificacoes", "afiliados",
 ];
 
 const TIMEOUT_MS = 5000;

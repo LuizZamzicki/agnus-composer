@@ -182,7 +182,7 @@ describe("AuthController", () => {
     await AuthController.googleCallback(mockRequest({ query: { error: "access_denied" } }), response);
 
     expect(response.redirect).toHaveBeenCalledWith(
-      "http://localhost:3001/login?error=Google%20OAuth%20retornou%20erro%3A%20access_denied",
+      "http://localhost:3001/login?error=N%C3%A3o%20foi%20poss%C3%ADvel%20entrar%20com%20o%20Google.%20Tente%20novamente.",
     );
   });
 
@@ -216,7 +216,7 @@ describe("AuthController", () => {
 
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
-    expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=invalid");
+    expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=N%C3%A3o%20foi%20poss%C3%ADvel%20entrar%20com%20o%20Google.%20Tente%20novamente.");
   });
 
   it("googleCallback redireciona com erro inesperado serializado", async () => {
@@ -226,7 +226,17 @@ describe("AuthController", () => {
 
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
-    expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=invalid");
+    expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=N%C3%A3o%20foi%20poss%C3%ADvel%20entrar%20com%20o%20Google.%20Tente%20novamente.");
+  });
+
+  it("googleCallback repassa mensagem conhecida do login Google", async () => {
+    const response = mockResponse();
+
+    authService.authenticateWithGoogle.mockRejectedValueOnce(new Error("Este e-mail já está vinculado a outra conta Google."));
+
+    await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
+
+    expect(response.redirect).toHaveBeenCalledWith("http://localhost:3001/login?error=Este%20e-mail%20j%C3%A1%20est%C3%A1%20vinculado%20a%20outra%20conta%20Google.");
   });
 
   it("googleCallback manda o token pro app quando o state tem redirect", async () => {
@@ -253,7 +263,7 @@ describe("AuthController", () => {
 
     await AuthController.googleCallback(mockRequest({ query: { code: "c", state: "s" } }), response);
 
-    expect(response.redirect).toHaveBeenCalledWith("agnusapp://auth?error=invalid");
+    expect(response.redirect).toHaveBeenCalledWith("agnusapp://auth?error=N%C3%A3o%20foi%20poss%C3%ADvel%20entrar%20com%20o%20Google.%20Tente%20novamente.");
   });
 
   it.each([

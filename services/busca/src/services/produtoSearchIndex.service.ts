@@ -157,6 +157,7 @@ class ProdutoSearchIndexService {
       nome: row.nome ?? "",
       descricao: row.descricao ?? "",
       preco_base: Number(row.preco_base ?? 0),
+      preco_original: row.preco_original == null ? null : Number(row.preco_original),
       ativo: Boolean(row.ativo),
       categoria_nome: row.categoria_nome,
       quantidade_vendida: Number(row.quantidade_vendida ?? 0),
@@ -197,6 +198,7 @@ class ProdutoSearchIndexService {
           "nome",
           "descricao",
           "preco_base",
+          "preco_original",
           "ativo",
           "categoria_nome",
           "quantidade_vendida",
@@ -343,7 +345,8 @@ class ProdutoSearchIndexService {
     }
 
     try {
-      return ProdutoSearchIndexService.runSearch(request);
+      // await dentro do try: sem ele, o erro assíncrono do Meilisearch escapava do fallback e virava 500.
+      return await ProdutoSearchIndexService.runSearch(request);
     } catch (error) {
       return ProdutoSearchIndexService.handleSearchError(
         error instanceof Error ? error : String(error),

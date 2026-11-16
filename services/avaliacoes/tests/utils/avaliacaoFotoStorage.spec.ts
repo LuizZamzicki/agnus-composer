@@ -31,8 +31,12 @@ describe("avaliacaoFotoStorage", () => {
     Date.now = originalNow;
   });
 
-  it("normalizeFotoPath remove espacos", () => {
-    expect(normalizeFotoPath(" foto.jpg ")).toBe("foto.jpg");
+  it("normalizeFotoPath remove espacos e só aceita caminho gerado pelo upload", () => {
+    expect(normalizeFotoPath(" avaliacao_fotos/foto-1.jpg ")).toBe("avaliacao_fotos/foto-1.jpg");
+    expect(normalizeFotoPath("foto.jpg")).toBe("");
+    expect(normalizeFotoPath("https://exemplo.invalid/a.png")).toBe("");
+    expect(normalizeFotoPath("avaliacao_fotos/../segredo.jpg")).toBe("");
+    expect(normalizeFotoPath(123)).toBe("");
     expect(normalizeFotoPath(undefined)).toBe("");
   });
 

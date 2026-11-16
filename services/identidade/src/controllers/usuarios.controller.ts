@@ -11,7 +11,8 @@ import type {
   UsuarioRouteParams,
   UsuarioUpdateData,
 } from "@agnus/comum/types/user.types";
-import type { AuthenticatedResponseLocals } from "@agnus/comum/middlewares/auth.middleware";
+import { limparCacheDeUsuarios, type AuthenticatedResponseLocals } from "@agnus/comum/middlewares/auth.middleware";
+import AuthService, { TAMANHO_MAXIMO_SENHA } from "../services/auth.service";
 
 import { buildPaginationMeta, parsePagination } from "@agnus/comum/utils/pagination";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
@@ -100,6 +101,10 @@ class UsuariosController {
 
   private static getPasswordError(password: string): PasswordValidationError | null {
     const passwordStrength = evaluatePasswordStrength(password);
+
+    if (password.length > TAMANHO_MAXIMO_SENHA)
+      return { message: `A senha pode ter no máximo ${TAMANHO_MAXIMO_SENHA} caracteres.`, passwordStrength };
+
     return passwordStrength.isValid ? null : {
       message: UsuariosController.PASSWORD_MESSAGE,
       passwordStrength
@@ -182,6 +187,9 @@ class UsuariosController {
     if (!payload.senhaAtual || !payload.confirmacaoSenhaAtual || !payload.novaSenha)
       return "Senha atual, confirmação da senha atual e nova senha são obrigatórias.";
 
+    if (payload.senhaAtual.length > TAMANHO_MAXIMO_SENHA)
+      return "Senha atual inválida.";
+
     if (payload.senhaAtual !== payload.confirmacaoSenhaAtual)
       return "As duas informações da senha atual devem ser iguais.";
 
@@ -211,7 +219,9 @@ class UsuariosController {
     const passwordHash = await UsuariosController.hashPassword(newPassword);
     await user.update({ senha: passwordHash });
     await UsuarioSenhasHistoricoController.create(user.id_usuario, passwordHash);
-    return res.status(204).send();
+    limparCacheDeUsuarios();
+    // As outras sessões caem (a marca da credencial mudou); quem trocou recebe um token novo.
+    return res.status(200).json({ token: AuthService.issueToken(user) });
   }
 
   static async findAll(req: Request, res: Response) {

@@ -14,7 +14,7 @@ import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
 jest.mock("@agnus/comum/utils/referencias", () => ({ __esModule: true, usuarioExiste: jest.fn() }));
 jest.mock("../../src/models/CarrinhoItens", () => ({
   __esModule: true,
-  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
+  default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn(), count: jest.fn(async () => 0) },
 }));
 jest.mock("../../src/models/Carrinhos", () => ({
   __esModule: true,

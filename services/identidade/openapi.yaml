@@ -196,6 +196,10 @@ paths:
       operationId: patchUsersPorIdPassword
       tags: [ Usuarios ]
       summary: Troca de senha com validacao de forca e historico
+      description: >-
+        Encerra as outras sessoes da conta e devolve um token novo para quem trocou.
+        Limite de 5 tentativas a cada 15 minutos por conta; senha com no maximo 128 caracteres;
+        as 5 ultimas senhas nao podem ser repetidas.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -209,8 +213,16 @@ paths:
                 confirmacao_senha_atual: { type: string, format: password }
                 nova_senha: { type: string, format: password }
       responses:
-        "200": { description: Senha alterada }
+        "200":
+          description: Senha alterada; o token antigo deixa de valer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { description: Muitas tentativas de troca de senha }
 
   /user-addresses:
     post:

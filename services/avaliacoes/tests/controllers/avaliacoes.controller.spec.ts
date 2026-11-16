@@ -472,10 +472,56 @@ describe("AvaliacaoFotosController", () => {
     const foto = buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "a.jpg" });
     avaliacaoFotosModel.findByPk.mockResolvedValueOnce(foto);
     avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
-    await AvaliacaoFotosController.update(mockRequest({ params: { id: "1" }, body: { id_avaliacao_produto: 1, caminho_url: "b.jpg" } }), res);
+    avaliacaoFotosModel.count.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+    await AvaliacaoFotosController.update(mockRequest({ params: { id: "1" }, body: { id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/b.jpg" } }), res);
     expect(foto.update).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(foto);
+  });
+
+  it("update recusa caminho_url que é URL externa", async () => {
+    const res = mockResponse();
+    avaliacaoFotosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/a.jpg" }));
+    await AvaliacaoFotosController.update(mockRequest({ params: { id: "1" }, body: { caminho_url: "https://exemplo.invalid/rastreio.png" } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "caminho_url inválido." });
+  });
+
+  it("update recusa caminho_url de foto de outra avaliação", async () => {
+    const res = mockResponse();
+    avaliacaoFotosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_foto: 1, id_avaliacao_produto: 1, caminho_url: "avaliacao_fotos/a.jpg" }));
+    avaliacaoFotosModel.count.mockResolvedValueOnce(0);
+    await AvaliacaoFotosController.update(mockRequest({ params: { id: "1" }, body: { caminho_url: "avaliacao_fotos/de-outro.jpg" } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("create recusa mais de 4 fotos em base64 num envio", async () => {
+    const res = mockResponse();
+    const foto = { upload_index: 0, nome_original: "a.png", tipo_arquivo: "image/png", tamanho_bytes: 8, arquivo_base64: "iVBORw0KGgo=" };
+    await AvaliacaoFotosController.create(mockRequest({ body: { id_avaliacao_produto: 1, fotos_upload: Array(5).fill(foto) } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Envie no máximo 4 fotos por vez." });
+  });
+
+  it("create recusa quando a avaliação passaria do limite de fotos", async () => {
+    const res = mockResponse();
+    const foto = { upload_index: 0, nome_original: "a.png", tipo_arquivo: "image/png", tamanho_bytes: 8, arquivo_base64: "iVBORw0KGgo=" };
+    avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
+    avaliacaoFotosModel.count.mockResolvedValueOnce(8);
+    await AvaliacaoFotosController.create(mockRequest({ body: { id_avaliacao_produto: 1, fotos_upload: [foto] } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Cada avaliação aceita no máximo 8 fotos." });
+  });
+
+  it("create trata arquivo_base64 que não é texto como foto inválida", async () => {
+    const res = mockResponse();
+    avaliacaoProdutosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_avaliacao_produto: 1 }));
+    avaliacaoFotosModel.count.mockResolvedValueOnce(0);
+    await AvaliacaoFotosController.create(
+      mockRequest({ body: { id_avaliacao_produto: 1, fotos_upload: [{ upload_index: 0, nome_original: "a.png", tipo_arquivo: "image/png", tamanho_bytes: 8, arquivo_base64: 123 }] } }),
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it("remove retorna 400 para id inválido", async () => {
