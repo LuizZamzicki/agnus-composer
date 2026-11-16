@@ -22,6 +22,8 @@ import ClienteSenha from "./pages/cliente/clienteSenha";
 import ClienteContatos from "./pages/cliente/clienteContatos";
 import ClienteAfiliados from "./pages/cliente/clienteAfiliados";
 import TermosAfiliados from "./pages/termosAfiliados";
+import Duvidas from "./pages/duvidas";
+import { Entrega, Privacidade, Sobre, TrocasDevolucoes } from "./pages/institucional";
 
 import Login from "./pages/login";
 import NotFound from "./pages/notFound";
@@ -77,6 +79,11 @@ function App() {
         </Route>
 
         <Route path="/afiliados/termos" element={<TermosAfiliados />} />
+        <Route path="/duvidas" element={<Duvidas />} />
+        <Route path="/trocas-e-devolucoes" element={<TrocasDevolucoes />} />
+        <Route path="/entrega" element={<Entrega />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/sobre" element={<Sobre />} />
 
         <Route path="/login" element={<Login />} />
 

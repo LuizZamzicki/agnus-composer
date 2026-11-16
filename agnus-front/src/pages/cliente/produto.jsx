@@ -7,7 +7,8 @@ import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 import { EsqueletoProduto } from "../../components/esqueleto";
 import VerMedidas from "../../components/guiaMedidas";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import ConfiancaCompra from "../../components/confiancaCompra";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
 function textoResumoAvaliacoes({ media, total }) {
@@ -464,6 +465,7 @@ function Produto() {
                         <h2>
                             <PrecoProduto destaque preco={precoFinal} precoOriginal={precoOriginalFinal} />
                         </h2>
+                        <ParcelaProduto preco={precoFinal} />
                     </div>
 
                     <p>{produto.descricao}</p>
@@ -555,6 +557,8 @@ function Produto() {
                     </button>
 
                     {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
+
+                    <ConfiancaCompra />
 
                 </div>
             </div>
@@ -714,6 +718,7 @@ function Produto() {
                             <h3>{p.nome}</h3>
 
                             <PrecoProduto preco={p.preco_base ?? p.preco} precoOriginal={p.preco_original} />
+                            <ParcelaProduto preco={p.preco_base ?? p.preco} />
                         </Link>
                     ))}
                 </div>

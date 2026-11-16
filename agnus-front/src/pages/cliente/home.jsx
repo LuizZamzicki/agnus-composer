@@ -7,7 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import DuvidasLista from "../../components/duvidasLista";
+import { DUVIDAS_DA_HOME } from "../../conteudo/loja";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -185,6 +187,7 @@ function Home() {
                     <h3>{prod.nome}</h3>
                     {renderStars(avaliacoes[prod.id_produto])}
                     <PrecoProduto className="product-price" preco={prod.preco_base} precoOriginal={prod.preco_original} />
+                    <ParcelaProduto preco={prod.preco_base} />
                 </div>
             </Link>
         );
@@ -319,6 +322,14 @@ function Home() {
                     <p className="sob-encomenda-latin"><em>Ora et labora.</em> Reza e trabalha.</p>
                     <Link className="btn-agnus" to="/catalogo">Escolher a minha peça</Link>
                 </div>
+            </section>
+
+            <section className="duvidas-home" data-cy="duvidas-home" aria-labelledby="duvidas-home-titulo">
+                <h2 id="duvidas-home-titulo" className="section-title">Perguntas frequentes</h2>
+                <DuvidasLista perguntas={DUVIDAS_DA_HOME} prefixo="duvida-home" />
+                <p className="duvidas-home-mais">
+                    <Link className="btn-agnus-ghost" to="/duvidas" data-cy="ver-todas-duvidas">Ver todas as dúvidas</Link>
+                </p>
             </section>
         </main>
     );

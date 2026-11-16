@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 
 const ESPERA_DA_BUSCA_MS = 250;
 const MAX_ATRASO_CARTAO = 8;
@@ -258,6 +258,7 @@ function Catalogo() {
                                         <h3>{prod.nome}</h3>
                                         {renderStars(avaliacoes[prod.id_produto])}
                                         <PrecoProduto className="product-price" preco={prod.preco_base} precoOriginal={prod.preco_original} />
+                                        <ParcelaProduto preco={prod.preco_base} />
                                     </div>
                                 </Link>
                             );

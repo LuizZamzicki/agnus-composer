@@ -1,4 +1,5 @@
 import "../css/precoProduto.css";
+import { PARCELAS_SEM_JUROS } from "../conteudo/loja";
 
 const formatar = (valor) =>
     Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -9,6 +10,17 @@ export function descontoPercentual(precoOriginal, preco) {
     const por = Number(preco || 0);
 
     return de > por && por > 0 ? Math.round((1 - por / de) * 100) : 0;
+}
+
+// "ou 2x de R$ X sem juros" (de 3x em diante o cartão cobra juros).
+export function ParcelaProduto({ preco, className = "" }) {
+    const valor = Number(preco || 0);
+    if (!(valor > 0) || PARCELAS_SEM_JUROS < 2) return null;
+    return (
+        <span className={`preco-produto__parcela ${className}`} data-cy="parcela-produto">
+            ou {PARCELAS_SEM_JUROS}x de {formatar(valor / PARCELAS_SEM_JUROS)} sem juros
+        </span>
+    );
 }
 
 // Mostra "De R$ X por R$ Y" quando há promoção; senão só o preço.
