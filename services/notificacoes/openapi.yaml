@@ -63,6 +63,53 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /notifications/registro:
+    get:
+      summary: Registro de eventos (somente administrador)
+      description: |
+        Histórico permanente do que aconteceu no sistema (tabela registro_eventos): pedidos criados, vendas
+        (pagamento aprovado), mudanças de status, e-mails enviados ou que falharam (destinatário mascarado),
+        avisos no site, devoluções e afiliação. Mais recentes primeiro.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: categoria, in: query, schema: { type: string, enum: [pedido, pagamento, devolucao, email, aviso, catalogo, usuario, afiliado, sistema] } }
+        - { name: resultado, in: query, schema: { type: string, enum: [sucesso, falha, ignorado] } }
+        - { name: tipo, in: query, schema: { type: string }, description: "Prefixo do código, ex.: email. ou pedido.atualizado" }
+        - { name: id_pedido, in: query, schema: { type: integer }, description: "História completa de um pedido" }
+        - { name: id_usuario, in: query, schema: { type: integer } }
+        - { name: id_devolucao, in: query, schema: { type: integer } }
+        - { name: inicio, in: query, schema: { type: string, format: date }, description: AAAA-MM-DD (horário de Brasília) }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        "200":
+          description: Registros e paginação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_registro: { type: integer }
+                        tipo: { type: string, example: email.enviado }
+                        categoria: { type: string, example: email }
+                        descricao: { type: string, example: 'E-mail enviado ao cliente (b****@gmail.com): "Recebemos seu pagamento - pedido #21"' }
+                        resultado: { type: string, enum: [sucesso, falha, ignorado] }
+                        id_pedido: { type: integer, nullable: true }
+                        id_usuario: { type: integer, nullable: true }
+                        id_devolucao: { type: integer, nullable: true }
+                        origem: { type: string, example: agnus-notificacoes }
+                        request_id: { type: string, nullable: true }
+                        dados: { type: object, nullable: true }
+                        ocorrido_em: { type: string, format: date-time }
+                  pagination: { type: object }
+        "401": { description: Sem login }
+        "403": { description: Não é administrador }
 components:
   securitySchemes:
     bearerAuth:

@@ -3,6 +3,9 @@ import EventBusService from "@agnus/comum/services/eventBus.service";
 import type { AgnusEvent, AgnusEventHandler, AgnusEventType } from "@agnus/comum/types/event.types";
 import logger from "@agnus/comum/utils/logger";
 import Notificacoes from "./models/Notificacoes";
+import RegistroService from "./registro/registro.service";
+import AvisoPorEmailService, { dispararSemEsperar } from "./email/avisoPorEmail.service";
+import type { PedidoStatus } from "./email/modelos";
 
 const AUDIT_LIST_KEY = "agnus:auditoria:eventos";
 const AUDIT_LIST_SIZE = 500;
@@ -19,7 +22,8 @@ const registrarAuditoria = async (event: AgnusEvent) => {
   await client.ltrim(AUDIT_LIST_KEY, 0, AUDIT_LIST_SIZE - 1);
 };
 
-// Notificacoes ainda sao simuladas via log; o ponto de extensao para e-mail/WhatsApp fica aqui.
+// Avisos por evento. Mudanca de status chega pela rota interna /status-pedido (nao se perde);
+// aqui ficam o e-mail de pedido novo (cliente e equipe) e as limpezas.
 const handlers: Partial<Record<AgnusEventType, AgnusEventHandler>> = {
   "pedido.removido": async (event) => {
     await Notificacoes.destroy({ where: { id_pedido: Number(event.payload.id_pedido) } });
@@ -34,6 +38,17 @@ const handlers: Partial<Record<AgnusEventType, AgnusEventHandler>> = {
       valorTotal: event.payload.valor_total,
       mensagem: "Novo pedido recebido. Iniciar produção sob demanda após confirmação do pagamento.",
     });
+
+    const pedido = {
+      id_pedido: Number(event.payload.id_pedido),
+      id_usuario: Number(event.payload.id_usuario),
+      status: String(event.payload.status ?? "aguardando_pagamento") as PedidoStatus,
+      valor_total: event.payload.valor_total == null ? null : Number(event.payload.valor_total),
+    };
+
+    if (Number.isInteger(pedido.id_pedido) && Number.isInteger(pedido.id_usuario)) {
+      dispararSemEsperar(AvisoPorEmailService.pedidoCriado(pedido), { eventId: event.id, pedido: pedido.id_pedido });
+    }
   },
   "pedido.atualizado": (event) => {
     if (event.payload.status === event.payload.status_anterior) {
@@ -63,6 +78,8 @@ const processarEvento = async (event: AgnusEvent) => {
     });
   }
 
+  // Registro permanente (tabela registro_eventos); a lista no Redis fica só para consulta rápida.
+  await RegistroService.registrarEvento(event);
   await handlers[event.type]?.(event);
 };
 
