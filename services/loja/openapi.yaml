@@ -1,0 +1,423 @@
+openapi: 3.0.3
+info:
+  title: Agnus - serviço da loja (Shopify Storefront)
+  version: 3.5.0
+  description: |
+    BFF da Storefront API do Shopify (headless). A vitrine, a sacola e o checkout vêm do Shopify;
+    o token da Storefront API fica só neste serviço.
+
+    - Exposto pelo Nginx sob `/api` (ex.: `https://localhost/api/loja/produtos`).
+    - Vitrine em cache Redis (cache-aside com TTL curto, ADR 0003).
+    - Os ids de sacola e de linha são os ids do Shopify em base64url. O id da sacola carrega
+      uma chave secreta: quem o tem abre a sacola, como no próprio Shopify.
+    - O pagamento acontece no checkout hospedado do Shopify (`checkoutUrl`).
+servers:
+  - url: /api
+    description: Via Nginx (docker compose)
+  - url: http://localhost:3000
+    description: Serviço direto (desenvolvimento)
+tags:
+  - name: Observabilidade
+  - name: Vitrine
+  - name: Sacola
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [ Observabilidade ]
+      summary: Liveness do serviço (usado pelo healthcheck do Docker)
+      responses:
+        "200":
+          description: Serviço no ar
+      security: []
+  /loja/produtos:
+    get:
+      operationId: listarProdutosLoja
+      tags: [ Vitrine ]
+      summary: Lista as peças do Shopify, com busca, coleção, ordenação e paginação por cursor
+      parameters:
+        - { in: query, name: busca, schema: { type: string, maxLength: 80 } }
+        - { in: query, name: colecao, description: Handle da coleção, schema: { type: string } }
+        - in: query
+          name: ordem
+          schema: { type: string, enum: [ relevancia, menor, maior, novidades, mais-vendidos ], default: relevancia }
+        - { in: query, name: depois, description: Cursor "fim" da página atual, schema: { type: string } }
+        - { in: query, name: antes, description: Cursor "inicio" da página atual, schema: { type: string } }
+        - { in: query, name: limite, schema: { type: integer, minimum: 1, maximum: 48, default: 12 } }
+      responses:
+        "200":
+          description: Página de peças
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginaProdutos" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/Indisponivel" }
+      security: []
+  /loja/produtos/{handle}:
+    get:
+      operationId: buscarProdutoLoja
+      tags: [ Vitrine ]
+      summary: Detalhe da peça com opções (tamanho, cor) e variantes
+      parameters:
+        - $ref: "#/components/parameters/Handle"
+      responses:
+        "200":
+          description: Peça
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/Indisponivel" }
+      security: []
+  /loja/produtos/{handle}/relacionados:
+    get:
+      operationId: relacionadosLoja
+      tags: [ Vitrine ]
+      summary: Até 4 peças recomendadas pelo Shopify
+      parameters:
+        - $ref: "#/components/parameters/Handle"
+      responses:
+        "200":
+          description: Peças relacionadas
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Cartao" } }
+        "404": { $ref: "#/components/responses/NotFound" }
+      security: []
+  /loja/colecoes:
+    get:
+      operationId: listarColecoesLoja
+      tags: [ Vitrine ]
+      summary: Coleções do Shopify (usadas como categorias)
+      responses:
+        "200":
+          description: Coleções
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    handle: { type: string }
+                    nome: { type: string }
+      security: []
+  /loja/sacolas:
+    post:
+      operationId: criarSacola
+      tags: [ Sacola ]
+      summary: Cria a sacola no Shopify, ligada à conta do cliente. Exige login.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                linhas: { type: array, items: { $ref: "#/components/schemas/LinhaNova" } }
+      responses:
+        "201":
+          description: Sacola criada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Regra" }
+      security:
+        - bearerAuth: []
+  /loja/sacolas/minha:
+    get:
+      operationId: minhaSacola
+      tags: [ Sacola ]
+      summary: Sacola guardada na conta do cliente
+      responses:
+        "200":
+          description: Sacola
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: Contas de administrador não fazem compras }
+        "404": { $ref: "#/components/responses/NotFound" }
+      security:
+        - bearerAuth: []
+  /loja/sacolas/{id}:
+    get:
+      operationId: buscarSacola
+      tags: [ Sacola ]
+      summary: Abre a sacola. 404 quando ela já foi paga ou expirou no Shopify.
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+      responses:
+        "200":
+          description: Sacola
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      security: []
+  /loja/sacolas/{id}/linhas:
+    post:
+      operationId: adicionarNaSacola
+      tags: [ Sacola ]
+      summary: Adiciona variantes à sacola
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ linhas ]
+              properties:
+                linhas: { type: array, items: { $ref: "#/components/schemas/LinhaNova" } }
+      responses:
+        "200":
+          description: Sacola atualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Regra" }
+      security:
+        - bearerAuth: []
+  /loja/sacolas/{id}/linhas/{linha}:
+    patch:
+      operationId: alterarLinha
+      tags: [ Sacola ]
+      summary: Altera a quantidade (0 remove a linha)
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+        - $ref: "#/components/parameters/LinhaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ quantidade ]
+              properties:
+                quantidade: { type: integer, minimum: 0, maximum: 99 }
+      responses:
+        "200":
+          description: Sacola atualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Regra" }
+      security:
+        - bearerAuth: []
+    delete:
+      operationId: removerLinha
+      tags: [ Sacola ]
+      summary: Tira a linha da sacola
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+        - $ref: "#/components/parameters/LinhaId"
+      responses:
+        "200":
+          description: Sacola atualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+      security:
+        - bearerAuth: []
+  /loja/sacolas/{id}/vincular:
+    post:
+      operationId: vincularSacola
+      tags: [ Sacola ]
+      summary: Liga a sacola de visitante à conta; se a conta já tinha uma, as peças são somadas a ela
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+      responses:
+        "200":
+          description: Sacola da conta
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sacola" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+      security:
+        - bearerAuth: []
+  /loja/sacolas/{id}/checkout:
+    post:
+      operationId: checkoutSacola
+      tags: [ Sacola ]
+      summary: Devolve o endereço do checkout do Shopify, com o e-mail do cliente já preenchido. Exige login.
+      parameters:
+        - $ref: "#/components/parameters/SacolaId"
+      responses:
+        "200":
+          description: Endereço do checkout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkoutUrl: { type: string, format: uri }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: Contas de administrador não fazem compras }
+        "409": { description: Sacola vazia }
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Handle:
+      in: path
+      name: handle
+      required: true
+      schema: { type: string }
+    SacolaId:
+      in: path
+      name: id
+      required: true
+      description: Id da sacola do Shopify em base64url
+      schema: { type: string }
+    LinhaId:
+      in: path
+      name: linha
+      required: true
+      description: Id da linha do Shopify em base64url
+      schema: { type: string }
+  responses:
+    BadRequest:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Token ausente ou inválido
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Não encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Regra:
+      description: O Shopify recusou a operação (estoque, quantidade)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Indisponivel:
+      description: Shopify fora do ar, sem configuração ou limitando requisições
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+    Cartao:
+      type: object
+      properties:
+        id: { type: string, example: "gid://shopify/Product/8907384062234" }
+        idNumerico: { type: string, example: "8907384062234" }
+        handle: { type: string, example: regata-crucifixo }
+        nome: { type: string }
+        disponivel: { type: boolean }
+        preco: { type: number, example: 129.9 }
+        precoComparado: { type: number, nullable: true }
+        moeda: { type: string, example: BRL }
+        imagens: { type: array, items: { type: string, format: uri } }
+    PaginaProdutos:
+      type: object
+      properties:
+        produtos: { type: array, items: { $ref: "#/components/schemas/Cartao" } }
+        paginacao:
+          type: object
+          properties:
+            temProxima: { type: boolean }
+            temAnterior: { type: boolean }
+            inicio: { type: string, nullable: true }
+            fim: { type: string, nullable: true }
+    Produto:
+      type: object
+      properties:
+        id: { type: string }
+        idNumerico: { type: string }
+        handle: { type: string }
+        nome: { type: string }
+        descricao: { type: string }
+        disponivel: { type: boolean }
+        preco: { type: number }
+        moeda: { type: string }
+        imagens:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string }
+              alt: { type: string }
+        opcoes:
+          type: array
+          items:
+            type: object
+            properties:
+              nome: { type: string, example: Tamanho }
+              valores:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    nome: { type: string, example: M }
+                    cor: { type: string, nullable: true }
+        variantes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, example: "gid://shopify/ProductVariant/1" }
+              nome: { type: string }
+              disponivel: { type: boolean }
+              preco: { type: number }
+              precoComparado: { type: number, nullable: true }
+              opcoes: { type: object, additionalProperties: { type: string }, example: { Tamanho: M, Cor: Preto } }
+              imagem: { type: string, nullable: true }
+    LinhaNova:
+      type: object
+      required: [ variante ]
+      properties:
+        variante: { type: string, example: "gid://shopify/ProductVariant/1" }
+        quantidade: { type: integer, minimum: 1, maximum: 99, default: 1 }
+    Sacola:
+      type: object
+      properties:
+        id: { type: string }
+        quantidade: { type: integer }
+        subtotal: { type: number }
+        total: { type: number }
+        moeda: { type: string }
+        linhas:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              quantidade: { type: integer }
+              precoUnitario: { type: number }
+              total: { type: number }
+              varianteId: { type: string }
+              disponivel: { type: boolean }
+              opcoes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    nome: { type: string }
+                    valor: { type: string }
+              produto:
+                type: object
+                properties:
+                  handle: { type: string }
+                  nome: { type: string }
+              imagem: { type: string, nullable: true }
