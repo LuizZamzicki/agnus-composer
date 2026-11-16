@@ -5,8 +5,9 @@ import codigoRastreio from "./0003-codigo-rastreio";
 import refAfiliado from "./0004-ref-afiliado";
 import devolucoes from "./0005-devolucoes";
 import devolucaoFotos from "./0006-devolucao-fotos";
+import pedidosFornecedor from "./0007-pedidos-fornecedor";
 
 // Ordem de execução. Migração nova entra no fim da lista e nunca é editada depois de publicada.
-const migracoes: Migracao[] = [esquemaInicial, pagamentos, codigoRastreio, refAfiliado, devolucoes, devolucaoFotos];
+const migracoes: Migracao[] = [esquemaInicial, pagamentos, codigoRastreio, refAfiliado, devolucoes, devolucaoFotos, pedidosFornecedor];
 
 export default migracoes;

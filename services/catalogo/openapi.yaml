@@ -312,6 +312,43 @@ paths:
       responses:
         "200": { description: Grades }
 
+  /products/{id}/skus:
+    get:
+      summary: SKUs da YouDraw por cor e tamanho do produto (equipe)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "200": { description: "Combinações cor × tamanho com o SKU (ou null), `faltando` e `integracao_ativa`" }
+    put:
+      summary: Salva os SKUs (combinação precisa existir; SKU sem espaço e sem repetir)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skus:
+                  type: array
+                  items: { type: object, properties: { cor: { type: string }, tamanho: { type: string }, sku: { type: string, nullable: true } } }
+      responses:
+        "200": { description: SKUs salvos }
+        "400": { description: Combinação inexistente, SKU inválido ou repetido }
+  /products/{id}/skus/importar:
+    post:
+      summary: Busca o produto na YouDraw e liga as variantes por cor e tamanho
+      description: Acha pelo nome; se houver mais de um candidato devolve `precisa_escolher` e `candidatos` (reenvie com `id_produto_fornecedor`).
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { id_produto_fornecedor: { type: string } } }
+      responses:
+        "200": { description: "`associados`, `sem_par` ou `precisa_escolher` + `candidatos`" }
+        "409": { description: Integração desligada (sem YOUDRAW_API_KEY) }
 components:
   securitySchemes:
     bearerAuth:

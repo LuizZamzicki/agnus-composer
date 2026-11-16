@@ -5,6 +5,7 @@ import ProdutoCores from "../models/ProdutoCores";
 import ProdutoFotos from "../models/ProdutoFotos";
 import ProdutoGrades from "../models/ProdutoGrades";
 import Produtos from "../models/Produtos";
+import SkuService from "../services/sku.service";
 
 const router = Router();
 
@@ -92,6 +93,15 @@ router.get("/produtos/:id/cores", async (req: Request, res: Response) => {
   const cores = await ProdutoCores.findAll({ where: { id_produto: idProduto }, attributes: ["id_produto_cor"] });
 
   return res.status(200).json({ cores: cores.map((cor) => cor.id_produto_cor) });
+});
+
+// SKU do fornecedor de cada par cor + grade de um pedido (serviço de pedidos, ao enviar à YouDraw).
+router.post("/variantes/skus", async (req: Request, res: Response) => {
+  const pares = (req.body?.pares ?? []) as { id_produto_cor: number; id_produto_grade: number }[];
+  if (!Array.isArray(pares) || pares.length > 100) {
+    return res.status(400).json({ message: "Envie de 0 a 100 pares." });
+  }
+  return res.status(200).json(await SkuService.resolverPares(pares));
 });
 
 export default router;

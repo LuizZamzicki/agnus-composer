@@ -8,6 +8,7 @@ import EventBusService from "@agnus/comum/services/eventBus.service";
 import AvisoPedidoService from "../services/avisoPedido.service";
 import PedidoRegrasService from "../services/pedidoRegras.service";
 import { refDoCookie } from "../services/afiliacao.service";
+import YouDrawService, { PedidosFornecedor } from "../fornecedor/youdraw.service";
 import { extrairCodigoRastreio, RastreioInvalido, urlRastreio } from "../utils/rastreio";
 import type { AuthUserPayload } from "@agnus/comum/types/auth.types";
 import type {
@@ -230,7 +231,14 @@ class PedidosController {
       },
     });
 
-    return res.status(200).send(pedidos.map((pedido) => PedidosController.comRastreio(pedido)));
+    // Lista da equipe: junto, a situação de cada pedido na YouDraw.
+    const fornecedor = pedidos.length
+      ? new Map((await PedidosFornecedor.findAll({ where: { id_pedido: pedidos.map((p) => p.id_pedido) } })).map((r) => [r.id_pedido, r]))
+      : new Map();
+
+    return res.status(200).send(
+      pedidos.map((pedido) => ({ ...PedidosController.comRastreio(pedido), fornecedor: YouDrawService.resumo(fornecedor.get(pedido.id_pedido)) })),
+    );
   }
 
   // Pedidos do usuario autenticado; o id vem do token, nunca da query.

@@ -2,6 +2,7 @@ import { chamarServico } from "@agnus/comum/utils/clienteInterno";
 import logger from "@agnus/comum/utils/logger";
 import type Pedidos from "../models/Pedidos";
 import AfiliacaoService from "./afiliacao.service";
+import YouDrawService from "../fornecedor/youdraw.service";
 import type { PedidoStatus } from "../types/pedido.types";
 
 class AvisoPedidoService {
@@ -27,6 +28,9 @@ class AvisoPedidoService {
     }
 
     await AfiliacaoService.avisarStatus(pedido);
+
+    // Pago: a produção começa criando o pedido na YouDraw (em segundo plano).
+    YouDrawService.aoPagar(pedido);
   }
 }
 

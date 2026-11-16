@@ -416,6 +416,62 @@ paths:
             image/webp: {}
         "401": { description: Sem login }
         "404": { description: Foto não encontrada (ou sem acesso) }
+  /orders/{id}/fornecedor:
+    get:
+      summary: Situação do pedido na YouDraw (equipe)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "200":
+          description: "`fornecedor` é null enquanto nada foi enviado. situacao: aguardando, enviado, erro ou manual (integração desligada)."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  integracao_ativa: { type: boolean }
+                  fornecedor:
+                    type: object
+                    nullable: true
+                    properties:
+                      situacao: { type: string, enum: [aguardando, enviado, erro, manual] }
+                      codigo_publico: { type: string, nullable: true, example: YD-ABC23 }
+                      status_externo: { type: string, nullable: true, example: pending_payment }
+                      total: { type: number, nullable: true, description: Custo na YouDraw (R$) }
+                      frete: { type: number, nullable: true }
+                      rastreio_codigo: { type: string, nullable: true }
+                      rastreio_url: { type: string, nullable: true }
+                      erro: { type: string, nullable: true }
+                      erro_codigo: { type: string, nullable: true }
+        "401": { description: Sem login }
+        "403": { description: Sem permissão }
+  /orders/{id}/fornecedor/enviar:
+    post:
+      summary: Cria (ou tenta de novo) o pedido na YouDraw
+      description: |
+        Só para pedidos pagos. Idempotente: pedido já criado não é criado de novo. `nova_chave: true` gera outra
+        Idempotency-Key (use só depois de conferir no painel da YouDraw que o pedido não existe lá).
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { nova_chave: { type: boolean, default: false } } }
+      responses:
+        "200": { description: "Resultado (`fornecedor` com a situação depois do envio)" }
+        "404": { description: Pedido não encontrado }
+        "409": { description: Pedido ainda não pago }
+  /youdraw/webhook:
+    post:
+      summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)
+      description: |
+        Assinatura obrigatória: `X-YouDraw-Signature: v1=<HMAC-SHA256(YOUDRAW_WEBHOOK_SECRET, "<X-YouDraw-Timestamp>.<corpo bruto>")>`,
+        com no máximo 5 minutos de diferença. Entregas repetidas (mesmo `X-YouDraw-Delivery`) são ignoradas.
+        Enviado/entregue na YouDraw muda o pedido da loja e avisa o cliente; cancelado só é registrado.
+      responses:
+        "200": { description: "Processado (ou `processado: false` quando o segredo não está configurado)" }
+        "401": { description: Assinatura inválida ou vencida }
+        "500": { description: Falha ao aplicar; a YouDraw tenta de novo }
 components:
   securitySchemes:
     bearerAuth:

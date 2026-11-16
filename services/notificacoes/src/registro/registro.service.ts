@@ -4,7 +4,7 @@ import { HttpError } from "@agnus/comum/types/http_error";
 import type { AgnusEvent } from "@agnus/comum/types/event.types";
 import logger from "@agnus/comum/utils/logger";
 
-export type Categoria = "pedido" | "pagamento" | "devolucao" | "email" | "aviso" | "catalogo" | "usuario" | "afiliado" | "sistema";
+export type Categoria = "pedido" | "pagamento" | "devolucao" | "email" | "aviso" | "catalogo" | "usuario" | "afiliado" | "fornecedor" | "sistema";
 export type Resultado = "sucesso" | "falha" | "ignorado";
 
 export class RegistroEventos extends Model {
@@ -30,7 +30,7 @@ RegistroEventos.init(
     event_id: { type: DataTypes.STRING(36), allowNull: true },
     tipo: { type: DataTypes.STRING(60), allowNull: false },
     categoria: {
-      type: DataTypes.ENUM("pedido", "pagamento", "devolucao", "email", "aviso", "catalogo", "usuario", "afiliado", "sistema"),
+      type: DataTypes.ENUM("pedido", "pagamento", "devolucao", "email", "aviso", "catalogo", "usuario", "afiliado", "fornecedor", "sistema"),
       allowNull: false,
     },
     descricao: { type: DataTypes.STRING(255), allowNull: false },
@@ -84,6 +84,18 @@ const ROTULO_STATUS: Record<string, string> = {
   cancelado: "cancelado",
 };
 
+const STATUS_YOUDRAW: Record<string, string> = {
+  awaiting_art: "aguardando arte",
+  pending_payment: "aguardando pagamento",
+  paid: "pago",
+  in_production: "em produção",
+  shipped: "enviado",
+  delivered: "entregue",
+  returned: "devolvido",
+  canceled: "cancelado",
+  other: "outro",
+};
+
 // Tradução de cada evento do barramento para uma linha do registro.
 const DE_EVENTO: Record<string, (p: AgnusEvent["payload"]) => Omit<NovoRegistro, "tipo">> = {
   "pedido.criado": (p) => ({
@@ -121,6 +133,23 @@ const DE_EVENTO: Record<string, (p: AgnusEvent["payload"]) => Omit<NovoRegistro,
           categoria: "afiliado",
           descricao: `Venda do pedido #${p.id_pedido} atribuída ao afiliado #${p.id_afiliado}${reais(p.valor_comissao) ? ` (comissão ${reais(p.valor_comissao)})` : ""}`,
         },
+  "fornecedor.pedido_criado": (p) => ({
+    categoria: "fornecedor",
+    descricao: `Pedido #${p.id_pedido} criado na YouDraw (${p.codigo_publico})${Number.isFinite(Number(p.total_centavos)) ? `: custo ${reais(Number(p.total_centavos) / 100)}` : ""}, aguardando o pagamento lá`,
+  }),
+  "fornecedor.pedido_falhou": (p) => ({
+    categoria: "fornecedor",
+    resultado: p.codigo === "integracao_desligada" ? "ignorado" : "falha",
+    descricao:
+      p.codigo === "integracao_desligada"
+        ? `Pedido #${p.id_pedido} não foi enviado à YouDraw: integração desligada (fazer no painel)`
+        : `Falha ao criar o pedido #${p.id_pedido} na YouDraw${p.retentavel ? " (vai tentar de novo)" : ""}: ${p.mensagem ?? p.codigo}`,
+  }),
+  "fornecedor.status": (p) => ({
+    categoria: "fornecedor",
+    descricao: `YouDraw: pedido #${p.id_pedido} (${p.codigo_publico}) ${STATUS_YOUDRAW[String(p.status_anterior)] ? `${STATUS_YOUDRAW[String(p.status_anterior)]} → ` : ""}${STATUS_YOUDRAW[String(p.status_externo)] ?? p.status_externo}`,
+    resultado: p.status_externo === "canceled" || p.status_externo === "returned" ? "falha" : "sucesso",
+  }),
   "afiliado.pagamento": (p) => ({
     categoria: "afiliado",
     descricao: `Comissão paga ao afiliado #${p.id_afiliado}: ${reais(p.valor) ?? p.valor} (${p.quantidade_conversoes} venda(s))`,

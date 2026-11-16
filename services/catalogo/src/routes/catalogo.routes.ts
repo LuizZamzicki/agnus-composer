@@ -8,6 +8,8 @@ import { PERMISSIONS } from '@agnus/comum/config/permissions';
 import authenticateToken, { identifyOptionalUser } from '@agnus/comum/middlewares/auth.middleware';
 import { checarPermissao } from '@agnus/comum/middlewares/permission.middleware';
 import { uploadAny } from '@agnus/comum/middlewares/upload.middleware';
+import SkuService from '../services/sku.service';
+import { HttpError } from '@agnus/comum/types/http_error';
 
 // Bounded context Catalogo: leitura publica (com cache) e escrita so para a equipe.
 const router = Router();
@@ -25,6 +27,22 @@ router.post('/products', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_
 router.get('/products/:id', identifyOptionalUser, ProdutosController.getById);
 router.put('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), ProdutosController.update);
 router.delete('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EXCLUIR), ProdutosController.remove);
+
+// SKUs do fornecedor (YouDraw) por cor + tamanho: só a equipe vê e edita.
+const idProduto = (valor: unknown) => {
+  const n = Number(valor);
+  if (!Number.isInteger(n) || n <= 0) throw new HttpError(400, 'ID do produto inválido.');
+  return n;
+};
+router.get('/products/:id/skus', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), async (req, res) => {
+  res.json(await SkuService.listar(idProduto(req.params.id)));
+});
+router.put('/products/:id/skus', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), async (req, res) => {
+  res.json(await SkuService.salvar(idProduto(req.params.id), req.body ?? {}));
+});
+router.post('/products/:id/skus/importar', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), async (req, res) => {
+  res.json(await SkuService.importarDaYouDraw(idProduto(req.params.id), req.body ?? {}));
+});
 
 router.post('/product-colors', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_COR_CRIAR), ProdutoCoresController.create);
 router.get('/product-colors/:id_produto', ProdutoCoresController.getByIdProduto);
