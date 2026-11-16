@@ -4,8 +4,43 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ## [Não lançado] — 4.0.0
 
-### Em andamento
-- Integração de pagamento com Mercado Pago (US-25, US-26).
+### Adicionado
+- Checkout próprio com pagamento pelo Mercado Pago (ADR 0011, US-25 e US-26): depois de escolher o endereço, o cliente paga em `/pagamento/<pedido>` com PIX (QR Code e copia e cola) ou cartão de crédito em até 12x, no formulário seguro do Mercado Pago. Os dados do cartão não passam pelo servidor da Agnus.
+- O pedido vira "pago" sozinho: pelo webhook do Mercado Pago (assinatura conferida) ou, sem webhook, pela própria tela de pagamento, que confere o status a cada poucos segundos. O cliente recebe a notificação de pago no site.
+- "Meus pedidos" e a confirmação do pedido têm o botão **Pagar** enquanto o pedido aguarda pagamento; um PIX ainda válido reaparece em vez de gerar outra cobrança.
+
+- Promoção com preço "De R$ ... por R$ ..." e selo de desconto na vitrine, no produto e na busca; campo "Preço De" no cadastro do admin (AGNUS-226).
+- E-mails de aviso ao cliente (pedido recebido, pagamento confirmado, saiu para entrega, entregue, cancelado e cada etapa da devolução) e à equipe (novo pedido, pedido pago, nova devolução), a partir de `contato@agnusfit.com`; Mailpit para ver os e-mails em desenvolvimento (AGNUS-140).
+- Acompanhamento da entrega pelo rastreio da YouDraw dentro de "Meus pedidos", já pesquisado pelo pedido ou pelo e-mail do cliente; segue as cores do tema claro e escuro (AGNUS-227).
+- Programa de afiliados (serviço `afiliados`, modelo da Shopee Afiliados): links curtos rastreados, atribuição por 7 dias (último clique), comissão por produto, categoria, afiliado ou padrão, aprovação após o prazo de arrependimento, pagamento por PIX e API com AppID e assinatura SHA256; painel do afiliado no site, área de afiliados no admin e termos do programa (AGNUS-230, AGNUS-233).
+- Devolução pelo cliente em "Meus pedidos" (7 dias para arrependimento e tamanho, 90 dias para defeito), com fotos da peça, aprovação, código de postagem e reembolso pelo Mercado Pago ou manual; a comissão do afiliado fica retida e é descontada das peças devolvidas (AGNUS-232).
+- Edição e exclusão de categorias no admin; ao excluir uma categoria com produtos, eles ficam "Sem categoria" (AGNUS-231).
+- Guia de medidas ("Ver medidas") na página do produto, com desenho da peça, tabela por tamanho com as medidas da YouDraw, como medir e sugestão de tamanho; tabela editável por produto no admin (AGNUS-234).
+- Registro permanente de eventos (`registro_eventos`): pedidos, vendas, e-mails enviados ou que falharam, avisos no site, devoluções e afiliação, com tela no admin e histórico por pedido (AGNUS-235).
+### Removido
+- Integração Shopify headless (ADR 0009) desativada: o serviço `loja` sai do `docker-compose`, do gateway e do CD, mas o código fica guardado (`services/loja/`, `agnus-front/shopify-desativado/`) com instruções para religar. Vitrine, sacola e pedidos voltam a usar `catalogo`, `carrinho` e `pedidos`.
+
+### Alterado
+- Painel administrativo `/admin` mantido (a remoção prevista no ADR 0010 foi desfeita).
+- Trocar a senha encerra as sessões nos outros aparelhos; a API devolve um token novo para quem trocou (`PATCH /users/:id/password` responde 200 com `token`). Na primeira vez após a atualização todos precisam entrar de novo.
+
+### Corrigido
+- Renomear uma categoria só mudando maiúsculas (ex.: "camisetas" para "Camisetas") dava "Já existe categoria com esse nome".
+- Excluir uma categoria que tinha produtos dava erro 500 pela chave estrangeira.
+
+### Segurança
+Correções da auditoria de segurança (metodologia Cloudflare security-audit-skill):
+- Login com Google: uma conta já ligada a uma conta Google não é mais religada a outra só por ter o mesmo e-mail. As mensagens de erro na URL de retorno são só textos conhecidos, e o site ignora textos de `?error=` que não reconhece.
+- Troca de senha: no máximo 5 tentativas a cada 15 minutos por conta, senha com no máximo 128 caracteres e histórico com as 5 últimas senhas (as mais antigas são apagadas).
+- Fotos de avaliação: no máximo 4 por envio e 8 por avaliação, também no envio em base64; uma foto inválida não deixa arquivos órfãos; `caminho_url` só aceita fotos da própria avaliação.
+- Corpo das requisições limitado a 1 MB (20 MB só nas rotas de foto) e sem aceitar corpo comprimido; erros de tamanho e formato respondem 413/415 em vez de 500.
+- Chamadas entre serviços: o disjuntor só abre por timeout, falha de conexão ou 502/503/504, não por erro causado pelo dado de um cliente, e não repete uma chamada que estourou o tempo. Seleções do catálogo em lotes de no máximo 100; carrinho com no máximo 50 itens diferentes; paginação com teto de página. Busca: falha do Meilisearch volta a cair no plano B.
+- Produção: `docker-compose.prod.yml` força `NODE_ENV=production` nos serviços. O CD só publica versões `vX.Y.Z`, o disparo manual só vale na main, só o build escreve no registro de imagens, deploys não rodam em paralelo e a versão chega ao script de deploy como variável de ambiente.
+- Cada container recebe só os segredos que usa (Google só na identidade, credenciais do Mercado Pago só em pedidos, chave do Meilisearch só na busca); busca e admin deixam de herdar o usuário e a senha do banco.
+- Actions do GitHub fixadas por hash de commit no CI e no CD.
+- Tokens de sessão assinados com chave assimétrica (ES256): só a identidade tem a chave privada e o `JWT_SECRET`; os outros serviços só conferem com a pública e não conseguem forjar um login. O algoritmo aceito é fixo (um token HS256 é recusado quando há chave pública). Gere as chaves com `node services/scripts/gerar-chaves-jwt.cjs services/.env`; sem elas, vale o modo HS256 antigo, e um serviço sem nenhuma das duas não sobe.
+- Deploy pelo digest da imagem: o CD guarda o digest de cada imagem que construiu e o servidor sobe exatamente aquela imagem (`/opt/agnus/.release`); o rollback volta para os digests da release anterior.
+- Removido o container `agnus-backend` (monólito antigo) que continuava rodando fora do compose, com acesso ao banco e às fotos.
 
 ## [3.5.0] — 2026-11-09
 

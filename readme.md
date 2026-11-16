@@ -13,6 +13,7 @@ As pastas do front e back devem ficar exatamente assim:
    - `.env.example` → `.env`
    - `services/.env.example` → `services/.env` (a `DB_PASSWORD` deve ser igual à `MYSQL_ROOT_PASSWORD`)
    - `agnus-front/.env` com `REACT_APP_API_BASE_URL=/api/`
+   - Gere as chaves dos tokens de sessão: `node services/scripts/gerar-chaves-jwt.cjs services/.env`. A chave privada fica só no serviço de identidade; os demais só recebem a pública. Em produção, rode o mesmo comando no servidor, em `/opt/agnus/services/.env`.
 2. Gere os certificados e coloque `agnus.pem` e `agnus-key.pem` numa pasta `certs/` na raiz:
 
    | Windows | macOS |
@@ -40,7 +41,7 @@ Comandos para subir e derrubar containers:
 | `busca` | Índice de pesquisa do catálogo | só interno |
 | `avaliacoes` | Avaliações e fotos | <https://localhost/api/product-reviews> |
 | `carrinho` | Sacola | <https://localhost/api/carts> |
-| `pedidos` | Pedidos e checkout | <https://localhost/api/orders> |
+| `pedidos` | Pedidos, checkout e pagamento (Mercado Pago) | <https://localhost/api/orders> |
 | `notificacoes` | Sino do site e consumo dos eventos | `docker compose logs -f notificacoes` |
 | `admin` | BFF do painel e Swagger de todos os serviços | <https://localhost/api/docs/> |
 | `admin-front` | Gera o build do painel e encerra | <https://localhost/admin> |
@@ -52,6 +53,31 @@ Comandos para subir e derrubar containers:
 | `ngrok` | Túnel público (opcional, precisa de token) | <http://localhost:4040> |
 
 Arquitetura completa: [mapa dos microsserviços](docs/arquitetura/microsservicos.md).
+
+## Pagamento (Mercado Pago)
+
+O checkout é do próprio site: depois de escolher o endereço, o cliente paga em `/pagamento/<pedido>` com **PIX** ou **cartão de crédito** (até 12x), no formulário seguro do Mercado Pago (Payment Brick). Os dados do cartão nunca passam pelo servidor da Agnus. O valor cobrado é sempre o total gravado no pedido ([ADR 0011](docs/arquitetura/adr/0011-checkout-proprio-mercado-pago.md)).
+
+1. Em <https://www.mercadopago.com.br/developers/panel/app>, crie uma aplicação (Pagamentos online, **Checkout Transparente/Bricks**).
+2. Em **Contas de teste**, crie uma conta **Vendedor** e uma **Comprador**. As credenciais de teste são as da conta vendedora de teste e começam com `APP_USR-` (o formato antigo `TEST-` também funciona). Copie a **Public Key** e o **Access Token** para `services/.env`, cada um no começo da linha, sem espaços antes:
+
+   ```env
+   MP_PUBLIC_KEY=APP_USR-...
+   MP_ACCESS_TOKEN=APP_USR-...
+   ```
+
+3. (Opcional) Em **Webhooks → Configurar notificações**, use a URL `https://<seu-dominio-ngrok>/pagamentos/webhook`, marque o evento **Pagamentos** e copie a **chave secreta**:
+
+   ```env
+   MP_WEBHOOK_SECRET=...
+   MP_NOTIFICATION_URL=https://<seu-dominio-ngrok>/pagamentos/webhook
+   ```
+
+4. `docker compose up -d --build pedidos nginx`.
+
+Sem webhook (por exemplo, só em localhost), a própria tela de pagamento confere o status no Mercado Pago a cada poucos segundos. Para testar, use os [cartões de teste](https://www.mercadopago.com.br/developers/pt/docs/checkout-bricks/additional-content/your-integrations/test/cards) (nome do titular `APRO` aprova, `OTHE` recusa) e, no campo de e-mail do formulário, o **e-mail da conta compradora de teste**: com credenciais de teste, o Mercado Pago recusa qualquer outro pagador ("Unauthorized use of live credentials"). Os dois campos do webhook são opcionais; sem eles, o site não manda `notification_url` e a rota do webhook responde 200 sem processar nada. Para cobrar de verdade, troque pelas credenciais de produção.
+
+> A integração com o Shopify headless (ADR 0009) está desativada e guardada em `services/loja/` e `agnus-front/shopify-desativado/`; veja `services/loja/README.md` para religar.
 
 
 Documentação Agnus
