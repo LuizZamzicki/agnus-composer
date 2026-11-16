@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Package, Pencil } from "lucide-react";
+import { History, Package, Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { apiFetch, formatarMoeda, formatarStatus, getAuthHeaders } from "./admin-api";
 
 function normalizarListaResposta(payload) {
@@ -27,6 +28,8 @@ function normalizarPedido(item, index = 0) {
     status: item?.status ?? item?.status_pedido ?? "-",
     total: item?.valor_total ?? item?.total ?? item?.preco_total ?? item?.valor ?? "-",
     dataCriacao: item?.data_criacao ?? item?.created_at ?? item?.dataPedido ?? null,
+    urlRastreio: item?.url_rastreio ?? null,
+    codigoRastreio: item?.codigo_rastreio ?? "",
   };
 }
 
@@ -40,6 +43,7 @@ function formatarDataPedido(valor) {
 }
 
 function AdminPedidoLista() {
+  const navigate = useNavigate();
   const [pedidosStatusFiltro, setPedidosStatusFiltro] = useState("todos");
   const [pedidosBuscaFiltro, setPedidosBuscaFiltro] = useState("");
   const [pedidosPage, setPedidosPage] = useState(1);
@@ -50,6 +54,7 @@ function AdminPedidoLista() {
 
   const [pedidoEditando, setPedidoEditando] = useState(null);
   const [novoStatus, setNovoStatus] = useState("");
+  const [novoRastreio, setNovoRastreio] = useState("");
 
   useEffect(() => {
     let ativo = true;
@@ -98,8 +103,10 @@ function AdminPedidoLista() {
       const response = await apiFetch(`/orders/${idPedido}`, {
         method: "PUT",
         headers: getAuthHeaders(),
+        // Número do pedido na YouDraw (opcional). Vazio: o cliente rastreia pelo e-mail da compra.
         body: JSON.stringify({
           status: novoStatus,
+          rastreio: novoRastreio.trim() || null,
         }),
       });
 
@@ -113,13 +120,14 @@ function AdminPedidoLista() {
       setPedidos((prev) =>
         prev.map((pedido) =>
           pedido.id === idPedido
-            ? { ...pedido, status: novoStatus }
+            ? { ...pedido, status: novoStatus, urlRastreio: data?.url_rastreio ?? null, codigoRastreio: data?.codigo_rastreio ?? "" }
             : pedido
         )
       );
 
       setPedidoEditando(null);
       setNovoStatus("");
+      setNovoRastreio("");
     } catch {
       alert("Erro ao conectar no servidor.");
     }
@@ -223,6 +231,7 @@ function AdminPedidoLista() {
                   <th>Status</th>
                   <th>Total</th>
                   <th>Data</th>
+                  <th title="Opcional. Sem ele, o cliente rastreia pelo e-mail da compra.">Nº pedido YouDraw</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -263,6 +272,25 @@ function AdminPedidoLista() {
 
                     <td>
                       {pedidoEditando === pedido.id ? (
+                        <input
+                          data-cy="rastreio-pedido"
+                          className="admin-form-input"
+                          type="text"
+                          placeholder="Opcional (ex.: 1234)"
+                          value={novoRastreio}
+                          onChange={(e) => setNovoRastreio(e.target.value)}
+                        />
+                      ) : pedido.urlRastreio ? (
+                        <a href={pedido.urlRastreio} target="_blank" rel="noopener noreferrer" data-cy="ver-rastreio">
+                          #{pedido.codigoRastreio} · ver rastreio
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+
+                    <td>
+                      {pedidoEditando === pedido.id ? (
                         <>
                           <button data-cy="salvar-status-pedido" className="admin-btn-novo-pedido" onClick={() => salvarStatus(pedido.id)}>
                             Salvar
@@ -275,6 +303,16 @@ function AdminPedidoLista() {
                           </button>
                         </>
                       ) : (
+                        <>
+                        <button
+                          data-cy="historico-pedido"
+                          className="admin-btn-novo-pedido"
+                          title="Histórico do pedido (registro de eventos)"
+                          aria-label={`Histórico do pedido ${pedido.id}`}
+                          onClick={() => navigate(`/admin/eventos?pedido=${pedido.id}`)}
+                        >
+                          <History size={16} />
+                        </button>
                         <button
                           data-cy="editar-pedido"
                           className="admin-btn-novo-pedido"
@@ -283,10 +321,12 @@ function AdminPedidoLista() {
                             setNovoStatus(
                               pedido.status
                             );
+                            setNovoRastreio(pedido.codigoRastreio || "");
                           }}
                         >
                           <Pencil size={16} />
                         </button>
+                        </>
                       )}
                     </td>
                   </tr>

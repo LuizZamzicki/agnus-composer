@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   FolderOpen,
+  History,
   LayoutDashboard,
   List,
   LogOut,
   Package,
+  RotateCcw,
+  Share2,
   ShoppingCart,
   Users,
 } from "lucide-react";
@@ -25,6 +28,15 @@ function obterMenuAtivo(pathname) {
 
   if (pathname.startsWith("/admin/pedidos"))
     return "pedidos";
+
+  if (pathname.startsWith("/admin/devolucoes"))
+    return "devolucoes";
+
+  if (pathname.startsWith("/admin/afiliados"))
+    return "afiliados";
+
+  if (pathname.startsWith("/admin/eventos"))
+    return "eventos";
 
   return "produtos-listar";
 }
@@ -46,6 +58,15 @@ function caminhoPorMenu(menu) {
 
     case "pedidos":
       return "/admin/pedidos";
+
+    case "devolucoes":
+      return "/admin/devolucoes";
+
+    case "afiliados":
+      return "/admin/afiliados";
+
+    case "eventos":
+      return "/admin/eventos";
 
     default:
       return "/admin/produtos";
@@ -219,6 +240,33 @@ function AdminMenuLateral() {
             Pedidos
           </span>
 
+        </button>
+
+        <button
+          data-cy="menu-devolucoes"
+          className={`admin-nav-item ${activeMenu === "devolucoes" ? "active" : ""}`}
+          onClick={() => irParaMenu("devolucoes")}
+        >
+          <RotateCcw size={20} />
+          <span>Devoluções</span>
+        </button>
+
+        <button
+          data-cy="menu-afiliados"
+          className={`admin-nav-item ${activeMenu === "afiliados" ? "active" : ""}`}
+          onClick={() => irParaMenu("afiliados")}
+        >
+          <Share2 size={20} />
+          <span>Afiliados</span>
+        </button>
+
+        <button
+          data-cy="menu-eventos"
+          className={`admin-nav-item ${activeMenu === "eventos" ? "active" : ""}`}
+          onClick={() => irParaMenu("eventos")}
+        >
+          <History size={20} />
+          <span>Registro de eventos</span>
         </button>
 
       </nav>

@@ -5,6 +5,7 @@ import { useNotification } from "../../components/notification";
 import { assetUrl } from "../../utils/api";
 import { fetchJsonPaginado } from "../../utils/pagination";
 import { apiFetch, getAuthHeaders } from "./admin-api";
+import TabelaMedidasEditor, { faltasNaTabela } from "./tabela-medidas-editor";
 
 function normalizarCategoria(item, index = 0) {
   return {
@@ -130,10 +131,12 @@ function AdminProdutoCadastro() {
     descricao: "",
     custo: "",
     precoVenda: "",
+    precoOriginal: "",
     categoria: "",
   });
 
   const [grades, setGrades] = useState([]);
+  const [tabelaMedidas, setTabelaMedidas] = useState(null);
   const [novaGrade, setNovaGrade] = useState({ nome: "", acrescimo: "" });
 
   const [cores, setCores] = useState([]);
@@ -163,9 +166,11 @@ function AdminProdutoCadastro() {
       descricao: "",
       custo: "",
       precoVenda: "",
+      precoOriginal: "",
       categoria: "",
     });
     setGrades([]);
+    setTabelaMedidas(null);
     setCores([]);
     setNovaGrade({ nome: "", acrescimo: "" });
     setNovaCor({ nome: "", tonalidade: "#c04b31", acrescimo: "" });
@@ -334,8 +339,17 @@ function AdminProdutoCadastro() {
           descricao: produtoData?.descricao ?? "",
           custo: precoCusto === null || precoCusto === undefined ? "" : String(precoCusto),
           precoVenda: precoBase === null || precoBase === undefined ? "" : String(precoBase),
+          precoOriginal: produtoData?.preco_original == null ? "" : String(produtoData.preco_original),
           categoria: produtoData?.id_categoria ?? produtoData?.categoria_id ?? "",
         });
+
+        // Tabela de medidas: o editor trabalha com texto nas células.
+        const tabela = typeof produtoData?.tabela_medidas === "string" ? JSON.parse(produtoData.tabela_medidas || "null") : produtoData?.tabela_medidas;
+        setTabelaMedidas(
+          tabela
+            ? { ...tabela, observacao: tabela.observacao ?? "", linhas: tabela.linhas.map((l) => ({ ...l, valores: Object.fromEntries(Object.entries(l.valores).map(([k, v]) => [k, String(v).replace(".", ",")])) })) }
+            : null,
+        );
 
         const gradesOriginais =
           gradesData.length > 0
@@ -489,6 +503,17 @@ function AdminProdutoCadastro() {
       return;
     }
 
+    const precoOriginal = produto.precoOriginal !== "" ? parseFloat(produto.precoOriginal) : null;
+    if (precoOriginal !== null && (Number.isNaN(precoOriginal) || precoOriginal <= precoBase)) {
+      notify.warning("O preço \"De\" da promoção precisa ser maior que o preço de venda (ou fique vazio).");
+      return;
+    }
+
+    if (tabelaMedidas && faltasNaTabela(tabelaMedidas) > 0) {
+      notify.warning("Preencha todas as medidas da tabela (ou escolha \"Sem tabela de medidas\").");
+      return;
+    }
+
     const gradesValidas = grades.filter((grade) => (grade?.nome || "").trim() !== "");
 
     if (gradesValidas.length === 0) {
@@ -572,6 +597,8 @@ function AdminProdutoCadastro() {
         descricao: produto.descricao || null,
         preco_custo: parseFloat(produto.custo) || 0,
         preco_base: precoBase,
+        preco_original: precoOriginal,
+        tabela_medidas: tabelaMedidas,
         ativo: true,
         grades: gradesPayload,
         cores: coresPayload,
@@ -702,6 +729,21 @@ function AdminProdutoCadastro() {
           </div>
 
           <div className="admin-form-group">
+            <label className="admin-form-label">Preço "De" (promoção, opcional)</label>
+            <div className="admin-form-input-prefix">
+              <span>R$</span>
+              <input
+                data-cy="produto-preco-original"
+                type="number"
+                placeholder="Vazio = sem promoção"
+                step="0.01"
+                value={produto.precoOriginal}
+                onChange={(e) => setProduto({ ...produto, precoOriginal: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="admin-form-group">
             <label className="admin-form-label">Categoria</label>
             <div className="admin-input-group">
               <select
@@ -823,6 +865,8 @@ function AdminProdutoCadastro() {
           </div>
         </div >
       </div >
+
+      <TabelaMedidasEditor tabela={tabelaMedidas} onChange={setTabelaMedidas} tamanhos={grades.map((g) => g.nome)} />
 
       <div className="admin-form-section">
         <div className="admin-form-header">
