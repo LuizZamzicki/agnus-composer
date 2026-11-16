@@ -6,6 +6,7 @@ import { assetUrl } from "../../utils/api";
 import { fetchJsonPaginado } from "../../utils/pagination";
 import { apiFetch, getAuthHeaders } from "./admin-api";
 import TabelaMedidasEditor, { faltasNaTabela } from "./tabela-medidas-editor";
+import SkusYouDraw from "./skus-youdraw";
 
 function normalizarCategoria(item, index = 0) {
   return {
@@ -867,6 +868,8 @@ function AdminProdutoCadastro() {
       </div >
 
       <TabelaMedidasEditor tabela={tabelaMedidas} onChange={setTabelaMedidas} tamanhos={grades.map((g) => g.nome)} />
+
+      {produtoEdicaoId && <SkusYouDraw idProduto={produtoEdicaoId} />}
 
       <div className="admin-form-section">
         <div className="admin-form-header">

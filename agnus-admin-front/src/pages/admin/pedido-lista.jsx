@@ -29,6 +29,7 @@ function normalizarPedido(item, index = 0) {
     total: item?.valor_total ?? item?.total ?? item?.preco_total ?? item?.valor ?? "-",
     dataCriacao: item?.data_criacao ?? item?.created_at ?? item?.dataPedido ?? null,
     urlRastreio: item?.url_rastreio ?? null,
+    fornecedor: item?.fornecedor ?? null,
     codigoRastreio: item?.codigo_rastreio ?? "",
   };
 }
@@ -44,6 +45,7 @@ function formatarDataPedido(valor) {
 
 function AdminPedidoLista() {
   const navigate = useNavigate();
+  const [enviandoYouDraw, setEnviandoYouDraw] = useState(null);
   const [pedidosStatusFiltro, setPedidosStatusFiltro] = useState("todos");
   const [pedidosBuscaFiltro, setPedidosBuscaFiltro] = useState("");
   const [pedidosPage, setPedidosPage] = useState(1);
@@ -131,6 +133,69 @@ function AdminPedidoLista() {
     } catch {
       alert("Erro ao conectar no servidor.");
     }
+  }
+
+  // Cria (ou tenta de novo) o pedido na YouDraw. Conflito de idempotência só com confirmação:
+  // uma chave nova pode criar um segundo pedido lá se o primeiro tiver sido criado.
+  async function enviarYouDraw(pedido, novaChave = false) {
+    setEnviandoYouDraw(pedido.id);
+    try {
+      const response = await apiFetch(`/orders/${pedido.id}/fornecedor/enviar`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(novaChave ? { nova_chave: true } : {}),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data?.message || "Não foi possível enviar à YouDraw.");
+        return;
+      }
+      const f = data.fornecedor;
+      setPedidos((prev) => prev.map((p) => (p.id === pedido.id ? { ...p, fornecedor: f } : p)));
+      if (f?.situacao === "erro" && f.erro_codigo === "idempotency_conflict") {
+        if (window.confirm("A YouDraw recusou porque os dados mudaram desde a última tentativa. Confira no painel da YouDraw se o pedido já existe. Enviar como pedido novo?")) {
+          await enviarYouDraw(pedido, true);
+        }
+      } else if (f?.situacao === "erro") {
+        alert(`YouDraw: ${f.erro}`);
+      }
+    } catch {
+      alert("Erro ao conectar no servidor.");
+    } finally {
+      setEnviandoYouDraw(null);
+    }
+  }
+
+  function celulaYouDraw(pedido) {
+    const f = pedido.fornecedor;
+    const pago = ["pago", "enviado", "entregue"].includes(pedido.status);
+    const botao = (rotulo) => (
+      <button type="button" data-cy="enviar-youdraw" className="admin-btn-novo-pedido" disabled={enviandoYouDraw === pedido.id} onClick={() => enviarYouDraw(pedido)}>
+        {enviandoYouDraw === pedido.id ? "Enviando..." : rotulo}
+      </button>
+    );
+
+    if (f?.situacao === "enviado") {
+      return (
+        <span data-cy="youdraw-enviado" title={f.status_externo ?? ""}>
+          <strong>{f.codigo_publico}</strong>
+          <br />
+          <small>{({ pending_payment: "aguardando pagamento lá", paid: "pago lá", in_production: "em produção", shipped: "enviado", delivered: "entregue", canceled: "cancelado lá", awaiting_art: "aguardando arte", returned: "devolvido" })[f.status_externo] ?? f.status_externo}</small>
+        </span>
+      );
+    }
+    if (f?.situacao === "erro") {
+      return (
+        <span data-cy="youdraw-erro" title={f.erro ?? ""}>
+          <small style={{ color: "#9b2c1f" }}>Falhou{f.retentavel ? " (tentando de novo)" : ""}</small>
+          <br />
+          {botao("Tentar de novo")}
+        </span>
+      );
+    }
+    if (f?.situacao === "manual") return <span title={f.erro ?? ""}><small>Fazer no painel</small><br />{botao("Enviar")}</span>;
+    if (f?.situacao === "aguardando") return <small>Enviando...</small>;
+    return pago ? botao("Enviar") : "-";
   }
 
   const pedidosFiltrados = useMemo(() => {
@@ -231,6 +296,7 @@ function AdminPedidoLista() {
                   <th>Status</th>
                   <th>Total</th>
                   <th>Data</th>
+                  <th>YouDraw</th>
                   <th title="Opcional. Sem ele, o cliente rastreia pelo e-mail da compra.">Nº pedido YouDraw</th>
                   <th>Ações</th>
                 </tr>
@@ -269,6 +335,7 @@ function AdminPedidoLista() {
 
                     <td>{formatarMoeda(pedido.total)}</td>
                     <td>{formatarDataPedido(pedido.dataCriacao)}</td>
+                    <td>{celulaYouDraw(pedido)}</td>
 
                     <td>
                       {pedidoEditando === pedido.id ? (
