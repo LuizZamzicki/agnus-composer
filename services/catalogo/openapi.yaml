@@ -352,7 +352,7 @@ paths:
   /vitrine/banners:
     get:
       summary: Banners de campanha no ar (página inicial)
-      description: Ativos e dentro do período (inicio/fim), na ordem definida pela equipe; no máximo 6.
+      description: Ativos e dentro do período (inicio/fim), na ordem definida pela equipe; no máximo 6. Cada banner traz `fim` (ou null), que a loja usa para a contagem regressiva quando faltam até 14 dias.
       responses:
         "200": { description: "`data`: lista de banners (titulo, subtitulo, sobretitulo, texto_botao, link, imagem_url, imagem_mobile_url, alinhamento, foco)" }
     post:

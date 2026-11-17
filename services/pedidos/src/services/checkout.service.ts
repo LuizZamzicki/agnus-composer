@@ -7,6 +7,8 @@ import { calculateSubtotal, consultarSelecoes, normalizeItemQuantity } from "@ag
 import PedidoItens from "../models/PedidoItens";
 import Pedidos from "../models/Pedidos";
 import AfiliacaoService from "./afiliacao.service";
+import OfertasService, { type CupomValido } from "./ofertas.service";
+import { resumoDaCompra } from "./ofertas.regras";
 
 export class CheckoutError extends Error {
   constructor(readonly status: number, message: string) {
@@ -20,8 +22,6 @@ type ItemDaSacola = {
   id_produto_grade: number;
   quantidade: number | null;
 };
-
-const roundMoney = (value: number) => Number(value.toFixed(2));
 
 class CheckoutService {
   private static async ensureOwnAddress(userId: number, addressId: number) {
@@ -85,8 +85,10 @@ class CheckoutService {
   }
 
   // refAfiliado: cookie do último clique em link de afiliado (validado depois pelo serviço afiliados).
-  static async finalizar(userId: number, addressId: number, refAfiliado: string | null = null) {
+  // cupom: código de primeira compra (opcional); validado aqui de novo, nunca confiado ao navegador.
+  static async finalizar(userId: number, addressId: number, refAfiliado: string | null = null, cupomInformado: string | null = null) {
     await CheckoutService.ensureOwnAddress(userId, addressId);
+    const cupom: CupomValido | null = cupomInformado ? await OfertasService.validarCupom(userId, cupomInformado) : null;
 
     const { data: itens } = await chamarServico<ItemDaSacola[]>("carrinho", `/usuarios/${userId}/itens`);
 
@@ -95,14 +97,18 @@ class CheckoutService {
     }
 
     const itensPedido = await CheckoutService.priceItems(itens);
+    const resumo = resumoDaCompra(itensPedido.reduce((total, item) => total + item.subtotal, 0), cupom?.percentual ?? 0);
     const pedido = await sequelize.transaction(async (transaction) => {
       const novoPedido = await Pedidos.create(
         {
           id_usuario: userId,
           id_usuario_endereco: addressId,
           status: "aguardando_pagamento",
-          valor_total: roundMoney(itensPedido.reduce((total, item) => total + item.subtotal, 0)),
+          valor_total: resumo.total,
           valor_frete: 0,
+          frete_gratis: resumo.frete_gratis,
+          cupom_codigo: cupom?.codigo ?? null,
+          valor_desconto: resumo.desconto,
           ref_afiliado: refAfiliado,
         },
         { transaction },

@@ -7,6 +7,9 @@ import {
   emailDevolucaoParaEquipe,
   emailNovoPedidoParaEquipe,
   emailPagamentoParaEquipe,
+  emailBoasVindasOfertas,
+  emailPedirAvaliacao,
+  type ProdutoParaAvaliar,
   type AvisoDevolucao,
   type PedidoStatus,
 } from "./modelos";
@@ -80,6 +83,15 @@ export const avisarDevolucaoPorEmail = async (aviso: AvisoDevolucao & { id_usuar
   if (aviso.status === "solicitada") {
     await Promise.all(emailsDaEquipe().map((para) => EmailService.enviar(emailDevolucaoParaEquipe(para, aviso), { ...contexto, destinatario: "equipe" })));
   }
+};
+
+export const enviarBoasVindasOfertas = (aviso: { email: string; cupom: string; token: string; percentual: number }) =>
+  EmailService.enviar(emailBoasVindasOfertas(aviso.email, aviso.cupom, aviso.token, aviso.percentual), { destinatario: "cliente" });
+
+export const pedirAvaliacaoPorEmail = async (pedido: { id_usuario: number; id_pedido: number; produtos: ProdutoParaAvaliar[] }) => {
+  const usuario = await buscarUsuario(pedido.id_usuario);
+  const email = usuario && emailPedirAvaliacao({ nome: usuario.nome, email: usuario.email! }, pedido.id_pedido, pedido.produtos);
+  if (email) await EmailService.enviar(email, { id_pedido: pedido.id_pedido, id_usuario: pedido.id_usuario, destinatario: "cliente" });
 };
 
 export const dispararSemEsperar = (tarefa: Promise<unknown>, contexto: Record<string, unknown>) => {

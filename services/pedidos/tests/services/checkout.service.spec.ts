@@ -6,6 +6,7 @@ import { consultarSelecoes } from "@agnus/comum/utils/itemDetails";
 import PedidoItens from "../../src/models/PedidoItens";
 import Pedidos from "../../src/models/Pedidos";
 import CheckoutService, { CheckoutError } from "../../src/services/checkout.service";
+import OfertasService from "../../src/services/ofertas.service";
 
 const transaction = { id: "tx" };
 
@@ -14,6 +15,10 @@ jest.mock("../../src/models/PedidoItens", () => ({ __esModule: true, default: { 
 jest.mock("../../src/models/Pedidos", () => ({ __esModule: true, default: { create: jest.fn() } }));
 jest.mock("@agnus/comum/services/eventBus.service", () => ({ __esModule: true, default: { publish: jest.fn() } }));
 jest.mock("@agnus/comum/utils/clienteInterno", () => ({ __esModule: true, chamarServico: jest.fn(), consultarOuNull: jest.fn() }));
+jest.mock("../../src/services/ofertas.service", () => ({
+  __esModule: true,
+  default: { validarCupom: jest.fn() },
+}));
 jest.mock("@agnus/comum/utils/itemDetails", () => ({
   __esModule: true,
   calculateSubtotal: (preco: number, quantidade: number) => preco * quantidade,
@@ -76,7 +81,7 @@ describe("CheckoutService (saga)", () => {
 
     expect(pedido.id_pedido).toBe(7);
     expect(mocks.create).toHaveBeenCalledWith(
-      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 0, ref_afiliado: null },
+      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 0, frete_gratis: false, cupom_codigo: null, valor_desconto: 0, ref_afiliado: null },
       { transaction },
     );
     expect(mocks.bulkCreate).toHaveBeenCalledWith(
@@ -139,5 +144,33 @@ describe("CheckoutService (saga)", () => {
     await expect(CheckoutService.finalizar(1, 3)).rejects.toMatchObject({ status: 503 });
     expect(destroyPedido).toHaveBeenCalled();
     expect(mocks.publish).not.toHaveBeenCalled();
+  });
+
+  it("peças a partir de R$ 250 saem com frete grátis; abaixo, o frete fica a combinar", async () => {
+    mocks.selecoes.mockResolvedValue([{ contexto: { produto: { ativo: true }, precoUnitario: 125 } }, disponivel]);
+    await CheckoutService.finalizar(1, 3);
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 299.9, frete_gratis: true, valor_desconto: 0, cupom_codigo: null });
+
+    mocks.create.mockClear();
+    mocks.selecoes.mockResolvedValue([disponivel, disponivel]);
+    await CheckoutService.finalizar(1, 3);
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 149.7, frete_gratis: false });
+  });
+
+  it("cupom de primeira compra: valida no servidor e grava 10% de desconto no pedido", async () => {
+    (OfertasService.validarCupom as jest.Mock).mockResolvedValue({ codigo: "AGNUS10-ABCDEF", percentual: 10 });
+
+    await CheckoutService.finalizar(1, 3, null, "agnus10-abcdef");
+
+    expect(OfertasService.validarCupom).toHaveBeenCalledWith(1, "agnus10-abcdef");
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ cupom_codigo: "AGNUS10-ABCDEF", valor_desconto: 14.97, valor_total: 134.73 });
+  });
+
+  it("cupom recusado não cria pedido nem mexe na sacola", async () => {
+    (OfertasService.validarCupom as jest.Mock).mockRejectedValue(new HttpError(409, "Este cupom vale só para a primeira compra."));
+
+    await expect(CheckoutService.finalizar(1, 3, null, "AGNUS10-XYZ")).rejects.toMatchObject({ status: 409 });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.chamar).not.toHaveBeenCalled();
   });
 });

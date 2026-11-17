@@ -109,6 +109,8 @@ export const publico = (b: VitrineBanners) => ({
   imagem_mobile_url: b.imagem_mobile_url,
   alinhamento: b.alinhamento,
   foco: b.foco,
+  // Fim da campanha: a loja mostra a contagem regressiva quando faltam poucos dias.
+  fim: b.fim ?? null,
 });
 
 export default class VitrineService {

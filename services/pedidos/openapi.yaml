@@ -15,6 +15,8 @@ servers:
   - url: http://localhost:3000
     description: Backend direto (desenvolvimento)
 tags:
+  - name: Ofertas
+    description: Ofertas por e-mail e cupom de primeira compra
   - name: Observabilidade
   - name: Pedidos
   - name: Itens de pedido
@@ -92,13 +94,18 @@ paths:
               properties:
                 id_usuario_endereco:
                   type: integer
+                cupom:
+                  type: string
+                  description: Cupom de primeira compra (AGNUS10-XXXXXX). Validado no servidor; da 10% nas pecas.
       responses:
         "201":
-          description: Pedido criado
+          description: >-
+            Pedido criado. Com cupom, grava cupom_codigo e valor_desconto; frete_gratis fica true quando as
+            pecas (ja com desconto) chegam a R$ 250 (abaixo disso o frete e combinado depois).
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Uma peca da sacola nao esta mais disponivel
+          description: Uma peca da sacola nao esta mais disponivel, ou o cupom ja foi usado / nao e mais primeira compra
   /orders/me:
     get:
       operationId: getOrdersMe
@@ -461,6 +468,104 @@ paths:
         "200": { description: "Resultado (`fornecedor` com a situação depois do envio)" }
         "404": { description: Pedido não encontrado }
         "409": { description: Pedido ainda não pago }
+  /ofertas/regras:
+    get:
+      operationId: getOfertasRegras
+      tags:
+        - Ofertas
+      summary: Regras comerciais mostradas no site (frete gratis e desconto da primeira compra)
+      responses:
+        "200":
+          description: Regras
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  frete_gratis_acima: { type: number, example: 250 }
+                  desconto_primeira_compra: { type: number, example: 10 }
+  /ofertas:
+    post:
+      operationId: postOfertas
+      tags:
+        - Ofertas
+      summary: Inscreve um e-mail nas ofertas e devolve o cupom de 10% na primeira compra
+      description: >-
+        Publico, limitado no gateway (6 por minuto por IP). O mesmo e-mail devolve o mesmo cupom sem
+        reenviar o e-mail. O e-mail de boas-vindas (com o link para cancelar) sai pelo servico de notificacoes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "201":
+          description: Inscricao nova
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cupom: { type: string, example: AGNUS10-K7M2QX }
+                  percentual: { type: number, example: 10 }
+                  ja_inscrito: { type: boolean }
+        "200":
+          description: E-mail ja inscrito (mesmo cupom)
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429":
+          description: Muitas inscricoes seguidas do mesmo IP
+  /ofertas/cancelar:
+    post:
+      operationId: postOfertasCancelar
+      tags:
+        - Ofertas
+      summary: Cancela a inscricao pelo link do e-mail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cancelada (devolve o e-mail mascarado)
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /cupons/{codigo}:
+    get:
+      operationId: getCupom
+      tags:
+        - Ofertas
+      summary: Confere se o cupom vale para o usuario autenticado
+      description: Vale uma vez, so na primeira compra da conta e sem outro cupom em pedido nao cancelado.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cupom valido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codigo: { type: string }
+                  percentual: { type: number }
+        "401": { description: Sem login }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Cupom ja usado ou nao e mais a primeira compra
   /youdraw/webhook:
     post:
       summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)

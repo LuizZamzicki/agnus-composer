@@ -14,6 +14,7 @@ import {
 import CheckoutService, { CheckoutError } from "../../src/services/checkout.service";
 import AvisoPedidoService from "../../src/services/avisoPedido.service";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
+import { HttpError } from "@agnus/comum/types/http_error";
 
 jest.mock("../../src/services/checkout.service", () => {
   class CheckoutError extends Error {
@@ -631,8 +632,20 @@ describe("PedidosController.checkout", () => {
       res as never,
     );
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null);
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null);
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it("repassa o cupom digitado e devolve o erro do cupom", async () => {
+    finalizar.mockRejectedValue(new HttpError(409, "Este cupom já foi usado."));
+    const res = mockResponse();
+    res.locals = authLocals;
+
+    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc " } }) as never, res as never);
+
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ");
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ message: "Este cupom já foi usado." });
   });
 
   it("exige um endereço", async () => {

@@ -8,6 +8,7 @@ import EventBusService from "@agnus/comum/services/eventBus.service";
 import AvisoPedidoService from "../services/avisoPedido.service";
 import PedidoRegrasService from "../services/pedidoRegras.service";
 import { refDoCookie } from "../services/afiliacao.service";
+import { HttpError } from "@agnus/comum/types/http_error";
 import YouDrawService, { PedidosFornecedor } from "../fornecedor/youdraw.service";
 import { extrairCodigoRastreio, RastreioInvalido, urlRastreio } from "../utils/rastreio";
 import type { AuthUserPayload } from "@agnus/comum/types/auth.types";
@@ -334,9 +335,14 @@ class PedidosController {
     try {
       return res
         .status(201)
-        .send(await CheckoutService.finalizar(res.locals.authUser!.id_usuario, addressId, refDoCookie(req.headers.cookie)));
+        .send(await CheckoutService.finalizar(
+          res.locals.authUser!.id_usuario,
+          addressId,
+          refDoCookie(req.headers.cookie),
+          typeof req.body.cupom === "string" && req.body.cupom.trim() ? req.body.cupom : null,
+        ));
     } catch (error) {
-      if (error instanceof CheckoutError) {
+      if (error instanceof CheckoutError || error instanceof HttpError) {
         return res.status(error.status).json({ message: error.message });
       }
 

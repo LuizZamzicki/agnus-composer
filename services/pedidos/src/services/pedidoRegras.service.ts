@@ -17,6 +17,13 @@ export const STATUS_ABERTOS: readonly PedidoStatus[] = ["aguardando_calculo_fret
 
 const roundMoney = (value: number) => Number(value.toFixed(2));
 
+// Parte do preço das peças que o cliente pagou (1 sem cupom; 0,9 com 10% de desconto).
+export const fatorPago = (pedido: { valor_desconto?: number | string | null }, itens: { subtotal?: number | string | null }[]) => {
+  const bruto = itens.reduce((total, item) => total + Number(item.subtotal ?? 0), 0);
+  const desconto = Number(pedido.valor_desconto ?? 0);
+  return bruto > 0 && desconto > 0 ? Math.max(0, (bruto - desconto) / bruto) : 1;
+};
+
 class PedidoRegrasService {
   static podeTransitar(atual: PedidoStatus, novo: PedidoStatus) {
     return atual === novo || TRANSICOES[atual].includes(novo);
@@ -26,12 +33,14 @@ class PedidoRegrasService {
     return STATUS_ABERTOS.includes(status);
   }
 
-  // valor_total = soma dos subtotais dos itens + frete. Nunca vem do cliente.
+  // valor_total = soma dos subtotais dos itens - desconto do cupom + frete. Nunca vem do cliente.
   static async recalcularTotal(pedido: Pedidos) {
     const itens = await PedidoItens.findAll({ where: { id_pedido: pedido.id_pedido } });
     const subtotais = itens.reduce((total, item) => total + Number(item.subtotal ?? 0), 0);
 
-    await pedido.update({ valor_total: roundMoney(subtotais + Number(pedido.valor_frete ?? 0)) });
+    const desconto = Number(pedido.valor_desconto ?? 0);
+
+    await pedido.update({ valor_total: roundMoney(Math.max(0, subtotais - desconto) + Number(pedido.valor_frete ?? 0)) });
     return pedido;
   }
 }
