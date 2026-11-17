@@ -12,6 +12,7 @@ import AdminDevolucaoLista from "./devolucao-lista";
 import AdminAfiliadoLista from "./afiliado-lista";
 import AdminRegistroEventos from "./registro-eventos";
 import AdminUsuarioLista from "./usuario-lista";
+import AdminVitrineBanners from "./vitrine-banners";
 
 function Admin() {
 
@@ -27,6 +28,7 @@ function Admin() {
   const isDevolucoes = pathname.startsWith("/admin/devolucoes");
   const isAfiliados = pathname.startsWith("/admin/afiliados");
   const isEventos = pathname.startsWith("/admin/eventos");
+  const isVitrine = pathname.startsWith("/admin/vitrine");
 
   const isProdutos =
     pathname.startsWith("/admin/produtos") ||
@@ -48,6 +50,7 @@ function Admin() {
       isDevolucoes ||
       isAfiliados ||
       isEventos ||
+      isVitrine ||
       isProdutos;
 
 
@@ -64,6 +67,7 @@ function Admin() {
     isDevolucoes,
     isAfiliados,
     isEventos,
+    isVitrine,
     isProdutos,
     navigate
   ]);
@@ -84,7 +88,9 @@ function Admin() {
                 ? "Programa de afiliados"
                 : isEventos
                   ? "Registro de eventos"
-                  : "Produtos";
+                  : isVitrine
+                    ? "Vitrine da loja"
+                    : "Produtos";
 
 
   return (
@@ -129,6 +135,8 @@ function Admin() {
           {isAfiliados && (<AdminAfiliadoLista />)}
 
           {isEventos && (<AdminRegistroEventos />)}
+
+          {isVitrine && (<AdminVitrineBanners />)}
 
         </section>
 

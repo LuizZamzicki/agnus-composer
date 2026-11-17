@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   FolderOpen,
   History,
+  Image,
   LayoutDashboard,
   List,
   LogOut,
@@ -38,6 +39,9 @@ function obterMenuAtivo(pathname) {
   if (pathname.startsWith("/admin/eventos"))
     return "eventos";
 
+  if (pathname.startsWith("/admin/vitrine"))
+    return "vitrine";
+
   return "produtos-listar";
 }
 
@@ -67,6 +71,9 @@ function caminhoPorMenu(menu) {
 
     case "eventos":
       return "/admin/eventos";
+
+    case "vitrine":
+      return "/admin/vitrine";
 
     default:
       return "/admin/produtos";
@@ -224,6 +231,15 @@ function AdminMenuLateral() {
             )
           }
         </div>
+
+        <button
+          data-cy="menu-vitrine"
+          className={`admin-nav-item ${activeMenu === "vitrine" ? "active" : ""}`}
+          onClick={() => irParaMenu("vitrine")}
+        >
+          <Image size={20} />
+          <span>Vitrine da loja</span>
+        </button>
 
         <button
           data-cy="menu-pedidos"
