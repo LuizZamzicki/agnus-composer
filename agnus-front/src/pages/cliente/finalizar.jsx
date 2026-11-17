@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Plus } from "lucide-react";
+import { ArrowLeft, Check, Plus, Tag } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import "../../css/cliente/finalizar.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
+import BarraFreteGratis from "../../components/barraFreteGratis";
+import { FRETE_GRATIS_ACIMA } from "../../conteudo/loja";
+import { esquecerCupomGuardado, lerCupomGuardado } from "../../utils/cupomGuardado";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -80,6 +83,46 @@ function Finalizar() {
     const [salvandoEndereco, setSalvandoEndereco] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [erro, setErro] = useState("");
+    const [cupom, setCupom] = useState(null);
+    const [codigoCupom, setCodigoCupom] = useState(() => lerCupomGuardado());
+    const [erroCupom, setErroCupom] = useState("");
+    const [conferindoCupom, setConferindoCupom] = useState(false);
+
+    async function aplicarCupom(evento) {
+        evento?.preventDefault();
+        const codigo = codigoCupom.trim();
+        setErroCupom("");
+
+        if (!codigo) {
+            setErroCupom("Digite o código do cupom.");
+            return;
+        }
+
+        setConferindoCupom(true);
+        try {
+            const res = await fetch(apiUrl(`cupons/${encodeURIComponent(codigo)}`), { headers: authHeaders() });
+            const dados = await res.json().catch(() => ({}));
+
+            if (res.status === 401) {
+                encerrarSessao();
+                navigate(LOGIN, { replace: true });
+                return;
+            }
+
+            if (!res.ok) {
+                setCupom(null);
+                setErroCupom(dados.message || "Cupom inválido.");
+                return;
+            }
+
+            setCupom(dados);
+            setCodigoCupom(dados.codigo);
+        } catch {
+            setErroCupom("Sem conexão com o servidor. Tente de novo.");
+        } finally {
+            setConferindoCupom(false);
+        }
+    }
 
     useEffect(() => {
         if (!idUsuario || isAdmin) {
@@ -240,7 +283,7 @@ function Finalizar() {
             const res = await fetch(apiUrl("orders/checkout"), {
                 method: "POST",
                 headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({ id_usuario_endereco: destino }),
+                body: JSON.stringify({ id_usuario_endereco: destino, ...(cupom ? { cupom: cupom.codigo } : {}) }),
             });
 
             if (res.status === 401) {
@@ -257,6 +300,7 @@ function Finalizar() {
             }
 
             avisarSacola();
+            if (cupom) esquecerCupomGuardado();
             // O pedido nasce aguardando pagamento; o próximo passo é pagar (PIX ou cartão).
             navigate(`/pagamento/${dados.id_pedido}`, { replace: true });
         } catch {
@@ -286,10 +330,13 @@ function Finalizar() {
         return <Navigate to="/carrinho" replace />;
     }
 
-    const total = itens.reduce(
+    const subtotal = itens.reduce(
         (acc, item) => acc + Number(item.preco_unitario || 0) * Number(item.quantidade || 0),
         0
     );
+    const desconto = cupom ? Math.round(subtotal * cupom.percentual) / 100 : 0;
+    const total = Math.round((subtotal - desconto) * 100) / 100;
+    const freteGratis = total >= FRETE_GRATIS_ACIMA;
 
     return (
         <div className="fin-page">
@@ -380,8 +427,40 @@ function Finalizar() {
                         ))}
                     </ul>
 
-                    <div className="fin-linha"><span>Frete</span><span>combinado depois</span></div>
+                    <form className="fin-cupom" onSubmit={aplicarCupom} data-cy="form-cupom">
+                        <label htmlFor="fin-cupom-codigo">Cupom de desconto</label>
+                        {cupom ? (
+                            <p className="fin-cupom-ok" data-cy="cupom-aplicado">
+                                <Tag size={16} strokeWidth={1.5} aria-hidden="true" />
+                                <span><strong>{cupom.codigo}</strong> · {cupom.percentual}% nas peças</span>
+                                <button type="button" onClick={() => { setCupom(null); setErroCupom(""); }}>Remover</button>
+                            </p>
+                        ) : (
+                            <div className="fin-cupom-campo">
+                                <input
+                                    id="fin-cupom-codigo"
+                                    data-cy="cupom-codigo"
+                                    value={codigoCupom}
+                                    onChange={(e) => setCodigoCupom(e.target.value.toUpperCase())}
+                                    placeholder="AGNUS10-XXXXXX"
+                                    autoComplete="off"
+                                    maxLength={40}
+                                />
+                                <button type="submit" data-cy="aplicar-cupom" className="btn-agnus-ghost" disabled={conferindoCupom}>
+                                    {conferindoCupom ? "Conferindo…" : "Aplicar"}
+                                </button>
+                            </div>
+                        )}
+                        {erroCupom && <small className="fin-erro" role="alert" data-cy="cupom-erro">{erroCupom}</small>}
+                    </form>
+
+                    <div className="fin-linha"><span>Peças</span><span>{formatarReal(subtotal)}</span></div>
+                    {cupom && (
+                        <div className="fin-linha fin-desconto" data-cy="finalizar-desconto"><span>Desconto ({cupom.percentual}%)</span><span>− {formatarReal(desconto)}</span></div>
+                    )}
+                    <div className="fin-linha"><span>Frete</span><span data-cy="finalizar-frete">{freteGratis ? "Grátis" : "combinado depois"}</span></div>
                     <div className="fin-linha fin-total"><strong>Total</strong><strong data-cy="finalizar-total">{formatarReal(total)}</strong></div>
+                    <BarraFreteGratis valor={total} />
 
                     {erro && <p data-cy="finalizar-erro" className="fin-erro" role="alert">{erro}</p>}
 
@@ -397,7 +476,8 @@ function Finalizar() {
                     </button>
 
                     <p className="fin-aviso">
-                        Depois de confirmar, você paga os produtos com PIX ou cartão (até 12x), sem sair do site. O frete é combinado com a gente depois.
+                        Depois de confirmar, você paga os produtos com PIX ou cartão (até 12x), sem sair do site.
+                        {freteGratis ? " O frete deste pedido é por nossa conta." : " O frete é combinado com a gente depois."}
                     </p>
                 </aside>
             </div>

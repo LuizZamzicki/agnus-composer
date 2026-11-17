@@ -13,6 +13,7 @@ import { DUVIDAS_DA_HOME, FRETE_GRATIS_ACIMA, PARCELAS_SEM_JUROS } from "../../c
 import BannerCampanha from "../../components/bannerCampanha";
 import ComprePorCategoria from "../../components/comprePorCategoria";
 import Depoimentos from "../../components/depoimentos";
+import OfertasEmail from "../../components/ofertasEmail";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -20,8 +21,12 @@ import "swiper/css/pagination";
 
 import { Autoplay } from "swiper/modules";
 import { useTituloPagina } from "../../utils/tituloPagina";
+import EscolhaRapida from "../../components/escolhaRapida";
+import EtiquetasProduto from "../../components/etiquetasProduto";
+import { useMaisPedidos } from "../../utils/vitrineDados";
 
 function Home() {
+    const maisPedidos = useMaisPedidos();
     useTituloPagina(null);
     const [produtos, setProdutos] = useState([]);
     const [bestSellers, setBestSellers] = useState([]);
@@ -162,14 +167,15 @@ function Home() {
         const imgHover = prod.imagens[1] || imgPadrao;
 
         return (
+            <div className="cartao-produto" key={prod.id_produto}>
             <Link
                 data-cy={dataCy}
                 className={`product-card${indice === null ? "" : " cartao-entra"}`}
                 style={indice === null ? undefined : { "--i": Math.min(indice, 8) }}
-                key={prod.id_produto}
                 to={`/produto/${prod.id_produto}`}
             >
                 <div className="product-image">
+                    <EtiquetasProduto produto={prod} maisPedidos={maisPedidos} />
                     <img
                         src={imgPadrao}
                         alt={prod.nome}
@@ -195,6 +201,8 @@ function Home() {
                     <ParcelaProduto preco={prod.preco_base} />
                 </div>
             </Link>
+            <EscolhaRapida produto={prod} imagem={imgPadrao} />
+            </div>
         );
     }
 
@@ -322,6 +330,8 @@ function Home() {
             </section>
 
             <Depoimentos />
+
+            <OfertasEmail />
 
             <section className="duvidas-home" data-cy="duvidas-home" aria-labelledby="duvidas-home-titulo">
                 <h2 id="duvidas-home-titulo" className="section-title">Perguntas frequentes</h2>

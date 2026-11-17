@@ -31,6 +31,9 @@ function normalizarPedido(item, index = 0) {
     urlRastreio: item?.url_rastreio ?? null,
     fornecedor: item?.fornecedor ?? null,
     codigoRastreio: item?.codigo_rastreio ?? "",
+    freteGratis: Boolean(item?.frete_gratis),
+    desconto: Number(item?.valor_desconto ?? 0),
+    cupom: item?.cupom_codigo ?? null,
   };
 }
 
@@ -333,7 +336,15 @@ function AdminPedidoLista() {
                       )}
                     </td>
 
-                    <td>{formatarMoeda(pedido.total)}</td>
+                    <td>
+                      {formatarMoeda(pedido.total)}
+                      {pedido.freteGratis && <small className="pedido-etiqueta" data-cy="pedido-frete-gratis">Frete grátis</small>}
+                      {pedido.desconto > 0 && (
+                        <small className="pedido-etiqueta" title={pedido.cupom || undefined}>
+                          Cupom −{formatarMoeda(pedido.desconto)}
+                        </small>
+                      )}
+                    </td>
                     <td>{formatarDataPedido(pedido.dataCriacao)}</td>
                     <td>{celulaYouDraw(pedido)}</td>
 

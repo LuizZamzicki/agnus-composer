@@ -1187,3 +1187,12 @@ button[disabled] {
 @media (max-width: 600px) {
     .pedido-rastreio-frame { height: 560px; }
 }
+
+/* Cupom e frete grátis embaixo do total do pedido */
+.pedido-valor .pedido-extras {
+    display: block;
+    margin-top: 2px;
+    font: 13px/1.2 var(--f-text);
+    font-weight: 400;
+    color: var(--ok);
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Ruler, X } from "lucide-react";
 import CompartilharProduto from "../../components/compartilharProduto";
 import { apiUrl as urlDaApi, assetUrl } from "../../utils/api";
@@ -55,6 +55,18 @@ function Produto() {
     const [corSelecionada, setCorSelecionada] = useState(null);
     const [loading, setLoading] = useState(true);
     useTituloPagina(produto?.nome);
+    const location = useLocation();
+    // Link do e-mail "Como ficaram as suas peças?": já abre o formulário de avaliação.
+    const pedirAvaliacao = new URLSearchParams(location.search).get("avaliar") === "1";
+    const [zoom, setZoom] = useState(null);
+
+    const moverZoom = (evento) => {
+        if (!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches) return;
+        const caixa = evento.currentTarget.getBoundingClientRect();
+        const x = ((evento.clientX - caixa.left) / caixa.width) * 100;
+        const y = ((evento.clientY - caixa.top) / caixa.height) * 100;
+        setZoom({ x: `${Math.min(100, Math.max(0, x))}%`, y: `${Math.min(100, Math.max(0, y))}%` });
+    };
     const [alerta, setAlerta] = useState(null);
     const [faltaEscolher, setFaltaEscolher] = useState(null);
     const [erroCompra, setErroCompra] = useState("");
@@ -267,6 +279,12 @@ function Produto() {
         if (id_produto) carregarAvaliacoes();
     }, [id_produto, versaoAvaliacoes]);
 
+    useEffect(() => {
+        if (!pedirAvaliacao || loading) return;
+        if (podeAvaliar || minhaAvaliacao) setMostrarForm(true);
+        document.getElementById("avaliacoes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [pedirAvaliacao, loading, podeAvaliar, minhaAvaliacao]);
+
     const adicionarCarrinho = async () => {
         setErroCompra("");
 
@@ -454,7 +472,13 @@ function Produto() {
                         ))}
                     </div>
 
-                    <div className="img-main">
+                    <div
+                        className={`img-main${zoom ? " is-zoom" : ""}`}
+                        data-cy="foto-principal"
+                        onMouseMove={moverZoom}
+                        onMouseLeave={() => setZoom(null)}
+                        style={zoom ? { "--zx": zoom.x, "--zy": zoom.y } : undefined}
+                    >
                         {imgPadrao && (
                             <img
                                 src={imgPadrao}
@@ -654,7 +678,7 @@ function Produto() {
                 </section>
             )}
 
-            <div className="avaliacoes-section">
+            <div className="avaliacoes-section" id="avaliacoes">
 
                 <div className="avaliacoes-header">
 
@@ -670,6 +694,16 @@ function Produto() {
                             </>
                         )}
                     </div>
+
+                    {pedirAvaliacao && !id_usuario && (
+                        <Link
+                            data-cy="entrar-para-avaliar"
+                            className="btn-agnus-ghost"
+                            to={`/login?redirect=${encodeURIComponent(`/produto/${id_produto}?avaliar=1`)}`}
+                        >
+                            Entre para avaliar
+                        </Link>
+                    )}
 
                     {(podeAvaliar || minhaAvaliacao) && (
                         <button data-cy="escrever-avaliacao" onClick={() => setMostrarForm(!mostrarForm)}>

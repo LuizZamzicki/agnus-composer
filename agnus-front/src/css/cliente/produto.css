@@ -80,6 +80,15 @@
     display: block;
 }
 
+/* Zoom ao passar o mouse (só com mouse; no celular, toque abre a foto em tela cheia). */
+@media (hover: hover) and (pointer: fine) {
+    .img-main img { transition: transform 0.25s var(--ease-out); }
+    .img-main.is-zoom img {
+        transform: scale(2);
+        transform-origin: var(--zx, 50%) var(--zy, 50%);
+    }
+}
+
 .produto-info {
     align-self: center;
     display: grid;

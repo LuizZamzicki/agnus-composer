@@ -4,6 +4,8 @@
 export const FRETE_GRATIS_ACIMA = 250;
 export const PARCELAS_SEM_JUROS = 2; // de 3x em diante o cartão cobra juros (Mercado Pago)
 export const PARCELAS_MAX = 12;
+export const DESCONTO_PRIMEIRA_COMPRA = 10; // % do cupom de quem se inscreve nas ofertas (vale na 1ª compra)
+export const DIAS_NOVIDADE = 30; // peça cadastrada há menos que isso ganha a etiqueta "Novidade"
 export const EMAIL = "contato@agnusfit.com";
 export const INSTAGRAM = { usuario: "@agnus.fit", url: "https://www.instagram.com/agnus.fit/" };
 
@@ -22,6 +24,7 @@ export const AVISOS = [
     "Black Friday: peças com até 30% off",
     `Frete grátis acima de ${real(FRETE_GRATIS_ACIMA)}`,
     `${PARCELAS_SEM_JUROS}x sem juros no cartão · Pix na hora`,
+    `${DESCONTO_PRIMEIRA_COMPRA}% na primeira compra: cadastre seu e-mail`,
     "Feita sob encomenda, peça por peça",
 ];
 

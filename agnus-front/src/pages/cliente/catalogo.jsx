@@ -7,6 +7,9 @@ import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import { useTituloPagina } from "../../utils/tituloPagina";
+import EscolhaRapida from "../../components/escolhaRapida";
+import EtiquetasProduto from "../../components/etiquetasProduto";
+import { useMaisPedidos } from "../../utils/vitrineDados";
 
 const ESPERA_DA_BUSCA_MS = 250;
 
@@ -18,6 +21,7 @@ const categoriaDaUrl = (busca) => {
 const MAX_ATRASO_CARTAO = 8;
 
 function Catalogo() {
+    const maisPedidos = useMaisPedidos();
     useTituloPagina("A coleção");
 
     const [produtos, setProdutos] = useState([]);
@@ -250,14 +254,15 @@ function Catalogo() {
                             const imgHover = prod.imagens?.[1] || imgPadrao;
 
                             return (
+                                <div className="cartao-produto" key={prod.id_produto}>
                                 <Link
                                     data-cy={`produto-card-${prod.id_produto}`}
                                     className="product-card cartao-entra"
                                     style={{ "--i": Math.min(indice, MAX_ATRASO_CARTAO) }}
-                                    key={prod.id_produto}
                                     to={`/produto/${prod.id_produto}`}
                                 >
                                     <div className="product-image">
+                                        <EtiquetasProduto produto={prod} maisPedidos={maisPedidos} />
                                         {imgPadrao && (
                                             <img src={imgPadrao} alt={prod.nome} className="img-default" loading="lazy" />
                                         )}
@@ -273,6 +278,8 @@ function Catalogo() {
                                         <ParcelaProduto preco={prod.preco_base} />
                                     </div>
                                 </Link>
+                                <EscolhaRapida produto={prod} imagem={imgPadrao} />
+                                </div>
                             );
                         })}
 

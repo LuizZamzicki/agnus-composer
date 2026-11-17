@@ -5,6 +5,9 @@ import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import { useTituloPagina } from "../../utils/tituloPagina";
+import BarraFreteGratis from "../../components/barraFreteGratis";
+import CompleteOLook from "../../components/completeOLook";
+import { FRETE_GRATIS_ACIMA } from "../../conteudo/loja";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -49,8 +52,9 @@ function Carrinho() {
         toastTimeout = setTimeout(() => setToast(null), 3000);
     }
 
-    const carregarCarrinho = useCallback(async () => {
-        setLoading(true);
+    // silencioso: recarrega sem trocar a tela pelo esqueleto (peça adicionada pelo "Complete o look").
+    const carregarCarrinho = useCallback(async ({ silencioso = false } = {}) => {
+        if (!silencioso) setLoading(true);
 
         try {
             if (isAdmin) {
@@ -288,13 +292,14 @@ function Carrinho() {
 
                 <div className="cart-summary">
                     <h2>Resumo</h2>
+                    <BarraFreteGratis valor={total} />
                     <div>
                         <span>Peças</span>
                         <span>{formatarReal(total)}</span>
                     </div>
                     <div>
                         <span>Frete</span>
-                        <span className="cart-frete">combinado depois</span>
+                        <span className="cart-frete" data-cy="carrinho-frete">{total >= FRETE_GRATIS_ACIMA ? "Grátis" : "combinado depois"}</span>
                     </div>
                     <hr />
                     <div>
@@ -307,8 +312,17 @@ function Carrinho() {
                     {!idUsuario && (
                         <p className="cart-hint">Na próxima etapa, você entra na sua conta ou cria uma. Sua sacola fica guardada.</p>
                     )}
+                    <p className="cart-hint">Tem cupom de primeira compra? Use na próxima etapa.</p>
                 </div>
             </div>
+
+            <CompleteOLook
+                idsNaSacola={cart.map((item) => item.id_produto).filter(Boolean)}
+                onAdicionado={() => {
+                    carregarCarrinho({ silencioso: true });
+                    showToast("Peça adicionada à sacola.");
+                }}
+            />
         </div>
     );
 }

@@ -210,6 +210,14 @@ function ClientePedidos() {
 
                             <strong className="pedido-valor">
                                 {formatarReal(pedido.valor_total)}
+                                {(pedido.frete_gratis || Number(pedido.valor_desconto) > 0) && (
+                                    <small className="pedido-extras">
+                                        {[
+                                            Number(pedido.valor_desconto) > 0 && `cupom −${formatarReal(pedido.valor_desconto)}`,
+                                            pedido.frete_gratis && "frete grátis",
+                                        ].filter(Boolean).join(" · ")}
+                                    </small>
+                                )}
                             </strong>
 
                             {pedido.status === "aguardando_pagamento" && (

@@ -25,7 +25,7 @@ const CHAVE_DESTINO = "agnus_destino_login";
 const CHAVE_NONCE = "agnus_nonce_login";
 
 function Login() {
-    useTituloPagina("Entrar");
+  useTituloPagina("Entrar");
   const navigate = useNavigate();
 
   // O painel é outro site: só a navegação completa do navegador chega nele.
