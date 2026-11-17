@@ -32,6 +32,9 @@ function normalizarPedido(item, index = 0) {
     fornecedor: item?.fornecedor ?? null,
     codigoRastreio: item?.codigo_rastreio ?? "",
     freteGratis: Boolean(item?.frete_gratis),
+    frete: Number(item?.valor_frete ?? 0),
+    freteServico: item?.frete_servico ?? null,
+    fretePrazo: item?.frete_prazo_dias ?? null,
     desconto: Number(item?.valor_desconto ?? 0),
     cupom: item?.cupom_codigo ?? null,
   };
@@ -338,7 +341,13 @@ function AdminPedidoLista() {
 
                     <td>
                       {formatarMoeda(pedido.total)}
-                      {pedido.freteGratis && <small className="pedido-etiqueta" data-cy="pedido-frete-gratis">Frete grátis</small>}
+                      {pedido.freteServico && (
+                        <small className="pedido-etiqueta" data-cy="pedido-frete">
+                          {pedido.freteServico} · {pedido.frete > 0 ? `+${formatarMoeda(pedido.frete)}` : "grátis"}
+                          {pedido.fretePrazo ? ` · até ${pedido.fretePrazo} dias` : ""}
+                        </small>
+                      )}
+                      {pedido.freteGratis && !pedido.freteServico && <small className="pedido-etiqueta" data-cy="pedido-frete-gratis">Frete grátis</small>}
                       {pedido.desconto > 0 && (
                         <small className="pedido-etiqueta" title={pedido.cupom || undefined}>
                           Cupom −{formatarMoeda(pedido.desconto)}

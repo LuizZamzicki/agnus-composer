@@ -25,7 +25,10 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Ofertas por e-mail na página inicial com cupom de 10% na primeira compra (`AGNUS10-XXXXXX`): o cupom aparece na hora, vai por e-mail com link para cancelar (`/ofertas/cancelar`) e já vem preenchido no "Finalizar pedido"; vale uma vez, só na primeira compra da conta. Reembolso de devolução e comissão de afiliado consideram o desconto. Inscrição limitada a 6 por minuto por IP no gateway (AGNUS-239).
 - E-mail "Como ficaram as suas peças?" e aviso no site alguns dias depois da entrega (`DIAS_PARA_PEDIR_AVALIACAO`, padrão 3), com um link por peça que já abre o formulário de avaliação (AGNUS-239).
 
+- Frete calculado pelo CEP (AGNUS-240): valor e prazo na página da peça, na sacola e no checkout, com escolha entre as opções (PAC, SEDEX ou, com `MELHOR_ENVIO_TOKEN`, as transportadoras do Melhor Envio). Sem o token, ou se o Melhor Envio não responder, vale a tabela da loja por distância do `FRETE_CEP_ORIGEM`. O frete é cotado de novo no servidor no checkout, gravado no pedido (`valor_frete`, `frete_servico`, `frete_prazo_dias`) e pago junto com as peças; a partir de R$ 250 o envio mais econômico sai grátis e os outros custam a diferença. Rota pública `POST /frete/cotacao` (30 por minuto por IP).
+
 ### Corrigido
+- `valor_total` do pedido somava o frete quando o admin mexia nos itens, e o pagamento somava o frete de novo: agora `valor_total` são só as peças (com desconto) e os avisos por e-mail mostram peças + frete (AGNUS-240).
 - "Também da coleção" no produto aparecia vazio: agora sugere até 4 peças, primeiro da mesma categoria, e some quando não há outras; no celular fica em 2 colunas e a parcela não sai mais em caixa alta (AGNUS-238).
 - A barra de compra fixa do celular não cobre mais o fim do rodapé, e o catálogo não mostra "1 / 1" quando só há uma página (AGNUS-238).
 

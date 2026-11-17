@@ -5,6 +5,7 @@ import "../../css/cliente/finalizar.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import BarraFreteGratis from "../../components/barraFreteGratis";
+import CalculoFrete from "../../components/calculoFrete";
 import { FRETE_GRATIS_ACIMA } from "../../conteudo/loja";
 import { esquecerCupomGuardado, lerCupomGuardado } from "../../utils/cupomGuardado";
 import {
@@ -87,6 +88,7 @@ function Finalizar() {
     const [codigoCupom, setCodigoCupom] = useState(() => lerCupomGuardado());
     const [erroCupom, setErroCupom] = useState("");
     const [conferindoCupom, setConferindoCupom] = useState(false);
+    const [frete, setFrete] = useState(null);
 
     async function aplicarCupom(evento) {
         evento?.preventDefault();
@@ -280,10 +282,19 @@ function Finalizar() {
                 return;
             }
 
+            if (!frete) {
+                setErro("Escolha a forma de entrega.");
+                return;
+            }
+
             const res = await fetch(apiUrl("orders/checkout"), {
                 method: "POST",
                 headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({ id_usuario_endereco: destino, ...(cupom ? { cupom: cupom.codigo } : {}) }),
+                body: JSON.stringify({
+                    id_usuario_endereco: destino,
+                    frete_servico: frete.id,
+                    ...(cupom ? { cupom: cupom.codigo } : {}),
+                }),
             });
 
             if (res.status === 401) {
@@ -337,6 +348,9 @@ function Finalizar() {
     const desconto = cupom ? Math.round(subtotal * cupom.percentual) / 100 : 0;
     const total = Math.round((subtotal - desconto) * 100) / 100;
     const freteGratis = total >= FRETE_GRATIS_ACIMA;
+    const pecas = itens.reduce((acc, item) => acc + Number(item.quantidade || 0), 0);
+    const cepDaEntrega = mostrarForm ? form.cep : enderecos.find((e) => e.id_usuario_endereco === enderecoId)?.cep ?? "";
+    const totalComFrete = Math.round((total + (frete?.preco ?? 0)) * 100) / 100;
 
     return (
         <div className="fin-page">
@@ -454,12 +468,21 @@ function Finalizar() {
                         {erroCupom && <small className="fin-erro" role="alert" data-cy="cupom-erro">{erroCupom}</small>}
                     </form>
 
+                    <CalculoFrete
+                        titulo="Entrega"
+                        cepFixo={cepDaEntrega}
+                        pecas={pecas}
+                        valorPecas={total}
+                        escolhido={frete}
+                        onEscolher={setFrete}
+                    />
+
                     <div className="fin-linha"><span>Peças</span><span>{formatarReal(subtotal)}</span></div>
                     {cupom && (
                         <div className="fin-linha fin-desconto" data-cy="finalizar-desconto"><span>Desconto ({cupom.percentual}%)</span><span>− {formatarReal(desconto)}</span></div>
                     )}
-                    <div className="fin-linha"><span>Frete</span><span data-cy="finalizar-frete">{freteGratis ? "Grátis" : "combinado depois"}</span></div>
-                    <div className="fin-linha fin-total"><strong>Total</strong><strong data-cy="finalizar-total">{formatarReal(total)}</strong></div>
+                    <div className="fin-linha"><span>Frete</span><span data-cy="finalizar-frete">{frete ? (frete.gratis ? "Grátis" : formatarReal(frete.preco)) : "escolha o endereço"}</span></div>
+                    <div className="fin-linha fin-total"><strong>Total</strong><strong data-cy="finalizar-total">{formatarReal(totalComFrete)}</strong></div>
                     <BarraFreteGratis valor={total} />
 
                     {erro && <p data-cy="finalizar-erro" className="fin-erro" role="alert">{erro}</p>}
@@ -468,7 +491,7 @@ function Finalizar() {
                         type="button"
                         data-cy="confirmar-pedido"
                         className="btn-agnus fin-confirmar"
-                        disabled={enviando || salvandoEndereco}
+                        disabled={enviando || salvandoEndereco || !frete}
                         onClick={confirmarPedido}
                     >
                         <Check size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -476,8 +499,8 @@ function Finalizar() {
                     </button>
 
                     <p className="fin-aviso">
-                        Depois de confirmar, você paga os produtos com PIX ou cartão (até 12x), sem sair do site.
-                        {freteGratis ? " O frete deste pedido é por nossa conta." : " O frete é combinado com a gente depois."}
+                        Depois de confirmar, você paga as peças e o frete com PIX ou cartão (até 12x), sem sair do site.
+                        {freteGratis ? " O envio mais econômico deste pedido é por nossa conta." : ""}
                     </p>
                 </aside>
             </div>

@@ -119,6 +119,18 @@ describe("Contagem regressiva da campanha", () => {
     });
 });
 
+const opcoesFrete = (gratis) => ({
+    cep: "87000000",
+    uf: "PR",
+    frete_gratis: gratis,
+    frete_gratis_acima: 250,
+    origem: "tabela",
+    opcoes: [
+        { id: "pac", nome: "PAC", empresa: "Correios", preco: gratis ? 0 : 19.9, preco_cheio: 19.9, prazo_dias: 4, gratis },
+        { id: "sedex", nome: "SEDEX", empresa: "Correios", preco: gratis ? 10 : 29.9, preco_cheio: 29.9, prazo_dias: 2, gratis: false },
+    ],
+});
+
 describe("Sacola: frete grátis e Complete o look", () => {
     const visitarComSacola = (itens) =>
         cy.visit("/carrinho", {
@@ -133,15 +145,37 @@ describe("Sacola: frete grátis e Complete o look", () => {
     it("mostra quanto falta para o frete grátis e sugere peças de outras categorias", () => {
         visitarComSacola([item(1, 100)]);
         cy.get('[data-cy="barra-frete"]').should("contain", "Faltam").invoke("text").should("match", /R\$\s150,00/);
-        cy.get('[data-cy="carrinho-frete"]').should("have.text", "combinado depois");
+        cy.get('[data-cy="carrinho-frete"]').should("contain", "informe o CEP");
         cy.get('[data-cy="sugestao-look"]').should("have.length", 2).first().should("contain", "Regata Fé");
         cy.get('[data-cy="complete-look"]').should("not.contain", "Peça 1");
     });
 
-    it("a partir de R$ 250 o frete sai grátis", () => {
+    it("a partir de R$ 250 o envio mais econômico sai grátis", () => {
+        cy.intercept("POST", "**/frete/cotacao", { body: opcoesFrete(true) }).as("cotacao");
         visitarComSacola([item(1, 130, 2)]);
         cy.get('[data-cy="barra-frete"]').should("contain", "Frete grátis garantido");
-        cy.get('[data-cy="carrinho-frete"]').should("have.text", "Grátis");
+        cy.get('[data-cy="frete-cep"]').type("87000-000");
+        cy.get('[data-cy="frete-calcular"]').click();
+        cy.wait("@cotacao").its("request.body").should("deep.equal", { cep: "87000000", pecas: 2, valor_pecas: 260 });
+        cy.get('[data-cy="carrinho-frete"]').should("contain", "Grátis");
+        cy.get('[data-cy="carrinho-total"]').invoke("text").should("match", /R\$\s260,00/);
+    });
+
+    it("calcula o frete pelo CEP, guarda o CEP e soma a opção escolhida no total", () => {
+        cy.intercept("POST", "**/frete/cotacao", { body: opcoesFrete(false) }).as("cotacao");
+        visitarComSacola([item(1, 100)]);
+        cy.get('[data-cy="frete-cep"]').type("123");
+        cy.get('[data-cy="frete-calcular"]').click();
+        cy.get('[data-cy="frete-erro"]').should("contain", "8 números");
+        cy.get('[data-cy="frete-cep"]').clear().type("87000000").should("have.value", "87000-000");
+        cy.get('[data-cy="frete-calcular"]').click();
+        cy.wait("@cotacao");
+        cy.get('[data-cy="frete-opcao"]').should("have.length", 2).first().should("contain", "PAC").and("contain", "até 4 dias úteis");
+        cy.get('[data-cy="carrinho-total"]').invoke("text").should("match", /R\$\s119,90/);
+        cy.get('[data-cy="frete-opcao"][data-id="sedex"] input').check();
+        cy.get('[data-cy="carrinho-frete"]').invoke("text").should("match", /29,90/);
+        cy.get('[data-cy="carrinho-total"]').invoke("text").should("match", /R\$\s129,90/);
+        cy.window().its("localStorage").invoke("getItem", "agnus_cep").should("eq", "87000000");
     });
 });
 
@@ -155,6 +189,7 @@ describe("Cupom no Finalizar pedido", () => {
         cy.intercept("GET", "**/user-addresses/1", {
             body: [{ id_usuario_endereco: 5, logradouro: "Rua A", numero: "1", bairro: "Centro", cidade: "Maringá", estado: "PR", cep: "87000000", principal: true }],
         });
+        cy.intercept("POST", "**/frete/cotacao", (req) => req.reply({ body: opcoesFrete(req.body.valor_pecas >= 250) })).as("cotacao");
     });
 
     const visitar = (cupomGuardado) =>
@@ -179,7 +214,7 @@ describe("Cupom no Finalizar pedido", () => {
         cy.get('[data-cy="finalizar-total"]').invoke("text").should("match", /R\$\s252,00/);
         cy.get('[data-cy="finalizar-frete"]').should("have.text", "Grátis");
         cy.get('[data-cy="confirmar-pedido"]').click();
-        cy.wait("@checkout").its("request.body").should("deep.equal", { id_usuario_endereco: 5, cupom: "AGNUS10-ABCDEF" });
+        cy.wait("@checkout").its("request.body").should("deep.equal", { id_usuario_endereco: 5, frete_servico: "pac", cupom: "AGNUS10-ABCDEF" });
         cy.window().its("localStorage").invoke("getItem", "agnus_cupom").should("be.null");
     });
 
@@ -191,6 +226,22 @@ describe("Cupom no Finalizar pedido", () => {
         cy.get('[data-cy="cupom-erro"]').should("contain", "só para a primeira compra");
         cy.get('[data-cy="finalizar-desconto"]').should("not.exist");
         cy.get('[data-cy="finalizar-total"]').invoke("text").should("match", /R\$\s280,00/);
+    });
+
+    it("frete cotado pelo CEP do endereço: a opção escolhida vai no pedido e entra no total", () => {
+        cy.intercept("GET", "**/cart-items/1", {
+            body: [{ id_carrinho_item: 10, quantidade: 1, preco_unitario: 100, produto: { nome: "Camiseta" }, cor: { nome: "Preto" }, grade: { nome: "M" } }],
+        });
+        cy.intercept("POST", "**/orders/checkout", { statusCode: 201, body: { id_pedido: 78 } }).as("checkout");
+        cy.intercept("GET", "**/orders/78**", { body: { id_pedido: 78, status: "aguardando_pagamento", valor_total: 100, valor_frete: 29.9 } });
+        visitar();
+        cy.wait("@cotacao").its("request.body").should("deep.equal", { cep: "87000000", pecas: 1, valor_pecas: 100 });
+        cy.get('[data-cy="calculo-frete"]').should("contain", "CEP 87000-000");
+        cy.get('[data-cy="finalizar-frete"]').invoke("text").should("match", /19,90/);
+        cy.get('[data-cy="frete-opcao"][data-id="sedex"] input').check();
+        cy.get('[data-cy="finalizar-total"]').invoke("text").should("match", /R\$\s129,90/);
+        cy.get('[data-cy="confirmar-pedido"]').click();
+        cy.wait("@checkout").its("request.body").should("deep.equal", { id_usuario_endereco: 5, frete_servico: "sedex" });
     });
 });
 

@@ -209,12 +209,13 @@ function ClientePedidos() {
                             </span>
 
                             <strong className="pedido-valor">
-                                {formatarReal(pedido.valor_total)}
-                                {(pedido.frete_gratis || Number(pedido.valor_desconto) > 0) && (
+                                {formatarReal(Number(pedido.valor_total || 0) + Number(pedido.valor_frete || 0))}
+                                {(pedido.frete_gratis || Number(pedido.valor_desconto) > 0 || Number(pedido.valor_frete) > 0) && (
                                     <small className="pedido-extras">
                                         {[
                                             Number(pedido.valor_desconto) > 0 && `cupom −${formatarReal(pedido.valor_desconto)}`,
-                                            pedido.frete_gratis && "frete grátis",
+                                            Number(pedido.valor_frete) > 0 && `frete ${formatarReal(pedido.valor_frete)}`,
+                                            pedido.frete_gratis && Number(pedido.valor_frete) === 0 && "frete grátis",
                                         ].filter(Boolean).join(" · ")}
                                     </small>
                                 )}

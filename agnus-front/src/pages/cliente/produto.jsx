@@ -11,6 +11,7 @@ import { EsqueletoProduto } from "../../components/esqueleto";
 import VerMedidas from "../../components/guiaMedidas";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import ConfiancaCompra from "../../components/confiancaCompra";
+import CalculoFrete from "../../components/calculoFrete";
 import { useTituloPagina } from "../../utils/tituloPagina";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
@@ -607,6 +608,10 @@ function Produto() {
                     </button>
 
                     {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
+
+                    {cores.length > 0 && tamanhos.length > 0 && (
+                        <CalculoFrete titulo="Calcule o frete e o prazo" pecas={1} valorPecas={Number(precoFinal) || 0} />
+                    )}
 
                     <ConfiancaCompra />
 

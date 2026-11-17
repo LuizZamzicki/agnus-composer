@@ -99,11 +99,11 @@ export const DUVIDAS = [
         perguntas: [
             {
                 pergunta: "Quanto custa o frete?",
-                resposta: `É grátis em pedidos acima de ${real(FRETE_GRATIS_ACIMA)}. Abaixo disso, o valor do frete é combinado com a gente depois da compra, de acordo com o seu CEP.`,
+                resposta: `Você vê o valor e o prazo na hora: digite o CEP na página da peça ou na sacola. A partir de ${real(FRETE_GRATIS_ACIMA)} em peças, o envio mais econômico é grátis; se preferir um mais rápido, paga só a diferença.`,
             },
             {
                 pergunta: "Vocês entregam em todo o Brasil?",
-                resposta: "Sim, enviamos para todo o Brasil. O prazo de transporte depende da sua região.",
+                resposta: "Sim, enviamos para todo o Brasil. O prazo aparece junto com o frete quando você digita o CEP e é contado a partir da confirmação do pagamento.",
             },
         ],
     },

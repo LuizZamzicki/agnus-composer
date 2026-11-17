@@ -68,8 +68,9 @@ export function Entrega() {
 
             <h2>Frete</h2>
             <ul>
-                <li><strong>Grátis</strong> em pedidos acima de {real(FRETE_GRATIS_ACIMA)}.</li>
-                <li>Abaixo disso, o valor do frete é combinado com a gente depois da compra, de acordo com o seu CEP.</li>
+                <li>O valor e o prazo aparecem na hora, pelo CEP, na página da peça, na sacola e no fechamento do pedido.</li>
+                <li><strong>Grátis</strong> a partir de {real(FRETE_GRATIS_ACIMA)} em peças, no envio mais econômico. Num envio mais rápido, você paga só a diferença.</li>
+                <li>O frete é pago junto com as peças, no Pix ou no cartão.</li>
             </ul>
 
             <h2>Pagamento</h2>
