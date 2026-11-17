@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Ruler, X } from "lucide-react";
+import CompartilharProduto from "../../components/compartilharProduto";
+import { apiUrl as urlDaApi } from "../../utils/api";
 import "../../css/cliente/produto.css";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
@@ -402,11 +404,59 @@ function Produto() {
         carregarProduto();
     }, [id_produto]);
 
+    // Nome da categoria para o caminho "Início / Coleção / Categoria / Peça".
+    const [categoriaNome, setCategoriaNome] = useState("");
+    useEffect(() => {
+        const idCategoria = produto?.id_categoria;
+        setCategoriaNome("");
+        if (!idCategoria) return undefined;
+        let ativo = true;
+        fetch(urlDaApi(`categories/${idCategoria}`))
+            .then((r) => (r.ok ? r.json() : null))
+            .then((c) => ativo && setCategoriaNome(c?.nome ?? c?.data?.nome ?? ""))
+            .catch(() => undefined);
+        return () => {
+            ativo = false;
+        };
+    }, [produto?.id_categoria]);
+
+    // Barra de compra fixa no celular: aparece quando o botão principal sai da tela.
+    const botaoComprar = useRef(null);
+    const [barraFixa, setBarraFixa] = useState(false);
+    useEffect(() => {
+        if (loading) return undefined;
+        let quadro = 0;
+        const conferir = () => {
+            quadro = 0;
+            const alvo = botaoComprar.current;
+            setBarraFixa(Boolean(alvo) && alvo.getBoundingClientRect().bottom < 0);
+        };
+        const aoRolar = () => {
+            if (!quadro) quadro = window.requestAnimationFrame(conferir);
+        };
+        window.addEventListener("scroll", aoRolar, { passive: true });
+        conferir();
+        return () => {
+            window.removeEventListener("scroll", aoRolar);
+            if (quadro) window.cancelAnimationFrame(quadro);
+        };
+    }, [produto, loading]);
+
     if (loading) return <EsqueletoProduto />;
     if (!produto) return <p>Produto não encontrado.</p>;
 
     return (
         <div className="produto-page">
+            <nav className="trilha" aria-label="Você está em" data-cy="trilha">
+                <ol>
+                    <li><Link to="/">Início</Link></li>
+                    <li><Link to="/catalogo">Coleção</Link></li>
+                    {categoriaNome && produto.id_categoria && (
+                        <li><Link to={`/catalogo?categoria=${produto.id_categoria}`}>{categoriaNome}</Link></li>
+                    )}
+                    <li aria-current="page">{produto.nome}</li>
+                </ol>
+            </nav>
 
             {alerta && (
                 <div data-cy="produto-alerta" className={`alerta ${alerta.tipo}`}>
@@ -544,6 +594,7 @@ function Produto() {
                     </div>
 
                     <button
+                        ref={botaoComprar}
                         data-cy="adicionar-carrinho"
                         className="btn-comprar"
                         onClick={adicionarCarrinho}
@@ -559,6 +610,8 @@ function Produto() {
                     {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
 
                     <ConfiancaCompra />
+
+                    <CompartilharProduto nome={produto.nome} />
 
                 </div>
             </div>
@@ -775,7 +828,28 @@ function Produto() {
                 </div>
             )}
 
-        </div >
+            {barraFixa && cores.length > 0 && tamanhos.length > 0 && (
+                <div className="barra-compra" data-cy="barra-compra">
+                    <div className="barra-compra-info">
+                        <strong>{produto.nome}</strong>
+                        <span>{formatarReal(precoFinal)}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn-comprar"
+                        disabled={adicionando}
+                        onClick={() => {
+                            if (!tamanhoSelecionado || !corSelecionada) {
+                                botaoComprar.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }
+                            adicionarCarrinho();
+                        }}
+                    >
+                        {adicionando ? "Adicionando…" : !tamanhoSelecionado ? "Escolher tamanho" : !corSelecionada ? "Escolher cor" : "Adicionar"}
+                    </button>
+                </div>
+            )}
+        </div>
 
     );
 }

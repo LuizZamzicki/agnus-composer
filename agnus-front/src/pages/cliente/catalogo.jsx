@@ -8,6 +8,12 @@ import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 
 const ESPERA_DA_BUSCA_MS = 250;
+
+// "/catalogo?categoria=3" (blocos "Compre por categoria" da home) já abre filtrado.
+const categoriaDaUrl = (busca) => {
+    const id = Number(new URLSearchParams(busca).get("categoria"));
+    return Number.isInteger(id) && id > 0 ? id : "Todos";
+};
 const MAX_ATRASO_CARTAO = 8;
 
 function Catalogo() {
@@ -25,7 +31,11 @@ function Catalogo() {
     useEffect(() => {
         if (location.state?.focarBusca) campoBusca.current?.focus();
     }, [location.key, location.state]);
-    const [categoria, setCategoria] = useState("Todos");
+    const [categoria, setCategoria] = useState(() => categoriaDaUrl(location.search));
+    useEffect(() => {
+        setCategoria(categoriaDaUrl(location.search));
+        setPagina(1);
+    }, [location.search]);
     const [ordem, setOrdem] = useState("relevancia");
 
     const [pagina, setPagina] = useState(1);

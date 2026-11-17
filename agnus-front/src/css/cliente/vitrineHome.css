@@ -1,0 +1,333 @@
+/* Home: banner de campanha (foto grande), compre por categoria e depoimentos.
+   Tokens do tema (index.css): segue claro e escuro sozinho. */
+
+/* ---------- Banner de campanha ---------- */
+.banner-campanha {
+    position: relative;
+    margin-top: clamp(56px, 7vw, 96px);
+    height: clamp(440px, 72vh, 760px);
+    overflow: hidden;
+    background: #11100e;
+    isolation: isolate;
+}
+
+.banner-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: clamp(28px, 6vw, 88px) clamp(16px, 6vw, 96px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.9s var(--ease-out), visibility 0s linear 0.9s;
+}
+
+.banner-slide.is-atual {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.9s var(--ease-out), visibility 0s;
+}
+
+.banner-slide picture,
+.banner-slide img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.banner-slide img {
+    object-fit: cover;
+    transform: scale(1.04);
+    transition: transform 7s linear;
+    z-index: -2;
+}
+
+.banner-slide.is-atual img { transform: scale(1); }
+
+/* Escurece só onde está o texto, para ler em qualquer foto. */
+.banner-slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(to top, rgba(10, 9, 8, 0.82) 0%, rgba(10, 9, 8, 0.35) 45%, rgba(10, 9, 8, 0.05) 75%),
+        linear-gradient(to right, rgba(10, 9, 8, 0.55) 0%, rgba(10, 9, 8, 0) 60%);
+}
+
+.banner-slide--direita { justify-content: flex-end; }
+.banner-slide--direita::before {
+    background:
+        linear-gradient(to top, rgba(10, 9, 8, 0.82) 0%, rgba(10, 9, 8, 0.35) 45%, rgba(10, 9, 8, 0.05) 75%),
+        linear-gradient(to left, rgba(10, 9, 8, 0.55) 0%, rgba(10, 9, 8, 0) 60%);
+}
+.banner-slide--centro { justify-content: center; text-align: center; }
+.banner-slide--centro::before {
+    background: linear-gradient(to top, rgba(10, 9, 8, 0.85) 0%, rgba(10, 9, 8, 0.4) 50%, rgba(10, 9, 8, 0.1) 80%);
+}
+
+.banner-texto {
+    max-width: 620px;
+    color: #f7f6f3;
+}
+
+.banner-sobretitulo {
+    margin: 0 0 14px;
+    font: 13px/1 var(--f-caps);
+    letter-spacing: 0.26em;
+    color: #d2b061;
+}
+
+.banner-texto h2 {
+    margin: 0;
+    font: 400 clamp(40px, 6.4vw, 84px)/1 var(--f-display);
+    letter-spacing: 0.03em;
+    text-wrap: balance;
+}
+
+.banner-subtitulo {
+    margin: 18px 0 0;
+    font-size: clamp(18px, 1.6vw, 21px);
+    line-height: 1.5;
+    color: rgba(247, 246, 243, 0.88);
+    max-width: 46ch;
+}
+
+.banner-slide--centro .banner-subtitulo { margin-left: auto; margin-right: auto; }
+
+.banner-botao {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 15px 34px;
+    border: 1px solid #f7f6f3;
+    border-radius: var(--radius);
+    color: #1d1c1a;
+    background: #f7f6f3;
+    font: 14px/1 var(--f-caps);
+    letter-spacing: 0.2em;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.banner-botao:hover { background: transparent; color: #f7f6f3; }
+.banner-botao:focus-visible { outline: 2px solid #d2b061; outline-offset: 3px; }
+
+.banner-seta {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(247, 246, 243, 0.45);
+    border-radius: 50%;
+    background: rgba(10, 9, 8, 0.25);
+    color: #f7f6f3;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s;
+}
+
+.banner-seta:hover { background: rgba(10, 9, 8, 0.55); }
+.banner-seta--anterior { left: clamp(12px, 2vw, 28px); }
+.banner-seta--proxima { right: clamp(12px, 2vw, 28px); }
+
+.banner-pontos {
+    position: absolute;
+    bottom: 22px;
+    right: clamp(16px, 6vw, 96px);
+    display: flex;
+    gap: 10px;
+}
+
+.banner-pontos button {
+    width: 28px;
+    height: 3px;
+    padding: 0;
+    border: 0;
+    background: rgba(247, 246, 243, 0.4);
+    cursor: pointer;
+    transition: background 0.2s, width 0.3s var(--ease-out);
+}
+
+.banner-pontos button.is-atual { width: 48px; background: #f7f6f3; }
+
+/* ---------- Compre por categoria ---------- */
+.compre-categoria {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(56px, 7vw, 96px) clamp(16px, 4vw, 48px) 0;
+}
+
+.compre-categoria-grade {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(10px, 1.6vw, 20px);
+}
+
+.compre-categoria-grade--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.compre-categoria-grade--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.categoria-bloco {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--stone-2, var(--line-soft));
+    color: #f7f6f3;
+    text-decoration: none;
+    isolation: isolate;
+}
+
+.categoria-bloco img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    transition: transform 0.8s var(--ease-out);
+}
+
+.categoria-bloco::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, rgba(10, 9, 8, 0.78) 0%, rgba(10, 9, 8, 0.15) 45%, rgba(10, 9, 8, 0) 70%);
+}
+
+.categoria-bloco:hover img { transform: scale(1.05); }
+.categoria-bloco:focus-visible { outline: 2px solid var(--lit); outline-offset: 3px; }
+
+.categoria-bloco-texto {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 18px;
+    display: grid;
+    gap: 6px;
+}
+
+.categoria-bloco-texto strong {
+    font: 400 clamp(24px, 2.4vw, 32px)/1.05 var(--f-display);
+    letter-spacing: 0.04em;
+}
+
+.categoria-bloco-texto small {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 12px/1 var(--f-caps);
+    letter-spacing: 0.2em;
+    opacity: 0.9;
+}
+
+.categoria-bloco-texto svg { transition: translate 0.3s var(--ease-out); }
+.categoria-bloco:hover .categoria-bloco-texto svg { translate: 4px 0; }
+
+/* ---------- Depoimentos ---------- */
+.depoimentos {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(56px, 7vw, 96px) clamp(16px, 4vw, 48px) 0;
+}
+
+.depoimentos .section-title { text-align: center; }
+
+.depoimentos-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 8px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(280px, 1fr);
+    gap: 18px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+}
+
+.depoimento {
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+}
+
+.depoimento-foto {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: calc(var(--radius) - 2px);
+}
+
+.depoimento-estrelas { display: flex; gap: 2px; }
+
+.depoimento h3 {
+    margin: 0;
+    font: 400 20px/1.2 var(--f-display);
+}
+
+.depoimento blockquote {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2, var(--ink));
+}
+
+.depoimento-autor {
+    margin: auto 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    font-size: 15px;
+}
+
+.depoimento-autor span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ok);
+    font-size: 13px;
+}
+
+.depoimento-produto {
+    font-size: 14px;
+    color: var(--lit);
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 900px) {
+    .compre-categoria-grade,
+    .compre-categoria-grade--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+    .banner-campanha { height: clamp(460px, 78vh, 640px); }
+    .banner-slide { padding: 28px 20px 64px; }
+    .banner-slide--direita { justify-content: flex-start; }
+    .banner-seta { display: none; }
+    .banner-pontos { left: 20px; right: auto; bottom: 26px; }
+    .categoria-bloco-texto { left: 14px; right: 14px; bottom: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .banner-slide,
+    .banner-slide.is-atual,
+    .banner-slide img,
+    .categoria-bloco img,
+    .categoria-bloco-texto svg { transition: none; }
+    .banner-slide img { transform: none; }
+}

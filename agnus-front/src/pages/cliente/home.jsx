@@ -1,7 +1,7 @@
 import "../../css/cliente/vitrine.css";
 import "../../css/cliente/home.css";
 import hero from "../../img/hero.png";
-import { Brush, ChevronLeft, ChevronRight, Truck, Shield, Star } from "lucide-react";
+import { Brush, ChevronLeft, ChevronRight, CreditCard, RotateCcw, Truck, Star } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -9,7 +9,10 @@ import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import DuvidasLista from "../../components/duvidasLista";
-import { DUVIDAS_DA_HOME } from "../../conteudo/loja";
+import { DUVIDAS_DA_HOME, FRETE_GRATIS_ACIMA, PARCELAS_SEM_JUROS } from "../../conteudo/loja";
+import BannerCampanha from "../../components/bannerCampanha";
+import ComprePorCategoria from "../../components/comprePorCategoria";
+import Depoimentos from "../../components/depoimentos";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -217,9 +220,10 @@ function Home() {
             </section>
 
             <ul className="benefits" aria-label="Vantagens">
-                <li className="benefit"><Truck size={18} strokeWidth={1.5} aria-hidden="true" />Frete grátis acima de R$ 250</li>
-                <li className="benefit"><Brush size={18} strokeWidth={1.5} aria-hidden="true" />Estampa exclusiva, feita sob encomenda</li>
-                <li className="benefit"><Shield size={18} strokeWidth={1.5} aria-hidden="true" />Pagamento seguro</li>
+                <li className="benefit"><Truck size={18} strokeWidth={1.5} aria-hidden="true" />Frete grátis acima de R$ {FRETE_GRATIS_ACIMA}</li>
+                <li className="benefit"><CreditCard size={18} strokeWidth={1.5} aria-hidden="true" />{PARCELAS_SEM_JUROS}x sem juros no cartão</li>
+                <li className="benefit"><RotateCcw size={18} strokeWidth={1.5} aria-hidden="true" />Devolução em 7 dias</li>
+                <li className="benefit"><Brush size={18} strokeWidth={1.5} aria-hidden="true" />Feita sob encomenda</li>
             </ul>
 
             {bestSellers.length > 0 && (
@@ -244,6 +248,10 @@ function Home() {
                     </div>
                 </section>
             )}
+
+            <BannerCampanha />
+
+            <ComprePorCategoria />
 
             <section className="catalog">
                 <h2 className="section-title">A coleção</h2>
@@ -310,6 +318,8 @@ function Home() {
                     </nav>
                 )}
             </section>
+
+            <Depoimentos />
 
             <section className="sob-encomenda" id="sob-encomenda">
                 <div className="sob-encomenda-inner">
