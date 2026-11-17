@@ -5,11 +5,17 @@ import authenticateToken from '@agnus/comum/middlewares/auth.middleware';
 import { authorizeOwnerByBody, authorizeOwnerByParam } from '@agnus/comum/middlewares/ownership.middleware';
 import { OWNERS } from '../middlewares/donos';
 import { uploadFotosAvaliacao } from '@agnus/comum/middlewares/upload.middleware';
+import { avaliacoesEmDestaque } from '../destaques';
 
 // Bounded context Avaliacoes: leitura publica; escrita so pelo autor da avaliacao.
 const router = Router();
 
 router.post('/product-reviews', authenticateToken, authorizeOwnerByBody('id_usuario'), AvaliacaoProdutosController.create);
+// Depoimentos da página inicial (antes de :id_produto, senão "destaques" vira id).
+router.get('/product-reviews/destaques', async (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=120');
+  res.json({ data: await avaliacoesEmDestaque() });
+});
 router.get('/product-reviews/:id_produto', AvaliacaoProdutosController.getByIdProduto);
 router.put('/product-reviews/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacao), authorizeOwnerByBody('id_usuario'), AvaliacaoProdutosController.update);
 router.delete('/product-reviews/:id', authenticateToken, authorizeOwnerByParam('id', OWNERS.avaliacao), AvaliacaoProdutosController.remove);
