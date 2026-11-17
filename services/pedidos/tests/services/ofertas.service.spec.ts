@@ -22,11 +22,9 @@ describe("Ofertas e cupom de primeira compra", () => {
     expect(normalizarCupom("  agnus10-ab cd ")).toBe("AGNUS10-ABCD");
   });
 
-  it("resumo: 10% sobre as peças e frete grátis a partir de R$ 250 já com desconto", () => {
-    expect(resumoDaCompra(260, 0)).toEqual({ subtotal: 260, desconto: 0, total: 260, frete_gratis: true });
-    expect(resumoDaCompra(260, 10)).toEqual({ subtotal: 260, desconto: 26, total: 234, frete_gratis: false });
-    expect(resumoDaCompra(249.99, 0).frete_gratis).toBe(false);
-    expect(resumoDaCompra(278, 10).frete_gratis).toBe(true);
+  it("resumo: 10% de desconto sobre as peças", () => {
+    expect(resumoDaCompra(260, 0)).toEqual({ subtotal: 260, desconto: 0, total: 260 });
+    expect(resumoDaCompra(260, 10)).toEqual({ subtotal: 260, desconto: 26, total: 234 });
   });
 
   it("parte paga de cada peça com cupom (reembolso e comissão)", () => {

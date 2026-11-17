@@ -38,6 +38,10 @@ jest.mock("../../src/models/Pedidos", () => ({
   default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
 }));
 jest.mock("@agnus/comum/utils/referencias", () => ({ __esModule: true, usuarioExiste: jest.fn() }));
+jest.mock("../../src/notaFiscal/notaFiscal.service", () => ({
+  __esModule: true,
+  default: { resumos: jest.fn(async () => new Map([[1, { chave: "4".repeat(44), numero: "123" }]])) },
+}));
 jest.mock("@agnus/comum/utils/clienteInterno", () => ({ __esModule: true, consultarOuNull: jest.fn() }));
 jest.mock("@agnus/comum/utils/itemDetails", () => ({
   consultarSelecao: jest.fn(),
@@ -113,7 +117,11 @@ describe("PedidosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
     // Sem número da YouDraw, o rastreio busca pelo e-mail do dono do pedido.
     expect(response.send).toHaveBeenCalledWith([
-      expect.objectContaining({ id_pedido: 1, url_rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=c%40a.com" }),
+      expect.objectContaining({
+        id_pedido: 1,
+        url_rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=c%40a.com",
+        nota_fiscal: { chave: "4".repeat(44), numero: "123" },
+      }),
     ]);
     delete process.env.YOUDRAW_LOJA_TOKEN;
   });
@@ -632,7 +640,7 @@ describe("PedidosController.checkout", () => {
       res as never,
     );
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null, null);
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
@@ -641,9 +649,9 @@ describe("PedidosController.checkout", () => {
     const res = mockResponse();
     res.locals = authLocals;
 
-    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc ", frete_servico: "sedex" } }) as never, res as never);
+    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc " } }) as never, res as never);
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ", "sedex");
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ");
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith({ message: "Este cupom já foi usado." });
   });

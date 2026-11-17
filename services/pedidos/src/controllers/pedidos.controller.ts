@@ -10,6 +10,7 @@ import PedidoRegrasService from "../services/pedidoRegras.service";
 import { refDoCookie } from "../services/afiliacao.service";
 import { HttpError } from "@agnus/comum/types/http_error";
 import YouDrawService, { PedidosFornecedor } from "../fornecedor/youdraw.service";
+import NotaFiscalService from "../notaFiscal/notaFiscal.service";
 import { extrairCodigoRastreio, RastreioInvalido, urlRastreio } from "../utils/rastreio";
 import type { AuthUserPayload } from "@agnus/comum/types/auth.types";
 import type {
@@ -237,8 +238,14 @@ class PedidosController {
       ? new Map((await PedidosFornecedor.findAll({ where: { id_pedido: pedidos.map((p) => p.id_pedido) } })).map((r) => [r.id_pedido, r]))
       : new Map();
 
+    const notas = await NotaFiscalService.resumos(pedidos.map((p) => p.id_pedido));
+
     return res.status(200).send(
-      pedidos.map((pedido) => ({ ...PedidosController.comRastreio(pedido), fornecedor: YouDrawService.resumo(fornecedor.get(pedido.id_pedido)) })),
+      pedidos.map((pedido) => ({
+        ...PedidosController.comRastreio(pedido),
+        fornecedor: YouDrawService.resumo(fornecedor.get(pedido.id_pedido)),
+        nota_fiscal: notas.get(pedido.id_pedido) ?? null,
+      })),
     );
   }
 
@@ -258,7 +265,12 @@ class PedidosController {
       order: [["data_criacao", "DESC"]],
     });
 
-    return res.status(200).send(pedidos.map((pedido) => PedidosController.comRastreio(pedido, res.locals.authUser)));
+    // Junto, a NF-e de cada pedido (quando já foi anexada pela loja).
+    const notas = await NotaFiscalService.resumos(pedidos.map((p) => p.id_pedido));
+
+    return res.status(200).send(
+      pedidos.map((pedido) => ({ ...PedidosController.comRastreio(pedido, res.locals.authUser), nota_fiscal: notas.get(pedido.id_pedido) ?? null })),
+    );
   }
 
   static async getById(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
@@ -340,7 +352,6 @@ class PedidosController {
           addressId,
           refDoCookie(req.headers.cookie),
           typeof req.body.cupom === "string" && req.body.cupom.trim() ? req.body.cupom : null,
-          typeof req.body.frete_servico === "string" ? req.body.frete_servico : null,
         ));
     } catch (error) {
       if (error instanceof CheckoutError || error instanceof HttpError) {

@@ -1,4 +1,4 @@
-import { emailBoasVindasOfertas, emailPedirAvaliacao } from "../../src/email/modelos";
+import { emailBoasVindasOfertas, emailNotaFiscal, emailPedirAvaliacao } from "../../src/email/modelos";
 
 describe("E-mails de ofertas e de pedido de avaliação", () => {
   beforeEach(() => {
@@ -29,5 +29,14 @@ describe("E-mails de ofertas e de pedido de avaliação", () => {
     expect(email.html).toContain("Tank Top &lt;Machão&gt;");
     expect(email.texto).toContain("Camiseta: https://loja.exemplo/produto/9?avaliar=1#avaliacoes");
     expect(emailPedirAvaliacao({ email: "ana@exemplo.com" }, 12, [])).toBeNull();
+  });
+});
+
+describe("e-mail da nota fiscal", () => {
+  it("avisa que a NF-e está em Meus pedidos", () => {
+    const email = emailNotaFiscal({ nome: "Ana Souza", email: "ana@teste.com" }, 42);
+    expect(email.assunto).toBe("Nota fiscal do pedido #42");
+    expect(email.html).toContain("/cliente/pedidos");
+    expect(email.texto).toContain("Ver nota fiscal");
   });
 });

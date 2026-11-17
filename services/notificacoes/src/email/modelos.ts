@@ -366,3 +366,17 @@ export const emailPedirAvaliacao = (destinatario: Destinatario, idPedido: number
     },
   });
 };
+
+// A loja anexou a NF-e: o cliente vê e baixa em "Meus pedidos".
+export const emailNotaFiscal = (destinatario: Destinatario, idPedido: number): Email => {
+  const nome = primeiroNome(destinatario.nome);
+  return montar(destinatario.email, nome ? `Olá, ${nome}!` : "Olá!", {
+    assunto: `Nota fiscal do pedido #${idPedido}`,
+    titulo: "Sua nota fiscal está disponível",
+    paragrafos: [
+      `A nota fiscal eletrônica (NF-e) do seu pedido #${idPedido} já foi emitida.`,
+      "Em Meus pedidos você abre o DANFE em PDF, baixa o XML e vê a chave de acesso para consultar na Receita.",
+    ],
+    botao: { texto: "Ver nota fiscal", url: `${urlDoSite()}/cliente/pedidos` },
+  });
+};

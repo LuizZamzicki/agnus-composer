@@ -17,8 +17,8 @@ servers:
 tags:
   - name: Ofertas
     description: Ofertas por e-mail e cupom de primeira compra
-  - name: Frete
-    description: Cotacao do frete pelo CEP (Melhor Envio ou tabela da loja)
+  - name: Nota fiscal
+    description: NF-e do pedido (DANFE em PDF, XML e chave de acesso)
   - name: Observabilidade
   - name: Pedidos
   - name: Itens de pedido
@@ -99,23 +99,16 @@ paths:
                 cupom:
                   type: string
                   description: Cupom de primeira compra (AGNUS10-XXXXXX). Validado no servidor; da 10% nas pecas.
-                frete_servico:
-                  type: string
-                  description: >-
-                    id da opcao escolhida em /frete/cotacao (ex.: pac, sedex, me-1). O servidor cota de novo pelo CEP
-                    do endereco; sem ele vai a opcao mais barata.
       responses:
         "201":
           description: >-
-            Pedido criado. valor_total sao as pecas (ja com desconto do cupom) e valor_frete o frete cotado pelo
-            CEP, com frete_servico e frete_prazo_dias; o pagamento cobra os dois. Com cupom, grava cupom_codigo e
-            valor_desconto; a partir de R$ 250 em pecas (frete_gratis) a opcao mais barata sai de graca.
+            Pedido criado. valor_total sao as pecas (ja com desconto do cupom); a loja nao cobra frete. Com cupom,
+            grava cupom_codigo e valor_desconto.
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
           description: >-
-            Uma peca da sacola nao esta mais disponivel, o cupom ja foi usado / nao e mais primeira compra, ou a
-            opcao de frete escolhida nao existe mais
+            Uma peca da sacola nao esta mais disponivel, ou o cupom ja foi usado / nao e mais primeira compra
   /orders/me:
     get:
       operationId: getOrdersMe
@@ -164,7 +157,7 @@ paths:
       description: |
         Transicoes permitidas: `aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue`;
         `cancelado` a partir de qualquer status anterior a `enviado`. Qualquer outra transicao retorna 409.
-        Alterar `valor_frete` recalcula `valor_total`; um `valor_total` enviado e ignorado.
+        `valor_total` (pecas - desconto) e recalculado no servidor; um `valor_total` enviado e ignorado.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -483,7 +476,7 @@ paths:
       operationId: getOfertasRegras
       tags:
         - Ofertas
-      summary: Regras comerciais mostradas no site (frete gratis e desconto da primeira compra)
+      summary: Regra comercial mostrada no site (desconto da primeira compra)
       responses:
         "200":
           description: Regras
@@ -492,7 +485,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  frete_gratis_acima: { type: number, example: 250 }
                   desconto_primeira_compra: { type: number, example: 10 }
   /ofertas:
     post:
@@ -576,53 +568,81 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
           description: Cupom ja usado ou nao e mais a primeira compra
-  /frete/cotacao:
-    post:
-      operationId: cotarFrete
-      tags:
-        - Frete
-      summary: Opcoes de frete para um CEP (publico; limite de 30 por minuto por IP no gateway)
+  /orders/{id}/nota-fiscal:
+    get:
+      operationId: getNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Dados da NF-e do pedido (dono do pedido ou equipe)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Nota anexada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotaFiscal" }
+        "401": { description: Sem login }
+        "404": { description: Pedido de outra pessoa ou nota ainda nao emitida }
+  /orders/{id}/nota-fiscal/{tipo}:
+    get:
+      operationId: getArquivoNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Arquivo da NF-e (pdf abre no navegador; xml vem como download)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+        - { in: path, name: tipo, required: true, schema: { type: string, enum: [ pdf, xml ] } }
+      responses:
+        "200":
+          description: Arquivo
+          content:
+            application/pdf: { schema: { type: string, format: binary } }
+            application/xml: { schema: { type: string, format: binary } }
+        "404": { description: Sem arquivo desse tipo }
+  /notas-fiscais/{id}:
+    put:
+      operationId: putNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Anexa ou troca a NF-e do pedido (permissao PEDIDO_ATUALIZAR; avisa o cliente na primeira vez)
       description: >-
-        Com MELHOR_ENVIO_TOKEN a cotacao e real (Correios, Jadlog...); sem ele, ou se o Melhor Envio nao responder,
-        vale a tabela da loja (PAC e SEDEX pela distancia do CEP de origem). O prazo ja soma FRETE_DIAS_PRODUCAO.
+        Arquivos em base64 (ate 5 MB cada). Com o XML, chave, numero, serie, emissao e valor vem dele; sem XML,
+        a chave e obrigatoria (44 digitos com digito verificador). So para pedido pago, enviado ou entregue.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [cep]
               properties:
-                cep: { type: string, example: 01310-100 }
-                pecas: { type: integer, minimum: 1, maximum: 50, example: 2 }
-                valor_pecas: { type: number, description: Valor das pecas; so decide se aparece frete gratis, example: 159.8 }
+                chave: { type: string, example: "4124 1100 0000 0000 0000 5500 1000 0001 2310 0000 0000" }
+                numero: { type: string }
+                serie: { type: string }
+                pdf: { type: string, description: DANFE em base64 }
+                xml: { type: string, description: XML autorizado em base64 }
       responses:
         "200":
-          description: Cotacao
+          description: Nota salva
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  cep: { type: string }
-                  uf: { type: string }
-                  frete_gratis: { type: boolean }
-                  frete_gratis_acima: { type: number }
-                  origem: { type: string, enum: [melhor_envio, tabela] }
-                  opcoes:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id: { type: string }
-                        nome: { type: string }
-                        empresa: { type: string }
-                        preco: { type: number }
-                        preco_cheio: { type: number }
-                        prazo_dias: { type: integer }
-                        gratis: { type: boolean }
+              schema: { $ref: "#/components/schemas/NotaFiscal" }
         "400": { $ref: "#/components/responses/BadRequest" }
-        "429": { description: Muitas consultas seguidas }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Pedido ainda nao pago ou cancelado }
+        "413": { description: Arquivo maior que 5 MB }
+    delete:
+      operationId: deleteNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Remove a NF-e do pedido (permissao PEDIDO_ATUALIZAR)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removida }
+        "404": { $ref: "#/components/responses/NotFound" }
   /youdraw/webhook:
     post:
       summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)
@@ -681,6 +701,17 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
   schemas:
+    NotaFiscal:
+      type: object
+      properties:
+        chave: { type: string, example: "41241100000000000000550010000001231000000000" }
+        chave_formatada: { type: string }
+        numero: { type: string, nullable: true }
+        serie: { type: string, nullable: true }
+        data_emissao: { type: string, format: date-time, nullable: true }
+        valor: { type: number, nullable: true }
+        tem_pdf: { type: boolean }
+        tem_xml: { type: boolean }
     Error:
       type: object
       properties:
@@ -838,4 +869,4 @@ components:
         id_usuario: { type: integer }
         id_usuario_endereco: { type: integer }
         status: { $ref: "#/components/schemas/PedidoStatus" }
-        valor_frete: { type: number, description: "Ao mudar, o valor_total e recalculado (itens + frete)" }
+        valor_frete: { type: number, description: "Legado (pedidos lancados a mao); a loja nao cobra frete" }

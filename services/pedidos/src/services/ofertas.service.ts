@@ -7,7 +7,7 @@ import logger from "@agnus/comum/utils/logger";
 import Pedidos from "../models/Pedidos";
 import { DESCONTO_PRIMEIRA_COMPRA, EMAIL_VALIDO, STATUS_DE_COMPRA, gerarCupom, normalizarCupom, normalizarEmail } from "./ofertas.regras";
 
-export { DESCONTO_PRIMEIRA_COMPRA, FRETE_GRATIS_ACIMA, gerarCupom, normalizarCupom, normalizarEmail, resumoDaCompra } from "./ofertas.regras";
+export { DESCONTO_PRIMEIRA_COMPRA, gerarCupom, normalizarCupom, normalizarEmail, resumoDaCompra } from "./ofertas.regras";
 
 export class OfertasInscricoes extends Model {
   declare id_inscricao: number;

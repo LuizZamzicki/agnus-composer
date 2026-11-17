@@ -27,7 +27,7 @@ router.get("/enderecos/:id", async (req: Request, res: Response) => {
   const endereco = await UsuarioEnderecos.findByPk(Number(req.params.id));
 
   return endereco
-    ? res.status(200).json({ id_usuario_endereco: endereco.id_usuario_endereco, id_usuario: endereco.id_usuario, cep: endereco.cep })
+    ? res.status(200).json({ id_usuario_endereco: endereco.id_usuario_endereco, id_usuario: endereco.id_usuario })
     : res.status(404).json({ message: "Endereço não encontrado." });
 });
 

@@ -14,9 +14,6 @@ class Pedidos extends Model {
     | "cancelado";
   declare valor_total: number | null;
   declare valor_frete: number | null;
-  declare frete_gratis: boolean;
-  declare frete_servico: string | null;
-  declare frete_prazo_dias: number | null;
   declare cupom_codigo: string | null;
   declare valor_desconto: number | string;
   declare avaliacao_pedida_em: Date | null;
@@ -61,21 +58,6 @@ Pedidos.init(
     },
     valor_frete: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: null,
-    },
-    frete_gratis: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-    },
-    frete_servico: {
-      type: DataTypes.STRING(80),
-      allowNull: true,
-      defaultValue: null,
-    },
-    frete_prazo_dias: {
-      type: DataTypes.SMALLINT,
       allowNull: true,
       defaultValue: null,
     },

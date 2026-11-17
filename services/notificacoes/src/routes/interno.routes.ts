@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import NotificacaoService from "../services/notificacao.service";
 import Notificacoes from "../models/Notificacoes";
-import { dispararSemEsperar, enviarBoasVindasOfertas, pedirAvaliacaoPorEmail } from "../email/avisoPorEmail.service";
+import { dispararSemEsperar, enviarBoasVindasOfertas, notaFiscalPorEmail, pedirAvaliacaoPorEmail } from "../email/avisoPorEmail.service";
 
 const router = Router();
 
@@ -58,6 +58,23 @@ router.post("/pedir-avaliacao", async (req: Request, res: Response) => {
   dispararSemEsperar(pedirAvaliacaoPorEmail({ id_usuario: corpo.id_usuario, id_pedido: corpo.id_pedido, produtos }), {
     pedido: corpo.id_pedido,
   });
+  return res.status(204).send();
+});
+
+// A loja anexou a NF-e do pedido: aviso no site e por e-mail.
+router.post("/nota-fiscal", async (req: Request, res: Response) => {
+  const corpo = req.body ?? {};
+  if (!Number.isInteger(corpo.id_usuario) || !Number.isInteger(corpo.id_pedido)) {
+    return res.status(400).json({ message: "Aviso de nota fiscal incompleto." });
+  }
+
+  await Notificacoes.create({
+    id_usuario: corpo.id_usuario,
+    id_pedido: corpo.id_pedido,
+    titulo: "Nota fiscal disponível",
+    mensagem: `A NF-e do pedido #${corpo.id_pedido} já está em Meus pedidos.`,
+  });
+  dispararSemEsperar(notaFiscalPorEmail({ id_usuario: corpo.id_usuario, id_pedido: corpo.id_pedido }), { pedido: corpo.id_pedido });
   return res.status(204).send();
 });
 

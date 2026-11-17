@@ -1,11 +1,9 @@
 import type { Migracao } from "@agnus/comum/utils/migracoes";
 
 // Ofertas por e-mail e cupom de primeira compra: cada inscrição ganha um código único de 10%.
-// No pedido ficam o cupom usado, o desconto, se o frete saiu grátis (peças a partir de R$ 250)
-// e quando foi pedido ao cliente que avaliasse as peças.
+// No pedido ficam o cupom usado, o desconto e quando foi pedido ao cliente que avaliasse as peças.
 const colunas: [string, string][] = [
-  ["frete_gratis", "tinyint(1) NOT NULL DEFAULT 0 AFTER `valor_frete`"],
-  ["cupom_codigo", "varchar(40) DEFAULT NULL AFTER `frete_gratis`"],
+  ["cupom_codigo", "varchar(40) DEFAULT NULL AFTER `valor_frete`"],
   ["valor_desconto", "decimal(10,2) NOT NULL DEFAULT 0.00 AFTER `cupom_codigo`"],
   ["avaliacao_pedida_em", "datetime DEFAULT NULL AFTER `data_entrega`"],
 ];

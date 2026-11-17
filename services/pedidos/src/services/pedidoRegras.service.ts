@@ -24,7 +24,7 @@ export const fatorPago = (pedido: { valor_desconto?: number | string | null }, i
   return bruto > 0 && desconto > 0 ? Math.max(0, (bruto - desconto) / bruto) : 1;
 };
 
-// O que o cliente paga: peças (já com desconto) + frete. É o "Total do pedido" dos avisos.
+// O que o cliente paga (peças com desconto; valor_frete só existe em pedidos antigos lançados à mão).
 export const totalPago = (pedido: { valor_total?: number | string | null; valor_frete?: number | string | null }) =>
   pedido.valor_total == null ? null : Math.round((Number(pedido.valor_total) + Number(pedido.valor_frete ?? 0)) * 100) / 100;
 

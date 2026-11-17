@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import authenticateToken from "@agnus/comum/middlewares/auth.middleware";
 import { HttpError } from "@agnus/comum/types/http_error";
-import OfertasService, { DESCONTO_PRIMEIRA_COMPRA, FRETE_GRATIS_ACIMA } from "../services/ofertas.service";
+import OfertasService, { DESCONTO_PRIMEIRA_COMPRA } from "../services/ofertas.service";
 
 const router = Router();
 
@@ -12,10 +12,10 @@ const responderErro = (res: Response, error: unknown) => {
   throw error;
 };
 
-// Regras que o site mostra (frete grátis e desconto da primeira compra).
+// Regra que o site mostra (desconto da primeira compra).
 router.get("/ofertas/regras", (_req: Request, res: Response) => {
   res.set("Cache-Control", "public, max-age=300");
-  return res.status(200).json({ frete_gratis_acima: FRETE_GRATIS_ACIMA, desconto_primeira_compra: DESCONTO_PRIMEIRA_COMPRA });
+  return res.status(200).json({ desconto_primeira_compra: DESCONTO_PRIMEIRA_COMPRA });
 });
 
 // Inscrição pública (campo da página inicial). Devolve o cupom para já aparecer na tela; o
