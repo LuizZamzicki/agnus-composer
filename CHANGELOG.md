@@ -20,6 +20,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Pedidos criados sozinhos na YouDraw pela API oficial quando a venda é paga: SKUs por cor e tamanho no cadastro do produto (com "Buscar na YouDraw"), coluna YouDraw na lista de pedidos com reenvio, chave de idempotência, nova tentativa automática para falhas passageiras, webhook assinado e conferência a cada 10 minutos que trazem status e rastreio (enviado e entregue avisam o cliente) e tudo no registro de eventos. Sem `YOUDRAW_API_KEY` o pedido fica marcado como "manual" (AGNUS-236).
 - Vitrine na página inicial, inspirada em Hace, Montclair e Eden: banner de campanha com foto grande (carrossel com mais de um, agendamento de início e fim), "Compre por categoria" com fotos, depoimentos de compras verificadas e faixa com 4 vantagens; tela "Vitrine da loja" no admin para subir os banners e escolher a foto de cada categoria (AGNUS-238).
 - Página do produto com caminho (Início / Coleção / Categoria), compartilhar no WhatsApp ou copiar link e barra de compra fixa no celular; o catálogo aceita `?categoria=` na URL (AGNUS-238).
+- Cada página tem o próprio título na aba e ao compartilhar o link (ex.: "Tank Top Machão Suedine · Agnus") (AGNUS-238).
+### Corrigido
+- "Também da coleção" no produto aparecia vazio: agora sugere até 4 peças, primeiro da mesma categoria, e some quando não há outras; no celular fica em 2 colunas e a parcela não sai mais em caixa alta (AGNUS-238).
+- A barra de compra fixa do celular não cobre mais o fim do rodapé, e o catálogo não mostra "1 / 1" quando só há uma página (AGNUS-238).
+
 ### Removido
 - Integração Shopify headless (ADR 0009) desativada: o serviço `loja` sai do `docker-compose`, do gateway e do CD, mas o código fica guardado (`services/loja/`, `agnus-front/shopify-desativado/`) com instruções para religar. Vitrine, sacola e pedidos voltam a usar `catalogo`, `carrinho` e `pedidos`.
 

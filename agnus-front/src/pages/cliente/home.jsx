@@ -19,8 +19,10 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import { Autoplay } from "swiper/modules";
+import { useTituloPagina } from "../../utils/tituloPagina";
 
 function Home() {
+    useTituloPagina(null);
     const [produtos, setProdutos] = useState([]);
     const [bestSellers, setBestSellers] = useState([]);
     const [categorias, setCategorias] = useState([]);

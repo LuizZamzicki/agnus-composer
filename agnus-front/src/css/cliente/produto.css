@@ -369,7 +369,7 @@
 
 .relacionados-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 240px));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 28px;
 }
 
@@ -394,9 +394,9 @@
     font: 400 19px/1.25 var(--f-display);
 }
 
-.relacionado-card span {
-    font: 15px var(--f-caps);
-    letter-spacing: 0.12em;
+@media (max-width: 600px) {
+    .relacionados-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; }
+    .relacionado-card h3 { font-size: 16px; }
 }
 
 /* Lightbox */
@@ -617,6 +617,9 @@
 .barra-compra { display: none; }
 
 @media (max-width: 720px) {
+    /* Espaço no fim da página para a barra fixa não cobrir o rodapé. */
+    body:has(.barra-compra) { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+
     .barra-compra {
         position: fixed;
         left: 0;

@@ -3,10 +3,12 @@ import DuvidasLista from "../components/duvidasLista";
 import FaleConosco from "../components/faleConosco";
 import { DUVIDAS } from "../conteudo/loja";
 import "../css/cliente/institucional.css";
+import { useTituloPagina } from "../utils/tituloPagina";
 
 const ancora = (assunto) => assunto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
 
 export default function Duvidas() {
+    useTituloPagina("Perguntas frequentes");
     return (
         <main className="institucional" data-cy="pagina-duvidas">
             <header className="institucional-topo">

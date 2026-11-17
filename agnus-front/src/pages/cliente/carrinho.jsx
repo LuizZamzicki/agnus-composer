@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
+import { useTituloPagina } from "../../utils/tituloPagina";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -32,6 +33,7 @@ function formatarItem(item) {
 }
 
 function Carrinho() {
+    useTituloPagina("Sacola");
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);

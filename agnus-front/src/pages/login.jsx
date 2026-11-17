@@ -8,6 +8,7 @@ import logoCompletoEscuro from "../img/marca/logo-completo-escuro.png";
 import { apiUrl } from "../utils/api";
 import { destinoSeguro } from "../utils/destinoSeguro";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
+import { useTituloPagina } from "../utils/tituloPagina";
 
 const ERRO_GENERICO_GOOGLE = "Não foi possível entrar com o Google. Tente novamente.";
 const MENSAGENS_DE_LOGIN_GOOGLE = new Set([
@@ -24,6 +25,7 @@ const CHAVE_DESTINO = "agnus_destino_login";
 const CHAVE_NONCE = "agnus_nonce_login";
 
 function Login() {
+    useTituloPagina("Entrar");
   const navigate = useNavigate();
 
   // O painel é outro site: só a navegação completa do navegador chega nele.

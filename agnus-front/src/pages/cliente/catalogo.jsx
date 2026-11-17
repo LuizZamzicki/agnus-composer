@@ -6,6 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import { useTituloPagina } from "../../utils/tituloPagina";
 
 const ESPERA_DA_BUSCA_MS = 250;
 
@@ -17,6 +18,7 @@ const categoriaDaUrl = (busca) => {
 const MAX_ATRASO_CARTAO = 8;
 
 function Catalogo() {
+    useTituloPagina("A coleção");
 
     const [produtos, setProdutos] = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -281,6 +283,7 @@ function Catalogo() {
                         )}
                     </div>
 
+                    {totalPaginas > 1 && (
                     <nav className="pagination" aria-label="Paginação">
                         <button
                             disabled={pagina === 1}
@@ -300,6 +303,7 @@ function Catalogo() {
                             <ChevronRight size={18} strokeWidth={1.5} />
                         </button>
                     </nav>
+                    )}
                 </section>
             </div>
         </div>

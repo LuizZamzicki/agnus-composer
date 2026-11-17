@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Ruler, X } from "lucide-react";
 import CompartilharProduto from "../../components/compartilharProduto";
-import { apiUrl as urlDaApi } from "../../utils/api";
+import { apiUrl as urlDaApi, assetUrl } from "../../utils/api";
 import "../../css/cliente/produto.css";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
@@ -11,10 +11,19 @@ import { EsqueletoProduto } from "../../components/esqueleto";
 import VerMedidas from "../../components/guiaMedidas";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import ConfiancaCompra from "../../components/confiancaCompra";
+import { useTituloPagina } from "../../utils/tituloPagina";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
 function textoResumoAvaliacoes({ media, total }) {
     return `${media.toFixed(1).replace(".", ",")} de 5 · ${total} ${total === 1 ? "avaliação" : "avaliações"}`;
+}
+
+// Sugestões: primeiro peças da mesma categoria, depois completa com o resto da coleção (até 4).
+export function escolherRelacionados(lista, produto, limite = 4) {
+    const outros = lista.filter((p) => p.id_produto !== produto.id_produto);
+    const mesmaCategoria = outros.filter((p) => p.id_categoria === produto.id_categoria);
+    const resto = outros.filter((p) => p.id_categoria !== produto.id_categoria);
+    return [...mesmaCategoria, ...resto].slice(0, limite);
 }
 
 function Produto() {
@@ -45,6 +54,7 @@ function Produto() {
     const [tamanhoSelecionado, setTamanhoSelecionado] = useState(null);
     const [corSelecionada, setCorSelecionada] = useState(null);
     const [loading, setLoading] = useState(true);
+    useTituloPagina(produto?.nome);
     const [alerta, setAlerta] = useState(null);
     const [faltaEscolher, setFaltaEscolher] = useState(null);
     const [erroCompra, setErroCompra] = useState("");
@@ -312,45 +322,10 @@ function Produto() {
     useEffect(() => {
         async function carregarRelacionados() {
             try {
-                const res = await fetch(`${BASE_URL}products/catalog`);
+                const res = await fetch(urlDaApi("products/catalog?page=1&limit=24"));
                 const data = await res.json();
-
-                const lista = data?.data || data || [];
-                const nomeBase = produto?.nome?.toLowerCase() || "";
-
-                const filtrados = lista
-                    .filter(p =>
-                        p.id_produto !== Number(id_produto) &&
-                        nomeBase &&
-                        p.nome?.toLowerCase().includes(nomeBase.split(" ")[0])
-                    )
-                    .slice(0, 3);
-
-                const comImagem = await Promise.all(
-                    filtrados.map(async (p) => {
-                        try {
-                            const resFoto = await fetch(`${BASE_URL}product-photos/${p.id_produto}`);
-                            const dataFotos = await resFoto.json();
-
-                            const fotos = Array.isArray(dataFotos)
-                                ? dataFotos
-                                : dataFotos?.data || [];
-
-                            return {
-                                ...p,
-                                img: fotos.length > 0
-                                    ? `${BASE_URL}${fotos[0].caminho_url}`
-                                    : null
-                            };
-
-                        } catch {
-                            return { ...p, img: null };
-                        }
-                    })
-                );
-
-                setRelacionados(comImagem);
-
+                const lista = Array.isArray(data?.data) ? data.data : [];
+                setRelacionados(escolherRelacionados(lista, produto).map((p) => ({ ...p, img: p.imagens?.[0] ? assetUrl(p.imagens[0]) : null })));
             } catch (err) {
                 console.error(err);
             }
@@ -756,7 +731,8 @@ function Produto() {
 
             </div>
 
-            <div className="relacionados">
+            {relacionados.length > 0 && (
+            <div className="relacionados" data-cy="relacionados">
                 <h2>Também da coleção</h2>
 
                 <div className="relacionados-grid">
@@ -776,6 +752,7 @@ function Produto() {
                     ))}
                 </div>
             </div>
+            )}
 
             {lightboxOpen && (
                 <div

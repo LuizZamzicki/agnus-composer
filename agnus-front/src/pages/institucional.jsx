@@ -2,12 +2,14 @@ import { Link } from "react-router-dom";
 import FaleConosco from "../components/faleConosco";
 import { EMAIL, FRETE_GRATIS_ACIMA, PARCELAS_MAX, PARCELAS_SEM_JUROS } from "../conteudo/loja";
 import "../css/cliente/institucional.css";
+import { useTituloPagina } from "../utils/tituloPagina";
 
 // Páginas do rodapé. Os textos seguem as regras que o sistema aplica hoje (prazos de devolução,
 // parcelas, dados usados no pedido). Política de privacidade: revisar com o jurídico antes de publicar.
 const real = (valor) => Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function Pagina({ sobretitulo, titulo, lede, cy, children }) {
+    useTituloPagina(titulo);
     return (
         <main className="institucional" data-cy={cy}>
             <header className="institucional-topo">

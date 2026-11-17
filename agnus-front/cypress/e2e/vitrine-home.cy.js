@@ -100,6 +100,24 @@ describe("Página do produto", () => {
         cy.get('[data-cy="compartilhar-whatsapp"]').should("have.attr", "href").and("include", "wa.me").and("include", encodeURIComponent("Tank Top Machão"));
     });
 
+    it("título da aba com o nome da peça e sugestões da mesma categoria primeiro", () => {
+        const item = (id, cat, nome) => ({ id_produto: id, id_categoria: cat, nome, preco_base: "50.00", imagens: [] });
+        cy.intercept("GET", "**/api/products/catalog*", {
+            body: { data: [item(4, 23, "Tank Top Machão"), item(9, 22, "Camiseta Classic"), item(7, 23, "Regata Cavada"), item(10, 22, "Camiseta 220g"), item(11, 22, "Camiseta UV"), item(12, 24, "Short 2 em 1")] }
+        });
+        cy.visit("/produto/4");
+        cy.title().should("eq", "Tank Top Machão · Agnus");
+        cy.get('[data-cy="relacionados"] .relacionado-card').should("have.length", 4).first().should("contain", "Regata Cavada");
+        cy.get('[data-cy="relacionados"]').should("not.contain", "Tank Top Machão");
+    });
+
+    it("sem outras peças, a seção de sugestões não aparece", () => {
+        cy.intercept("GET", "**/api/products/catalog*", { body: { data: [] } });
+        cy.visit("/produto/4");
+        cy.contains("h1", "Tank Top Machão");
+        cy.get('[data-cy="relacionados"]').should("not.exist");
+    });
+
     it("celular: barra de compra aparece ao rolar e pede o tamanho que falta", () => {
         cy.viewport(390, 844);
         cy.visit("/produto/4");
