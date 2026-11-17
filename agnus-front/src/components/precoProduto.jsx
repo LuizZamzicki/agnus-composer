@@ -33,7 +33,10 @@ export default function PrecoProduto({ preco, precoOriginal, className = "", des
 
     return (
         <span className={`preco-produto preco-produto--promo ${destaque ? "preco-produto--destaque" : ""} ${className}`}>
-            <span className="preco-produto__selo">Black Friday -{desconto}%</span>
+            <span className="preco-produto__selo" aria-label={`Black Friday: ${desconto}% de desconto`}>
+                <span className="preco-produto__selo-desconto" aria-hidden="true">−{desconto}%</span>
+                <span className="preco-produto__selo-campanha" aria-hidden="true">Black Friday</span>
+            </span>
             <span className="preco-produto__de">
                 De <s>{formatar(precoOriginal)}</s>
             </span>

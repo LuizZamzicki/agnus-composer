@@ -321,19 +321,6 @@ function Home() {
 
             <Depoimentos />
 
-            <section className="sob-encomenda" id="sob-encomenda">
-                <div className="sob-encomenda-inner">
-                    <h2>Feita sob encomenda</h2>
-                    <p>
-                        Nenhuma peça espera na prateleira. A sua começa a ser feita quando você
-                        a escolhe: sem estoque parado, sem desperdício, com o cuidado de quem
-                        trabalha para a glória de Deus.
-                    </p>
-                    <p className="sob-encomenda-latin"><em>Ora et labora.</em> Reza e trabalha.</p>
-                    <Link className="btn-agnus" to="/catalogo">Escolher a minha peça</Link>
-                </div>
-            </section>
-
             <section className="duvidas-home" data-cy="duvidas-home" aria-labelledby="duvidas-home-titulo">
                 <h2 id="duvidas-home-titulo" className="section-title">Perguntas frequentes</h2>
                 <DuvidasLista perguntas={DUVIDAS_DA_HOME} prefixo="duvida-home" />
