@@ -5,7 +5,7 @@ import ContagemRegressiva from "./contagemRegressiva";
 
 const INTERVALO_MS = 5000;
 
-// Avisos da faixa do topo (frete, parcelas, campanha). Troca sozinho; para quem prefere menos
+// Avisos da faixa do topo (parcelas, cupom, campanha). Troca sozinho; para quem prefere menos
 // movimento, mostra só o primeiro, parado. Campanha terminando nos próximos dias entra primeiro,
 // com a contagem regressiva ("Black Friday termina em 2d 05h 10min").
 export default function AvisosLoja() {

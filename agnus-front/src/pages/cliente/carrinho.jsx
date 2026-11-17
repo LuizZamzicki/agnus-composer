@@ -5,9 +5,7 @@ import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import { useTituloPagina } from "../../utils/tituloPagina";
-import BarraFreteGratis from "../../components/barraFreteGratis";
 import CompleteOLook from "../../components/completeOLook";
-import CalculoFrete from "../../components/calculoFrete";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -42,7 +40,6 @@ function Carrinho() {
     const [toast, setToast] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [sessaoExpirou, setSessaoExpirou] = useState(false);
-    const [frete, setFrete] = useState(null);
 
     const idUsuario = usuarioDaSessao();
     const isAdmin = sessaoDeAdmin();
@@ -158,8 +155,6 @@ function Carrinho() {
     }
 
     const total = cart.reduce((acc, item) => acc + item.preco_unitario * item.quantidade, 0);
-    const pecas = cart.reduce((acc, item) => acc + Number(item.quantidade || 0), 0);
-    const totalComFrete = Math.round((total + (frete?.preco ?? 0)) * 100) / 100;
     const linkFinalizar = idUsuario ? "/finalizar" : "/login?redirect=/finalizar";
 
     if (loading) {
@@ -295,22 +290,14 @@ function Carrinho() {
 
                 <div className="cart-summary">
                     <h2>Resumo</h2>
-                    <BarraFreteGratis valor={total} />
-                    <CalculoFrete pecas={pecas} valorPecas={total} escolhido={frete} onEscolher={setFrete} />
                     <div>
                         <span>Peças</span>
                         <span>{formatarReal(total)}</span>
                     </div>
-                    <div>
-                        <span>Frete</span>
-                        <span className={frete ? undefined : "cart-frete"} data-cy="carrinho-frete">
-                            {frete ? (frete.gratis ? "Grátis" : formatarReal(frete.preco)) : "informe o CEP"}
-                        </span>
-                    </div>
                     <hr />
                     <div>
                         <strong>Total</strong>
-                        <strong data-cy="carrinho-total">{formatarReal(totalComFrete)}</strong>
+                        <strong data-cy="carrinho-total">{formatarReal(total)}</strong>
                     </div>
                     <Link data-cy="finalizar-compra" className="finish-btn" to={linkFinalizar}>
                         Finalizar pedido
@@ -322,13 +309,7 @@ function Carrinho() {
                 </div>
             </div>
 
-            <CompleteOLook
-                idsNaSacola={cart.map((item) => item.id_produto).filter(Boolean)}
-                onAdicionado={() => {
-                    carregarCarrinho({ silencioso: true });
-                    showToast("Peça adicionada à sacola.");
-                }}
-            />
+            <CompleteOLook idsNaSacola={cart.map((item) => item.id_produto).filter(Boolean)} />
         </div>
     );
 }

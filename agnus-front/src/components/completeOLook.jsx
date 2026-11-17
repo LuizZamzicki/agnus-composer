@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../utils/api";
 import PrecoProduto from "./precoProduto";
-import EscolhaRapida from "./escolhaRapida";
 import "../css/cliente/conversao.css";
 
 // Sugestões na sacola: peças que ainda não estão nela, primeiro de categorias diferentes das
@@ -16,7 +15,7 @@ export const sugerirParaOLook = (catalogo, idsNaSacola, limite = 4) => {
     return [...outras, ...mesmas].slice(0, limite);
 };
 
-export default function CompleteOLook({ idsNaSacola, onAdicionado }) {
+export default function CompleteOLook({ idsNaSacola }) {
     const [catalogo, setCatalogo] = useState([]);
 
     useEffect(() => {
@@ -49,7 +48,6 @@ export default function CompleteOLook({ idsNaSacola, onAdicionado }) {
                                     <PrecoProduto className="product-price" preco={p.preco_base} precoOriginal={p.preco_original} />
                                 </div>
                             </Link>
-                            <EscolhaRapida produto={p} imagem={img} onAdicionado={onAdicionado} />
                         </div>
                     );
                 })}

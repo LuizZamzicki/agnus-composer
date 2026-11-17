@@ -177,7 +177,6 @@
 .finish-btn:hover { background: var(--acao-hover); border-color: var(--acao-hover); color: var(--on-acao-hover); }
 
 .cart-summary > div + div { margin-top: 8px; }
-.cart-summary > div span.cart-frete:last-child { font: italic 17px var(--f-text); letter-spacing: 0; color: var(--muted); }
 
 .cart-hint {
     margin: 12px 0 0;

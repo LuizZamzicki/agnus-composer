@@ -7,6 +7,7 @@ import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import RastreioPedido, { urlRastreioSegura } from "../../components/rastreioPedido";
 import DevolucaoPedido from "../../components/devolucaoPedido";
+import NotaFiscalPedido from "../../components/notaFiscalPedido";
 
 const STATUS_PEDIDO = {
     aguardando_calculo_frete: "Calculando o frete",
@@ -26,6 +27,7 @@ function ClientePedidos() {
     const [itemAvaliando, setItemAvaliando] = useState(null);
     const [rastreioAberto, setRastreioAberto] = useState(null);
     const [devolucoes, setDevolucoes] = useState([]);
+    const [notaAberta, setNotaAberta] = useState(null);
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -210,14 +212,8 @@ function ClientePedidos() {
 
                             <strong className="pedido-valor">
                                 {formatarReal(Number(pedido.valor_total || 0) + Number(pedido.valor_frete || 0))}
-                                {(pedido.frete_gratis || Number(pedido.valor_desconto) > 0 || Number(pedido.valor_frete) > 0) && (
-                                    <small className="pedido-extras">
-                                        {[
-                                            Number(pedido.valor_desconto) > 0 && `cupom −${formatarReal(pedido.valor_desconto)}`,
-                                            Number(pedido.valor_frete) > 0 && `frete ${formatarReal(pedido.valor_frete)}`,
-                                            pedido.frete_gratis && Number(pedido.valor_frete) === 0 && "frete grátis",
-                                        ].filter(Boolean).join(" · ")}
-                                    </small>
+                                {Number(pedido.valor_desconto) > 0 && (
+                                    <small className="pedido-extras">cupom −{formatarReal(pedido.valor_desconto)}</small>
                                 )}
                             </strong>
 
@@ -239,6 +235,22 @@ function ClientePedidos() {
                                 </button>
                             )}
 
+                            {pedido.nota_fiscal ? (
+                                <button
+                                    type="button"
+                                    data-cy="ver-nota-fiscal"
+                                    className="pedido-ver-pecas"
+                                    aria-expanded={notaAberta === pedido.id_pedido}
+                                    onClick={() => setNotaAberta(notaAberta === pedido.id_pedido ? null : pedido.id_pedido)}
+                                >
+                                    {notaAberta === pedido.id_pedido ? "Ocultar nota fiscal" : "Nota fiscal"}
+                                </button>
+                            ) : (
+                                ["pago", "enviado", "entregue"].includes(pedido.status) && (
+                                    <span className="pedido-nf-pendente" data-cy="nota-fiscal-pendente">Nota fiscal em emissão</span>
+                                )
+                            )}
+
                             <button
                                 type="button"
                                 data-cy="ver-pecas"
@@ -252,6 +264,10 @@ function ClientePedidos() {
 
                         {rastreioAberto === pedido.id_pedido && (
                             <RastreioPedido idPedido={pedido.id_pedido} url={pedido.url_rastreio} />
+                        )}
+
+                        {notaAberta === pedido.id_pedido && pedido.nota_fiscal && (
+                            <NotaFiscalPedido idPedido={pedido.id_pedido} nota={pedido.nota_fiscal} />
                         )}
 
                         <DevolucaoPedido

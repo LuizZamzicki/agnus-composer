@@ -7,7 +7,6 @@ import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import { useTituloPagina } from "../../utils/tituloPagina";
-import EscolhaRapida from "../../components/escolhaRapida";
 import EtiquetasProduto from "../../components/etiquetasProduto";
 import { useMaisPedidos } from "../../utils/vitrineDados";
 
@@ -278,7 +277,6 @@ function Catalogo() {
                                         <ParcelaProduto preco={prod.preco_base} />
                                     </div>
                                 </Link>
-                                <EscolhaRapida produto={prod} imagem={imgPadrao} />
                                 </div>
                             );
                         })}

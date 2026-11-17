@@ -1,7 +1,7 @@
 import "../../css/cliente/vitrine.css";
 import "../../css/cliente/home.css";
 import hero from "../../img/hero.png";
-import { Brush, ChevronLeft, ChevronRight, CreditCard, RotateCcw, Truck, Star } from "lucide-react";
+import { Brush, ChevronLeft, ChevronRight, CreditCard, RotateCcw, Star } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -9,7 +9,7 @@ import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
 import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
 import DuvidasLista from "../../components/duvidasLista";
-import { DUVIDAS_DA_HOME, FRETE_GRATIS_ACIMA, PARCELAS_SEM_JUROS } from "../../conteudo/loja";
+import { DUVIDAS_DA_HOME, PARCELAS_SEM_JUROS } from "../../conteudo/loja";
 import BannerCampanha from "../../components/bannerCampanha";
 import ComprePorCategoria from "../../components/comprePorCategoria";
 import Depoimentos from "../../components/depoimentos";
@@ -21,7 +21,6 @@ import "swiper/css/pagination";
 
 import { Autoplay } from "swiper/modules";
 import { useTituloPagina } from "../../utils/tituloPagina";
-import EscolhaRapida from "../../components/escolhaRapida";
 import EtiquetasProduto from "../../components/etiquetasProduto";
 import { useMaisPedidos } from "../../utils/vitrineDados";
 
@@ -201,7 +200,6 @@ function Home() {
                     <ParcelaProduto preco={prod.preco_base} />
                 </div>
             </Link>
-            <EscolhaRapida produto={prod} imagem={imgPadrao} />
             </div>
         );
     }
@@ -230,7 +228,6 @@ function Home() {
             </section>
 
             <ul className="benefits" aria-label="Vantagens">
-                <li className="benefit"><Truck size={18} strokeWidth={1.5} aria-hidden="true" />Frete grátis acima de R$ {FRETE_GRATIS_ACIMA}</li>
                 <li className="benefit"><CreditCard size={18} strokeWidth={1.5} aria-hidden="true" />{PARCELAS_SEM_JUROS}x sem juros no cartão</li>
                 <li className="benefit"><RotateCcw size={18} strokeWidth={1.5} aria-hidden="true" />Devolução em 7 dias</li>
                 <li className="benefit"><Brush size={18} strokeWidth={1.5} aria-hidden="true" />Feita sob encomenda</li>

@@ -1,7 +1,6 @@
 // Textos e regras da loja num lugar só: faixa de avisos, perguntas frequentes, contatos e parcelas.
 // Para mudar um aviso ou uma resposta, edite aqui; as telas leem deste arquivo.
 
-export const FRETE_GRATIS_ACIMA = 250;
 export const PARCELAS_SEM_JUROS = 2; // de 3x em diante o cartão cobra juros (Mercado Pago)
 export const PARCELAS_MAX = 12;
 export const DESCONTO_PRIMEIRA_COMPRA = 10; // % do cupom de quem se inscreve nas ofertas (vale na 1ª compra)
@@ -17,12 +16,9 @@ export const WHATSAPP = [
 export const linkWhatsApp = (numero, texto = "Olá! Vim pelo site da Agnus e tenho uma dúvida.") =>
     `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
 
-const real = (valor) => Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
 // Faixa fina no topo (ao lado do tempo litúrgico). Alterna sozinha a cada poucos segundos.
 export const AVISOS = [
     "Black Friday: peças com até 30% off",
-    `Frete grátis acima de ${real(FRETE_GRATIS_ACIMA)}`,
     `${PARCELAS_SEM_JUROS}x sem juros no cartão · Pix na hora`,
     `${DESCONTO_PRIMEIRA_COMPRA}% na primeira compra: cadastre seu e-mail`,
     "Feita sob encomenda, peça por peça",
@@ -95,15 +91,15 @@ export const DUVIDAS = [
         ],
     },
     {
-        assunto: "Entrega e frete",
+        assunto: "Entrega e nota fiscal",
         perguntas: [
             {
-                pergunta: "Quanto custa o frete?",
-                resposta: `Você vê o valor e o prazo na hora: digite o CEP na página da peça ou na sacola. A partir de ${real(FRETE_GRATIS_ACIMA)} em peças, o envio mais econômico é grátis; se preferir um mais rápido, paga só a diferença.`,
+                pergunta: "Vocês entregam em todo o Brasil?",
+                resposta: "Sim, enviamos para todo o Brasil. Quando a peça sai, o código de rastreio aparece em Meus pedidos.",
             },
             {
-                pergunta: "Vocês entregam em todo o Brasil?",
-                resposta: "Sim, enviamos para todo o Brasil. O prazo aparece junto com o frete quando você digita o CEP e é contado a partir da confirmação do pagamento.",
+                pergunta: "Onde vejo a nota fiscal da compra?",
+                resposta: "Em Meus pedidos, no pedido: lá você abre a NF-e (DANFE em PDF), baixa o XML e copia a chave de acesso. Avisamos por e-mail assim que ela estiver disponível.",
             },
         ],
     },

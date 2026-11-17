@@ -282,7 +282,6 @@ function FormularioDevolucao({ opcoes, onEnviar, onFechar, enviando, erro }) {
             {escolhidos.length > 0 && (
                 <p className="devolucao-total" data-cy="devolucao-total">
                     Reembolso previsto: <strong>{formatarReal(valor)}</strong>
-                    <small> (o frete volta junto quando todas as peças são devolvidas)</small>
                 </p>
             )}
 

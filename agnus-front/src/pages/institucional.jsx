@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
 import FaleConosco from "../components/faleConosco";
-import { EMAIL, FRETE_GRATIS_ACIMA, PARCELAS_MAX, PARCELAS_SEM_JUROS } from "../conteudo/loja";
+import { EMAIL, PARCELAS_MAX, PARCELAS_SEM_JUROS } from "../conteudo/loja";
 import "../css/cliente/institucional.css";
 import { useTituloPagina } from "../utils/tituloPagina";
 
 // Páginas do rodapé. Os textos seguem as regras que o sistema aplica hoje (prazos de devolução,
 // parcelas, dados usados no pedido). Política de privacidade: revisar com o jurídico antes de publicar.
-const real = (valor) => Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function Pagina({ sobretitulo, titulo, lede, cy, children }) {
     useTituloPagina(titulo);
@@ -66,12 +65,11 @@ export function Entrega() {
                 <Link to="/cliente/pedidos">Meus pedidos</Link>, com o acompanhamento da entrega dentro do próprio site.
             </p>
 
-            <h2>Frete</h2>
-            <ul>
-                <li>O valor e o prazo aparecem na hora, pelo CEP, na página da peça, na sacola e no fechamento do pedido.</li>
-                <li><strong>Grátis</strong> a partir de {real(FRETE_GRATIS_ACIMA)} em peças, no envio mais econômico. Num envio mais rápido, você paga só a diferença.</li>
-                <li>O frete é pago junto com as peças, no Pix ou no cartão.</li>
-            </ul>
+            <h2>Nota fiscal</h2>
+            <p>
+                A nota fiscal eletrônica (NF-e) de cada compra fica em <Link to="/cliente/pedidos">Meus pedidos</Link>: você abre o
+                DANFE em PDF, baixa o XML e vê a chave de acesso. Avisamos por e-mail quando ela estiver disponível.
+            </p>
 
             <h2>Pagamento</h2>
             <p>Pix ou cartão de crédito em até {PARCELAS_MAX}x. Em até {PARCELAS_SEM_JUROS}x não há juros; de 3x em diante entram os juros do cartão, mostrados antes de você confirmar.</p>

@@ -1188,7 +1188,7 @@ button[disabled] {
     .pedido-rastreio-frame { height: 560px; }
 }
 
-/* Cupom e frete grátis embaixo do total do pedido */
+/* Cupom embaixo do total do pedido */
 .pedido-valor .pedido-extras {
     display: block;
     margin-top: 2px;
@@ -1196,3 +1196,53 @@ button[disabled] {
     font-weight: 400;
     color: var(--ok);
 }
+
+/* Nota fiscal (NF-e) do pedido */
+.pedido-nf-pendente { align-self: center; font-size: 14px; color: var(--muted); }
+
+.nota-fiscal {
+    display: grid;
+    gap: 12px;
+    margin: 4px 0 16px;
+    padding: 16px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--stone);
+}
+.nota-fiscal h3 { display: flex; align-items: center; gap: 8px; margin: 0; font: 600 16px/1.3 var(--f-text); letter-spacing: 0; }
+.nota-fiscal h3 svg { color: var(--lit); }
+.nota-fiscal-detalhes { margin: 0; font-size: 15px; color: var(--muted); }
+
+.nota-fiscal-chave { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.nota-fiscal-chave span { width: 100%; font: 12px/1 var(--f-caps); letter-spacing: 0.14em; color: var(--muted); }
+.nota-fiscal-chave code {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font: 14px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    overflow-wrap: anywhere;
+}
+.nota-fiscal-chave button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font: 14px/1 var(--f-text);
+    cursor: pointer;
+}
+.nota-fiscal-chave button:hover { border-color: var(--ink); }
+
+.nota-fiscal-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.nota-fiscal-acoes button { display: inline-flex; align-items: center; gap: 8px; }
+.nota-fiscal-acoes .btn-agnus,
+.nota-fiscal-acoes .btn-agnus-ghost { margin: 0; }
+.nota-fiscal-portal { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--ink); }
+.nota-fiscal-erro { margin: 0; font-size: 14px; color: var(--danger); }
