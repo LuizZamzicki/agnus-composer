@@ -349,7 +349,7 @@ describe("PedidosController", () => {
     expect(pedido.update).not.toHaveBeenCalled();
   });
 
-  it("update ignora valor_total do corpo e recalcula com o novo frete", async () => {
+  it("update ignora valor_total do corpo; o total são as peças e o frete fica à parte", async () => {
     const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "aguardando_calculo_frete", valor_total: 30, valor_frete: 0 });
     pedidosModel.findByPk.mockResolvedValueOnce(pedido);
     enderecosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1 }));
@@ -358,7 +358,7 @@ describe("PedidosController", () => {
       mockRequest({ params: { id: "1" }, body: { status: "aguardando_pagamento", valor_frete: 12.3, valor_total: 1 } }),
       response,
     );
-    expect(pedido.update).toHaveBeenLastCalledWith({ valor_total: 42.8 });
+    expect(pedido.update).toHaveBeenLastCalledWith({ valor_total: 30.5 });
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
@@ -632,7 +632,7 @@ describe("PedidosController.checkout", () => {
       res as never,
     );
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null);
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null, null);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
@@ -641,9 +641,9 @@ describe("PedidosController.checkout", () => {
     const res = mockResponse();
     res.locals = authLocals;
 
-    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc " } }) as never, res as never);
+    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc ", frete_servico: "sedex" } }) as never, res as never);
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ");
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ", "sedex");
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith({ message: "Este cupom já foi usado." });
   });

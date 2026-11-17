@@ -17,6 +17,8 @@ servers:
 tags:
   - name: Ofertas
     description: Ofertas por e-mail e cupom de primeira compra
+  - name: Frete
+    description: Cotacao do frete pelo CEP (Melhor Envio ou tabela da loja)
   - name: Observabilidade
   - name: Pedidos
   - name: Itens de pedido
@@ -97,15 +99,23 @@ paths:
                 cupom:
                   type: string
                   description: Cupom de primeira compra (AGNUS10-XXXXXX). Validado no servidor; da 10% nas pecas.
+                frete_servico:
+                  type: string
+                  description: >-
+                    id da opcao escolhida em /frete/cotacao (ex.: pac, sedex, me-1). O servidor cota de novo pelo CEP
+                    do endereco; sem ele vai a opcao mais barata.
       responses:
         "201":
           description: >-
-            Pedido criado. Com cupom, grava cupom_codigo e valor_desconto; frete_gratis fica true quando as
-            pecas (ja com desconto) chegam a R$ 250 (abaixo disso o frete e combinado depois).
+            Pedido criado. valor_total sao as pecas (ja com desconto do cupom) e valor_frete o frete cotado pelo
+            CEP, com frete_servico e frete_prazo_dias; o pagamento cobra os dois. Com cupom, grava cupom_codigo e
+            valor_desconto; a partir de R$ 250 em pecas (frete_gratis) a opcao mais barata sai de graca.
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Uma peca da sacola nao esta mais disponivel, ou o cupom ja foi usado / nao e mais primeira compra
+          description: >-
+            Uma peca da sacola nao esta mais disponivel, o cupom ja foi usado / nao e mais primeira compra, ou a
+            opcao de frete escolhida nao existe mais
   /orders/me:
     get:
       operationId: getOrdersMe
@@ -566,6 +576,53 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
           description: Cupom ja usado ou nao e mais a primeira compra
+  /frete/cotacao:
+    post:
+      operationId: cotarFrete
+      tags:
+        - Frete
+      summary: Opcoes de frete para um CEP (publico; limite de 30 por minuto por IP no gateway)
+      description: >-
+        Com MELHOR_ENVIO_TOKEN a cotacao e real (Correios, Jadlog...); sem ele, ou se o Melhor Envio nao responder,
+        vale a tabela da loja (PAC e SEDEX pela distancia do CEP de origem). O prazo ja soma FRETE_DIAS_PRODUCAO.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cep]
+              properties:
+                cep: { type: string, example: 01310-100 }
+                pecas: { type: integer, minimum: 1, maximum: 50, example: 2 }
+                valor_pecas: { type: number, description: Valor das pecas; so decide se aparece frete gratis, example: 159.8 }
+      responses:
+        "200":
+          description: Cotacao
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cep: { type: string }
+                  uf: { type: string }
+                  frete_gratis: { type: boolean }
+                  frete_gratis_acima: { type: number }
+                  origem: { type: string, enum: [melhor_envio, tabela] }
+                  opcoes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        nome: { type: string }
+                        empresa: { type: string }
+                        preco: { type: number }
+                        preco_cheio: { type: number }
+                        prazo_dias: { type: integer }
+                        gratis: { type: boolean }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { description: Muitas consultas seguidas }
   /youdraw/webhook:
     post:
       summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)

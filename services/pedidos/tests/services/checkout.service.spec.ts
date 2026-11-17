@@ -7,6 +7,7 @@ import PedidoItens from "../../src/models/PedidoItens";
 import Pedidos from "../../src/models/Pedidos";
 import CheckoutService, { CheckoutError } from "../../src/services/checkout.service";
 import OfertasService from "../../src/services/ofertas.service";
+import FreteService from "../../src/frete/frete.service";
 
 const transaction = { id: "tx" };
 
@@ -64,7 +65,8 @@ describe("CheckoutService (saga)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mocks.transaction.mockImplementation((work) => work(transaction));
-    mocks.endereco.mockResolvedValue({ id_usuario: 1 });
+    mocks.endereco.mockResolvedValue({ id_usuario: 1, cep: "87013-000" });
+    FreteService.limparCache();
     mocks.selecoes.mockResolvedValue([disponivel, disponivel]);
     mocks.create.mockResolvedValue({
       id_pedido: 7,
@@ -81,7 +83,7 @@ describe("CheckoutService (saga)", () => {
 
     expect(pedido.id_pedido).toBe(7);
     expect(mocks.create).toHaveBeenCalledWith(
-      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 0, frete_gratis: false, cupom_codigo: null, valor_desconto: 0, ref_afiliado: null },
+      { id_usuario: 1, id_usuario_endereco: 3, status: "aguardando_pagamento", valor_total: 149.7, valor_frete: 19.9, frete_gratis: false, frete_servico: "Correios PAC", frete_prazo_dias: 4, cupom_codigo: null, valor_desconto: 0, ref_afiliado: null },
       { transaction },
     );
     expect(mocks.bulkCreate).toHaveBeenCalledWith(
@@ -146,15 +148,26 @@ describe("CheckoutService (saga)", () => {
     expect(mocks.publish).not.toHaveBeenCalled();
   });
 
-  it("peças a partir de R$ 250 saem com frete grátis; abaixo, o frete fica a combinar", async () => {
+  it("peças a partir de R$ 250 saem com frete grátis; abaixo, o frete é cotado pelo CEP", async () => {
     mocks.selecoes.mockResolvedValue([{ contexto: { produto: { ativo: true }, precoUnitario: 125 } }, disponivel]);
     await CheckoutService.finalizar(1, 3);
-    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 299.9, frete_gratis: true, valor_desconto: 0, cupom_codigo: null });
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 299.9, frete_gratis: true, valor_frete: 0, valor_desconto: 0, cupom_codigo: null });
 
     mocks.create.mockClear();
     mocks.selecoes.mockResolvedValue([disponivel, disponivel]);
     await CheckoutService.finalizar(1, 3);
-    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 149.7, frete_gratis: false });
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_total: 149.7, frete_gratis: false, valor_frete: 19.9 });
+  });
+
+  it("frete: cobra a opção escolhida, cotada de novo no servidor pelo CEP do endereço", async () => {
+    mocks.endereco.mockResolvedValue({ id_usuario: 1, cep: "01310100" });
+    await CheckoutService.finalizar(1, 3, null, null, "sedex");
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({ valor_frete: 54.9, frete_servico: "Correios SEDEX", frete_prazo_dias: 4 });
+  });
+
+  it("frete: opção que não existe na cotação é recusada antes de criar o pedido", async () => {
+    await expect(CheckoutService.finalizar(1, 3, null, null, "me-999")).rejects.toMatchObject({ status: 409 });
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it("cupom de primeira compra: valida no servidor e grava 10% de desconto no pedido", async () => {

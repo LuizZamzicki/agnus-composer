@@ -9,6 +9,8 @@ import Pedidos from "../models/Pedidos";
 import AfiliacaoService from "./afiliacao.service";
 import OfertasService, { type CupomValido } from "./ofertas.service";
 import { resumoDaCompra } from "./ofertas.regras";
+import FreteService from "../frete/frete.service";
+import { totalPago } from "./pedidoRegras.service";
 
 export class CheckoutError extends Error {
   constructor(readonly status: number, message: string) {
@@ -25,11 +27,13 @@ type ItemDaSacola = {
 
 class CheckoutService {
   private static async ensureOwnAddress(userId: number, addressId: number) {
-    const endereco = await consultarOuNull<{ id_usuario: number }>("identidade", `/enderecos/${addressId}`);
+    const endereco = await consultarOuNull<{ id_usuario: number; cep?: string | null }>("identidade", `/enderecos/${addressId}`);
 
     if (!endereco || endereco.id_usuario !== userId) {
       throw new CheckoutError(404, "Endereço não encontrado.");
     }
+
+    return endereco;
   }
 
   private static async priceItems(itens: ItemDaSacola[]) {
@@ -86,8 +90,16 @@ class CheckoutService {
 
   // refAfiliado: cookie do último clique em link de afiliado (validado depois pelo serviço afiliados).
   // cupom: código de primeira compra (opcional); validado aqui de novo, nunca confiado ao navegador.
-  static async finalizar(userId: number, addressId: number, refAfiliado: string | null = null, cupomInformado: string | null = null) {
-    await CheckoutService.ensureOwnAddress(userId, addressId);
+  // freteServico: opção escolhida na cotação (PAC, SEDEX...); o preço é cotado de novo aqui pelo CEP
+  // do endereço. Sem escolha, vai a opção mais barata.
+  static async finalizar(
+    userId: number,
+    addressId: number,
+    refAfiliado: string | null = null,
+    cupomInformado: string | null = null,
+    freteServico: string | null = null,
+  ) {
+    const endereco = await CheckoutService.ensureOwnAddress(userId, addressId);
     const cupom: CupomValido | null = cupomInformado ? await OfertasService.validarCupom(userId, cupomInformado) : null;
 
     const { data: itens } = await chamarServico<ItemDaSacola[]>("carrinho", `/usuarios/${userId}/itens`);
@@ -98,6 +110,8 @@ class CheckoutService {
 
     const itensPedido = await CheckoutService.priceItems(itens);
     const resumo = resumoDaCompra(itensPedido.reduce((total, item) => total + item.subtotal, 0), cupom?.percentual ?? 0);
+    const pecas = itensPedido.reduce((total, item) => total + item.quantidade, 0);
+    const { opcao } = await FreteService.escolher(endereco.cep, pecas, resumo.total, freteServico);
     const pedido = await sequelize.transaction(async (transaction) => {
       const novoPedido = await Pedidos.create(
         {
@@ -105,8 +119,10 @@ class CheckoutService {
           id_usuario_endereco: addressId,
           status: "aguardando_pagamento",
           valor_total: resumo.total,
-          valor_frete: 0,
+          valor_frete: opcao.preco,
           frete_gratis: resumo.frete_gratis,
+          frete_servico: opcao.empresa && !opcao.nome.includes(opcao.empresa) ? `${opcao.empresa} ${opcao.nome}` : opcao.nome,
+          frete_prazo_dias: opcao.prazo_dias,
           cupom_codigo: cupom?.codigo ?? null,
           valor_desconto: resumo.desconto,
           ref_afiliado: refAfiliado,
@@ -127,7 +143,7 @@ class CheckoutService {
       id_pedido: pedido.id_pedido,
       id_usuario: pedido.id_usuario,
       status: pedido.status,
-      valor_total: pedido.valor_total,
+      valor_total: totalPago(pedido),
     });
     await AfiliacaoService.avisarCompra(pedido);
 

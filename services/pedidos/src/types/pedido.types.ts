@@ -16,6 +16,8 @@ export type PedidoBody = {
   rastreio?: string | null;
   // Cupom de primeira compra informado no checkout (validado no servidor).
   cupom?: unknown;
+  // Opção de frete escolhida no checkout (id da cotação de /frete/cotacao).
+  frete_servico?: unknown;
 };
 
 export type PedidoRouteParams = {

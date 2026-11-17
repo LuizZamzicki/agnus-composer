@@ -340,6 +340,7 @@ class PedidosController {
           addressId,
           refDoCookie(req.headers.cookie),
           typeof req.body.cupom === "string" && req.body.cupom.trim() ? req.body.cupom : null,
+          typeof req.body.frete_servico === "string" ? req.body.frete_servico : null,
         ));
     } catch (error) {
       if (error instanceof CheckoutError || error instanceof HttpError) {

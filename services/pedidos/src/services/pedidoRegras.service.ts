@@ -24,6 +24,10 @@ export const fatorPago = (pedido: { valor_desconto?: number | string | null }, i
   return bruto > 0 && desconto > 0 ? Math.max(0, (bruto - desconto) / bruto) : 1;
 };
 
+// O que o cliente paga: peças (já com desconto) + frete. É o "Total do pedido" dos avisos.
+export const totalPago = (pedido: { valor_total?: number | string | null; valor_frete?: number | string | null }) =>
+  pedido.valor_total == null ? null : Math.round((Number(pedido.valor_total) + Number(pedido.valor_frete ?? 0)) * 100) / 100;
+
 class PedidoRegrasService {
   static podeTransitar(atual: PedidoStatus, novo: PedidoStatus) {
     return atual === novo || TRANSICOES[atual].includes(novo);
@@ -33,14 +37,15 @@ class PedidoRegrasService {
     return STATUS_ABERTOS.includes(status);
   }
 
-  // valor_total = soma dos subtotais dos itens - desconto do cupom + frete. Nunca vem do cliente.
+  // valor_total = soma dos subtotais dos itens - desconto do cupom. Nunca vem do cliente.
+  // O frete fica à parte em valor_frete; o pagamento cobra valor_total + valor_frete.
   static async recalcularTotal(pedido: Pedidos) {
     const itens = await PedidoItens.findAll({ where: { id_pedido: pedido.id_pedido } });
     const subtotais = itens.reduce((total, item) => total + Number(item.subtotal ?? 0), 0);
 
     const desconto = Number(pedido.valor_desconto ?? 0);
 
-    await pedido.update({ valor_total: roundMoney(Math.max(0, subtotais - desconto) + Number(pedido.valor_frete ?? 0)) });
+    await pedido.update({ valor_total: roundMoney(Math.max(0, subtotais - desconto)) });
     return pedido;
   }
 }

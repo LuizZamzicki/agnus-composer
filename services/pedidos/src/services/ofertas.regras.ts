@@ -18,7 +18,7 @@ export const gerarCupom = () =>
   `AGNUS10-${Array.from({ length: 6 }, () => ALFABETO[randomInt(ALFABETO.length)]).join("")}`;
 
 // Resumo do que o cliente paga: desconto sobre as peças e frete grátis quando as peças (já com
-// desconto) chegam a R$ 250. Abaixo disso o frete continua combinado depois da compra.
+// desconto) chegam a R$ 250 (a opção mais barata da cotação pelo CEP sai de graça; ver frete/).
 export const resumoDaCompra = (subtotal: number, percentualDesconto = 0) => {
   const desconto = dinheiro((subtotal * percentualDesconto) / 100);
   const pecas = dinheiro(subtotal - desconto);
