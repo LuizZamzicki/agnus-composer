@@ -15,7 +15,11 @@ on:
 
 permissions:
   contents: read
-  packages: write
+
+# Dois deploys ao mesmo tempo poderiam deixar produção com metade das imagens de cada versão.
+concurrency:
+  group: cd-producao
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -31,8 +35,22 @@ jobs:
       run:
         working-directory: services
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Só publica a partir de uma tag de versão ou da main, e só com versão no formato vX.Y.Z:
+      # o valor vira tag de imagem e entra no script de deploy.
+      - name: Validar origem e versao
+        working-directory: .
+        env:
+          REF: ${{ github.ref }}
+          EVENTO: ${{ github.event_name }}
+        run: |
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Versao invalida: use o formato v1.2.3"; exit 1
+          fi
+          if [ "$EVENTO" = "workflow_dispatch" ] && [ "$REF" != "refs/heads/main" ]; then
+            echo "Disparo manual so e permitido a partir da main"; exit 1
+          fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -46,6 +64,10 @@ jobs:
     name: Imagem ${{ matrix.imagem }}
     needs: test
     runs-on: ubuntu-latest
+    # Só este job escreve no registro de imagens.
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: true
       matrix:
@@ -55,20 +77,24 @@ jobs:
           - { imagem: busca, contexto: ./services, arquivo: services/busca/Dockerfile }
           - { imagem: avaliacoes, contexto: ./services, arquivo: services/avaliacoes/Dockerfile }
           - { imagem: carrinho, contexto: ./services, arquivo: services/carrinho/Dockerfile }
+          # Shopify headless DESATIVADO (ver services/loja/README.md).
+          # - { imagem: loja, contexto: ./services, arquivo: services/loja/Dockerfile }
           - { imagem: pedidos, contexto: ./services, arquivo: services/pedidos/Dockerfile }
           - { imagem: notificacoes, contexto: ./services, arquivo: services/notificacoes/Dockerfile }
+          - { imagem: afiliados, contexto: ./services, arquivo: services/afiliados/Dockerfile }
           - { imagem: admin, contexto: ./services, arquivo: services/admin/Dockerfile }
           - { imagem: frontend, contexto: ./agnus-front, arquivo: agnus-front/Dockerfile }
           - { imagem: admin-frontend, contexto: ./agnus-admin-front, arquivo: agnus-admin-front/Dockerfile }
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        id: push
         with:
           context: ${{ matrix.contexto }}
           file: ${{ matrix.arquivo }}
@@ -76,6 +102,22 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-${{ matrix.imagem }}:${{ env.VERSION }}
             ${{ env.IMAGE_PREFIX }}-${{ matrix.imagem }}:latest
+
+      # A tag pode ser reapontada no registro; o digest identifica exatamente a imagem que
+      # este build produziu. O deploy sobe por ele.
+      - name: Guardar o digest da imagem
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          IMAGEM: ${{ matrix.imagem }}
+        run: |
+          mkdir -p digests
+          NOME=$(printf %s "$IMAGEM" | tr 'a-z-' 'A-Z_')
+          echo "$NOME=$DIGEST" > "digests/$IMAGEM"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: digest-${{ matrix.imagem }}
+          path: digests/${{ matrix.imagem }}
+          retention-days: 1
 
   deploy:
     name: Deploy (producao)
@@ -95,21 +137,61 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Estrategia: deploy simples com rollback automatico. Guarda a versao em execucao,
-      # sobe a nova, valida o healthcheck e, se falhar, volta para a anterior.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: steps.check.outputs.enabled == 'true'
+        with:
+          pattern: digest-*
+          merge-multiple: true
+          path: digests
+
+      - name: Juntar os digests
+        if: steps.check.outputs.enabled == 'true'
+        id: digests
+        run: echo "lista=$(cat digests/* | paste -sd, -)" >> "$GITHUB_OUTPUT"
+
+      # Estrategia: deploy simples com rollback automatico. Cada release fica descrita em
+      # /opt/agnus/.release (versao + digest de cada imagem); se o healthcheck falhar, volta
+      # para a release anterior, pelos digests dela.
       - name: Deploy com rollback automatico
         if: steps.check.outputs.enabled == 'true'
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+        env:
+          AGNUS_VERSION: ${{ env.VERSION }}
+          AGNUS_DIGESTS: ${{ steps.digests.outputs.lista }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Versao e digests chegam como variaveis de ambiente, nao colados no texto do script.
+          envs: AGNUS_VERSION,AGNUS_DIGESTS
           script: |
             set -e
+            case "$AGNUS_VERSION" in
+              v[0-9]*.[0-9]*.[0-9]*) ;;
+              *) echo "Versao invalida"; exit 1 ;;
+            esac
             cd /opt/agnus
             COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
-            PREVIOUS=$(cat .current_version 2>/dev/null || echo latest)
-            export AGNUS_VERSION=${{ env.VERSION }}
+
+            # Monta a release nova so com valores validados (nome em maiusculas, digest sha256).
+            echo "export AGNUS_VERSION=$AGNUS_VERSION" > .release.nova
+            for par in $(printf %s "$AGNUS_DIGESTS" | tr "," " "); do
+              nome=${par%%=*}
+              digest=${par#*=}
+              printf %s "$nome" | grep -Eq "^[A-Z_]+$" || { echo "Imagem invalida: $nome"; exit 1; }
+              printf %s "$digest" | grep -Eq "^sha256:[0-9a-f]{64}$" || { echo "Digest invalido para $nome"; exit 1; }
+              echo "export REF_$nome=@$digest" >> .release.nova
+            done
+
+            if [ -f .release ]; then
+              cp .release .release.anterior
+            else
+              # Primeira release com digest: a anterior e a versao por tag que estava rodando.
+              echo "export AGNUS_VERSION=$(cat .current_version 2>/dev/null || echo latest)" > .release.anterior
+            fi
+            mv .release.nova .release
+
+            . ./.release
             $COMPOSE pull
             $COMPOSE up -d --no-build
             for i in $(seq 1 30); do
@@ -120,8 +202,11 @@ jobs:
               fi
               sleep 5
             done
-            echo "Healthcheck falhou. Rollback para $PREVIOUS"
-            export AGNUS_VERSION=$PREVIOUS
+
+            echo "Healthcheck falhou. Rollback para a release anterior"
+            for var in $(env | grep -o "^REF_[A-Z_]*"); do unset "$var"; done
+            cp .release.anterior .release
+            . ./.release
             $COMPOSE up -d --no-build
             exit 1
 

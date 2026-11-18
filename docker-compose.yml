@@ -4,6 +4,57 @@ x-ambiente: &ambiente
   REDIS_URL: redis://redis:6379
   INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
 
+# O services/.env vai inteiro para todos os containers; estes blocos apagam o que cada servico
+# nao usa, para que um servico invadido nao leve junto os segredos dos outros.
+x-sem-google: &sem-google
+  GOOGLE_CLIENT_SECRET: ""
+  GOOGLE_STATE_SECRET: ""
+
+x-sem-shopify: &sem-shopify
+  SHOPIFY_STOREFRONT_PRIVATE_TOKEN: ""
+  SHOPIFY_STOREFRONT_PUBLIC_TOKEN: ""
+  SHOPIFY_ADMIN_CLIENT_ID: ""
+  SHOPIFY_ADMIN_CLIENT_SECRET: ""
+  SHOPIFY_ADMIN_TOKEN: ""
+  SHOPIFY_CLIENT_ID: ""
+  SHOPIFY_CLIENT_SECRET: ""
+
+# So a identidade assina tokens; os outros servicos conferem com JWT_PUBLIC_KEY.
+x-sem-assinatura: &sem-assinatura
+  JWT_SECRET: ""
+  JWT_PRIVATE_KEY: ""
+
+# Credenciais do Mercado Pago: so o servico pedidos cobra e recebe o webhook.
+x-sem-mercadopago: &sem-mercadopago
+  MP_ACCESS_TOKEN: ""
+  MP_WEBHOOK_SECRET: ""
+
+# Senha do e-mail (SMTP): so o servico notificacoes envia e-mail.
+x-sem-smtp: &sem-smtp
+  SMTP_PASS: ""
+  SMTP_USER: ""
+
+# Integração com a YouDraw (fornecedor): a chave vai só para pedidos (cria os pedidos) e catálogo
+# (importa SKUs); o segredo do webhook, só para pedidos.
+x-sem-youdraw: &sem-youdraw
+  YOUDRAW_API_KEY: ""
+  YOUDRAW_WEBHOOK_SECRET: ""
+
+x-sem-youdraw-webhook: &sem-youdraw-webhook
+  YOUDRAW_WEBHOOK_SECRET: ""
+
+# Segredo do programa de afiliados (assina o cookie de clique e cifra as credenciais da API).
+x-sem-afiliados: &sem-afiliados
+  AFILIADOS_SEGREDO: ""
+
+x-sem-meili: &sem-meili
+  MEILISEARCH_MASTER_KEY: ""
+
+# Servicos sem banco proprio nao herdam o usuario e a senha do .env (no modelo, o root).
+x-sem-banco: &sem-banco
+  DB_USER: ""
+  DB_PASSWORD: ""
+
 x-servico: &servico
   restart: unless-stopped
   env_file:
@@ -52,6 +103,7 @@ services:
       DB_SENHA_CARRINHO: ${DB_SENHA_CARRINHO}
       DB_SENHA_PEDIDOS: ${DB_SENHA_PEDIDOS}
       DB_SENHA_NOTIFICACOES: ${DB_SENHA_NOTIFICACOES}
+      DB_SENHA_AFILIADOS: ${DB_SENHA_AFILIADOS}
     volumes:
       - ./services/scripts/migrar-bancos.sh:/migrar-bancos.sh:ro
     depends_on:
@@ -70,6 +122,19 @@ services:
       - meili_data:/meili_data
     networks:
       - data
+
+  # Caixa de e-mail local (so desenvolvimento): pega tudo que o notificacoes envia e mostra em
+  # http://localhost:8025. Sobe com o perfil "email-local" (COMPOSE_PROFILES=email-local no .env da raiz).
+  # Em producao nao ha esse perfil: o SMTP_HOST aponta para o provedor real.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: agnus-mailpit
+    restart: unless-stopped
+    profiles: ["email-local"]
+    ports:
+      - "127.0.0.1:8025:8025"
+    networks:
+      - app
 
   redis:
     image: redis:7.4-alpine
@@ -92,7 +157,7 @@ services:
       context: ./services
       dockerfile: identidade/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-identidade
       DB_NAME: agnus_identidade
       DB_USER: svc_identidade
@@ -111,7 +176,7 @@ services:
       context: ./services
       dockerfile: catalogo/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw-webhook]
       SERVICE_NAME: agnus-catalogo
       DB_NAME: agnus_catalogo
       DB_USER: svc_catalogo
@@ -132,7 +197,7 @@ services:
       context: ./services
       dockerfile: busca/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-banco, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-busca
     depends_on:
       redis:
@@ -148,7 +213,7 @@ services:
       context: ./services
       dockerfile: avaliacoes/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-avaliacoes
       DB_NAME: agnus_avaliacoes
       DB_USER: svc_avaliacoes
@@ -169,7 +234,7 @@ services:
       context: ./services
       dockerfile: carrinho/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-carrinho
       DB_NAME: agnus_carrinho
       DB_USER: svc_carrinho
@@ -188,7 +253,7 @@ services:
       context: ./services
       dockerfile: pedidos/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-afiliados]
       SERVICE_NAME: agnus-pedidos
       DB_NAME: agnus_pedidos
       DB_USER: svc_pedidos
@@ -198,6 +263,9 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+    # Fotos que o cliente anexa à devolução (servidas só com login, nunca como estático).
+    volumes:
+      - devolucao_fotos:/app/pedidos/devolucao_fotos
 
   notificacoes:
     <<: *servico
@@ -207,7 +275,7 @@ services:
       context: ./services
       dockerfile: notificacoes/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-notificacoes
       DB_NAME: agnus_notificacoes
       DB_USER: svc_notificacoes
@@ -218,6 +286,42 @@ services:
       redis:
         condition: service_healthy
 
+  # Programa de afiliados (links, cliques, conversoes e comissoes). Unico que recebe AFILIADOS_SEGREDO.
+  afiliados:
+    <<: *servico
+    image: agnus-afiliados:local
+    container_name: agnus-afiliados
+    build:
+      context: ./services
+      dockerfile: afiliados/Dockerfile
+    environment:
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-smtp, *sem-youdraw]
+      SERVICE_NAME: agnus-afiliados
+      DB_NAME: agnus_afiliados
+      DB_USER: svc_afiliados
+      DB_PASSWORD: ${DB_SENHA_AFILIADOS}
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Shopify headless DESATIVADO: vitrine, sacola e checkout voltaram para catalogo, carrinho e pedidos.
+  # Para religar, descomente o bloco abaixo (ver services/loja/README.md).
+  # loja:
+  #   <<: *servico
+  #   image: agnus-loja:local
+  #   container_name: agnus-loja
+  #   build:
+  #     context: ./services
+  #     dockerfile: loja/Dockerfile
+  #   environment:
+  #     <<: [*ambiente, *sem-assinatura, *sem-google, *sem-meili, *sem-banco]
+  #     SERVICE_NAME: agnus-loja
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+
   admin:
     <<: *servico
     image: agnus-admin:local
@@ -226,7 +330,7 @@ services:
       context: ./services
       dockerfile: admin/Dockerfile
     environment:
-      <<: *ambiente
+      <<: [*ambiente, *sem-mercadopago, *sem-assinatura, *sem-google, *sem-shopify, *sem-meili, *sem-banco, *sem-smtp, *sem-afiliados, *sem-youdraw]
       SERVICE_NAME: agnus-admin
     depends_on:
       redis:
@@ -296,6 +400,10 @@ services:
         condition: service_healthy
       notificacoes:
         condition: service_healthy
+      afiliados:
+        condition: service_healthy
+      # loja:
+      #   condition: service_healthy
       admin:
         condition: service_healthy
       frontend:
@@ -315,6 +423,7 @@ volumes:
   meili_data:
   produto_fotos:
   avaliacao_fotos:
+  devolucao_fotos:
   frontend_build:
   admin_build:
 

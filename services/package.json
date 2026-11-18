@@ -11,7 +11,8 @@
     "carrinho",
     "pedidos",
     "notificacoes",
-    "admin"
+    "admin",
+    "afiliados"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

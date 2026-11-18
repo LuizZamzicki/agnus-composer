@@ -111,6 +111,12 @@ function ClienteSenha() {
                 return;
             }
 
+            // A troca derruba as outras sessões; esta continua com o token novo devolvido pela API.
+            const data = await res.json().catch(() => ({}));
+            if (data?.token) {
+                localStorage.setItem("auth_token", data.token);
+            }
+
             showToast("Senha alterada com sucesso!", "success");
 
             setForm({

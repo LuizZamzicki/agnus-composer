@@ -1,0 +1,212 @@
+/* Programa de afiliados na área do cliente. Só tokens do site: segue o tema claro/escuro. */
+.afi { display: flex; flex-direction: column; gap: 20px; color: var(--ink); }
+
+.afi-intro { margin: 0; font-size: 17px; }
+
+.afi-passos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: passo;
+}
+
+.afi-passos li {
+    counter-increment: passo;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--stone);
+    font-size: 15px;
+}
+
+.afi-passos li::before {
+    content: counter(passo);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--lit);
+    color: var(--stone);
+    font-size: 13px;
+}
+
+.afi-form { display: flex; flex-direction: column; gap: 12px; max-width: 520px; }
+.afi-form label { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.afi-form small { color: var(--muted); }
+
+.afi input:not([type="checkbox"]),
+.afi select {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--stone);
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.afi-form .afi-aceite { flex-direction: row; align-items: flex-start; gap: 8px; }
+.afi-form .afi-aceite a { color: var(--lit); }
+.afi-form .btn-agnus,
+.afi-form .btn-agnus-ghost { align-self: flex-start; }
+
+.afi-aviso {
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--lit);
+    border-radius: var(--radius);
+    background: var(--stone);
+}
+
+.afi-aviso.erro { border-left-color: var(--danger); }
+
+.afi-alerta {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--danger);
+    background: var(--stone);
+    font-size: 15px;
+}
+
+.afi-cartoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.afi-cartao {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--stone);
+}
+
+.afi-cartao span { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.afi-cartao strong { font-size: 22px; font-variant-numeric: tabular-nums; }
+.afi-cartao small { font-size: 12px; color: var(--muted); }
+.afi-cartao.destaque { border-color: var(--lit); }
+.afi-cartao.destaque strong { color: var(--lit); }
+
+.afi-bloco {
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.afi-bloco h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-size: 19px;
+}
+
+.afi-ajuda { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+.afi-ajuda a { color: var(--lit); display: inline-flex; align-items: center; gap: 3px; }
+.afi-vazio { color: var(--muted); font-size: 15px; }
+
+.afi-linha { display: flex; gap: 8px; flex-wrap: wrap; }
+.afi-linha input { flex: 1 1 240px; }
+.afi-linha .afi-subid { flex: 0 1 180px; }
+
+.afi-resultado {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: var(--stone);
+}
+
+.afi code {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.afi-copiar {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font: 14px/1 var(--f-text);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.afi-copiar:hover { border-color: var(--lit); color: var(--lit); }
+
+.afi-ofertas { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.afi-ofertas li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.afi-ofertas li > div { flex: 1; min-width: 0; }
+.afi-ofertas strong { display: block; font-size: 15px; }
+.afi-ofertas small { font-size: 13px; color: var(--muted); }
+.afi-ofertas b { color: var(--lit); }
+.afi-ofertas img,
+.afi-sem-foto { width: 52px; height: 52px; flex: none; object-fit: cover; border-radius: var(--radius); background: var(--stone-2); }
+
+.afi-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+
+.afi-tabela-rolagem { overflow-x: auto; }
+.afi-tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.afi-tabela th,
+.afi-tabela td { padding: 8px; border-bottom: 1px solid var(--line-soft); text-align: left; vertical-align: top; }
+.afi-tabela th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.afi-tabela small { display: block; color: var(--muted); }
+
+.afi-status { padding: 2px 8px; border-radius: 999px; background: var(--stone-2); white-space: nowrap; }
+.afi-status--aprovada { background: var(--lit); color: var(--stone); }
+.afi-status--paga { background: var(--ok); color: var(--stone); }
+.afi-status--cancelada { color: var(--muted); text-decoration: line-through; }
+
+.afi-lista { margin: 0; padding: 0; list-style: none; }
+.afi-lista li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+
+.afi-segredo { margin-bottom: 10px; padding: 12px; border: 1px solid var(--danger); border-radius: var(--radius); }
+.afi-segredo p { margin: 0 0 6px; }
+
+@media (max-width: 600px) {
+    .afi-linha .btn-agnus { width: 100%; }
+    .afi-ofertas li { flex-wrap: wrap; }
+}
+
+/* Página pública dos termos (/afiliados/termos) */
+.termos-afiliados {
+    min-height: 100vh;
+    padding: 40px clamp(16px, 4vw, 48px);
+    background: var(--stone);
+}
+
+.termos-afiliados .afi {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 40px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    gap: 10px;
+}
+
+.termos-afiliados h1 { margin: 0; font: 400 clamp(26px, 4vw, 34px)/1.2 var(--f-display); }
+.termos-afiliados h2 { margin: 18px 0 0; font-size: 19px; }
+.termos-afiliados p,
+.termos-afiliados li { font-size: 16px; line-height: 1.6; }
+.termos-afiliados ul { margin: 0; padding-left: 20px; }
+.termos-afiliados a:not(.btn-agnus) { color: var(--lit); }

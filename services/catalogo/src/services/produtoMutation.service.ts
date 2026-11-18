@@ -17,6 +17,7 @@ import type {
   ProdutoGradeRecord,
 } from "../types/produto.types";
 import { normalizeRgbColor } from "../utils/color";
+import { normalizarTabelaMedidas } from "../utils/tabelaMedidas";
 import { saveProdutoFotoBits } from "../utils/produtoFotoStorage";
 import { CACHE_NAMESPACES } from "../config/cache";
 import CacheService from "./cache.service";
@@ -65,6 +66,16 @@ class ProdutoPayload {
     return this.parseMoney(this.body.preco_base);
   }
 
+  get precoOriginal() {
+    return this.parseMoney(this.body.preco_original) ?? null;
+  }
+
+  hasInvalidPrecoOriginal() {
+    const raw = this.body.preco_original;
+
+    return raw !== undefined && raw !== null && raw !== "" && (Number.isNaN(Number(raw)) || Number(raw) < 0);
+  }
+
   get ativo() {
     return this.body.ativo;
   }
@@ -91,6 +102,28 @@ class ProdutoPayload {
 
   hasPriceBaseField() {
     return this.body.preco_base !== undefined;
+  }
+
+  hasPriceOriginalField() {
+    return this.body.preco_original !== undefined;
+  }
+
+  // Já validada em getPayloadError; aqui só normaliza (null = sem tabela de medidas).
+  get tabelaMedidas() {
+    return normalizarTabelaMedidas(this.body.tabela_medidas);
+  }
+
+  get erroTabelaMedidas() {
+    try {
+      normalizarTabelaMedidas(this.body.tabela_medidas);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Tabela de medidas inválida.";
+    }
+  }
+
+  hasTabelaMedidasField() {
+    return this.body.tabela_medidas !== undefined;
   }
 
   hasActiveField() {
@@ -229,6 +262,14 @@ class ProdutoMutationService {
       return "preco_custo inválido.";
     }
 
+    if (payload.hasPriceOriginalField() && payload.hasInvalidPrecoOriginal()) {
+      return "preco_original inválido.";
+    }
+
+    if (payload.hasTabelaMedidasField() && payload.erroTabelaMedidas) {
+      return payload.erroTabelaMedidas;
+    }
+
     if (payload.hasCategoryField() && payload.categoryId === undefined) {
       return "id_categoria inválido.";
     }
@@ -324,6 +365,8 @@ class ProdutoMutationService {
         descricao: payload.descricao ?? null,
         preco_custo: payload.precoCusto ?? 0,
         preco_base: payload.precoBase,
+        preco_original: payload.precoOriginal,
+        tabela_medidas: payload.hasTabelaMedidasField() ? payload.tabelaMedidas : null,
         ativo: payload.ativo === undefined ? true : Boolean(payload.ativo),
       },
       { transaction },
@@ -529,6 +572,8 @@ class ProdutoMutationService {
         descricao: payload.hasDescriptionField() ? payload.descricao ?? null : produto.descricao,
         preco_custo: payload.hasPriceCostField() ? payload.precoCusto : produto.preco_custo,
         preco_base: payload.hasPriceBaseField() ? payload.precoBase : produto.preco_base,
+        preco_original: payload.hasPriceOriginalField() ? payload.precoOriginal : produto.preco_original,
+        tabela_medidas: payload.hasTabelaMedidasField() ? payload.tabelaMedidas : produto.tabela_medidas,
         ativo: payload.hasActiveField() ? Boolean(payload.ativo) : produto.ativo,
       },
       { transaction },

@@ -37,6 +37,7 @@ preparar avaliacoes "$DB_SENHA_AVALIACOES"
 preparar carrinho "$DB_SENHA_CARRINHO"
 preparar pedidos "$DB_SENHA_PEDIDOS"
 preparar notificacoes "$DB_SENHA_NOTIFICACOES"
+preparar afiliados "$DB_SENHA_AFILIADOS"
 
 copiar identidade usuarios usuario_senhas_historico usuario_enderecos usuario_contatos
 copiar catalogo categorias produtos produto_cores produto_grades produto_fotos

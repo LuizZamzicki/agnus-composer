@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { CACHE_NAMESPACES, CACHE_TTL } from "../config/cache";
+import sequelize from "@agnus/comum/config/database";
 import Categorias from "../models/Categorias";
+import Produtos from "../models/Produtos";
 import CacheService from "../services/cache.service";
 import EventBusService from "@agnus/comum/services/eventBus.service";
 import type {
@@ -50,10 +52,16 @@ class CategoriasController {
       : null;
   }
 
-  private static async findDuplicateMessage(nome: string | null, currentName?: string) {
-    return !nome || nome === currentName || !(await Categorias.findOne({ where: { nome } }))
-      ? null
-      : "Já existe categoria com esse nome.";
+  // O banco compara sem diferenciar maiúsculas e acentos: "camisetas" e "Camisetas" são o mesmo nome.
+  // Na edição, encontrar a própria categoria não é duplicidade (ex.: só corrigir maiúsculas).
+  private static async findDuplicateMessage(nome: string | null, idAtual?: number) {
+    if (!nome) {
+      return null;
+    }
+
+    const existente = await Categorias.findOne({ where: { nome } });
+
+    return existente && existente.id_categoria !== idAtual ? "Já existe categoria com esse nome." : null;
   }
 
   // O catalogo de produtos exibe o nome da categoria, entao os dois namespaces sao invalidados.
@@ -145,7 +153,7 @@ class CategoriasController {
     const categoria = await Categorias.findByPk(categoryId);
     const message = CategoriasController.getUpdateErrorMessage(payload);
     const duplicateMessage = !message && categoria
-      ? await CategoriasController.findDuplicateMessage(payload.nome, categoria.nome)
+      ? await CategoriasController.findDuplicateMessage(payload.nome, categoria.id_categoria)
       : null;
 
     if (!categoria) {
@@ -178,7 +186,26 @@ class CategoriasController {
       return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
-    await categoria.destroy();
+    // Produto aponta para a categoria (chave estrangeira): excluir direto daria erro no banco.
+    // Sem confirmação, responde quantos produtos seriam afetados; com ?mover_produtos=true, eles
+    // ficam "Sem categoria" e a categoria sai, tudo na mesma transação.
+    const produtos = await Produtos.count({ where: { id_categoria: categoryId } });
+    const confirmado = String((req.query as Record<string, unknown>).mover_produtos ?? "") === "true";
+
+    if (produtos > 0 && !confirmado) {
+      return res.status(409).json({
+        message: `A categoria "${categoria.nome}" tem ${produtos} produto(s). Confirme para excluir e deixá-los sem categoria.`,
+        produtos,
+      });
+    }
+
+    await sequelize.transaction(async (transaction) => {
+      if (produtos > 0) {
+        await Produtos.update({ id_categoria: null }, { where: { id_categoria: categoryId }, transaction });
+      }
+
+      await categoria.destroy({ transaction });
+    });
     await CategoriasController.afterChange("categoria.removida", categoria);
     return res.status(204).send();
   }

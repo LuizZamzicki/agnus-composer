@@ -8,6 +8,9 @@ import AdminProdutoLista from "./produto-lista";
 import AdminMenuLateral from "./menu-lateral";
 import AdminCategoriaLista from "./categoria-lista";
 import AdminPedidoLista from "./pedido-lista";
+import AdminDevolucaoLista from "./devolucao-lista";
+import AdminAfiliadoLista from "./afiliado-lista";
+import AdminRegistroEventos from "./registro-eventos";
 import AdminUsuarioLista from "./usuario-lista";
 
 function Admin() {
@@ -21,6 +24,9 @@ function Admin() {
   const isUsuarios = pathname.startsWith("/admin/usuarios");
   const isCategorias = pathname.startsWith("/admin/categorias");
   const isPedidos = pathname.startsWith("/admin/pedidos");
+  const isDevolucoes = pathname.startsWith("/admin/devolucoes");
+  const isAfiliados = pathname.startsWith("/admin/afiliados");
+  const isEventos = pathname.startsWith("/admin/eventos");
 
   const isProdutos =
     pathname.startsWith("/admin/produtos") ||
@@ -39,6 +45,9 @@ function Admin() {
       isUsuarios ||
       isCategorias ||
       isPedidos ||
+      isDevolucoes ||
+      isAfiliados ||
+      isEventos ||
       isProdutos;
 
 
@@ -52,6 +61,9 @@ function Admin() {
     isUsuarios,
     isCategorias,
     isPedidos,
+    isDevolucoes,
+    isAfiliados,
+    isEventos,
     isProdutos,
     navigate
   ]);
@@ -66,7 +78,13 @@ function Admin() {
           ? "Categoria de Produtos"
           : isPedidos
             ? "Pedidos"
-            : "Produtos";
+            : isDevolucoes
+              ? "Devoluções"
+              : isAfiliados
+                ? "Programa de afiliados"
+                : isEventos
+                  ? "Registro de eventos"
+                  : "Produtos";
 
 
   return (
@@ -105,6 +123,12 @@ function Admin() {
           {isCategorias && (<AdminCategoriaLista />)}
 
           {isPedidos && (<AdminPedidoLista />)}
+
+          {isDevolucoes && (<AdminDevolucaoLista />)}
+
+          {isAfiliados && (<AdminAfiliadoLista />)}
+
+          {isEventos && (<AdminRegistroEventos />)}
 
         </section>
 

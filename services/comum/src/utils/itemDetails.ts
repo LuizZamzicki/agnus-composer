@@ -46,14 +46,23 @@ const normalizeQuantidade = (value: unknown) => {
 };
 
 // Preço, nome e foto pertencem ao catálogo: quem vende nunca lê as tabelas dele.
-export const consultarSelecoes = async (pares: { id_produto_cor: number; id_produto_grade: number }[]) => {
-  const { data } = await chamarServico<SelecaoProduto[]>("catalogo", "/produtos/selecoes", {
-    method: "POST",
-    body: { pares },
-    repetivel: true,
-  });
+// O catálogo atende no máximo este tanto por chamada; carrinhos maiores vão em lotes.
+export const MAX_SELECOES_POR_CHAMADA = 100;
 
-  return data;
+export const consultarSelecoes = async (pares: { id_produto_cor: number; id_produto_grade: number }[]) => {
+  const resultado: SelecaoProduto[] = [];
+
+  for (let inicio = 0; inicio < pares.length || inicio === 0; inicio += MAX_SELECOES_POR_CHAMADA) {
+    const { data } = await chamarServico<SelecaoProduto[]>("catalogo", "/produtos/selecoes", {
+      method: "POST",
+      body: { pares: pares.slice(inicio, inicio + MAX_SELECOES_POR_CHAMADA) },
+      repetivel: true,
+    });
+
+    resultado.push(...data);
+  }
+
+  return resultado;
 };
 
 export const consultarSelecao = async (idProdutoCor: number, idProdutoGrade: number) =>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useNotification } from "../../components/notification";
 import { fetchJsonPaginado } from "../../utils/pagination";
 import { apiFetch, getAuthHeaders } from "./admin-api";
@@ -32,6 +32,10 @@ function AdminCategoriaLista() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [pagination, setPagination] = useState(PAGINACAO_INICIAL);
+  const [excluindoId, setExcluindoId] = useState(null);
+  // Categoria em edição (null = o modal está cadastrando uma nova).
+  const [categoriaEditando, setCategoriaEditando] = useState(null);
+  const [recarregar, setRecarregar] = useState(0);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -78,7 +82,7 @@ function AdminCategoriaLista() {
     return () => {
       ativo = false;
     };
-  }, [currentPage, limit]);
+  }, [currentPage, limit, recarregar]);
 
   const categoriasFiltradas = useMemo(() => {
     const busca = filtroBusca.trim().toLowerCase();
@@ -95,6 +99,58 @@ function AdminCategoriaLista() {
     setIsCategoriaModalOpen(false);
     setNovaCategoriaNome("");
     setSalvandoCategoria(false);
+    setCategoriaEditando(null);
+  }
+
+  function abrirEdicao(categoria) {
+    setCategoriaEditando(categoria);
+    setNovaCategoriaNome(categoria.nome);
+    setIsCategoriaModalOpen(true);
+  }
+
+  async function salvarCategoria() {
+    if (categoriaEditando) {
+      await editarCategoria();
+    } else {
+      await cadastrarCategoria();
+    }
+  }
+
+  async function editarCategoria() {
+    const nome = novaCategoriaNome.trim();
+    if (!nome) {
+      notify.warning("Digite o nome da categoria.");
+      return;
+    }
+
+    if (nome === categoriaEditando.nome) {
+      fecharModalCategoria();
+      return;
+    }
+
+    setSalvandoCategoria(true);
+    try {
+      const response = await apiFetch(`/categories/${categoriaEditando.id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nome }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        notify.error(data?.message || "Erro ao editar categoria.");
+        setSalvandoCategoria(false);
+        return;
+      }
+
+      // Os produtos da categoria passam a mostrar o nome novo (o catálogo e a busca são atualizados).
+      setCategorias((lista) => lista.map((c) => (c.id === categoriaEditando.id ? { ...c, nome: data?.nome ?? nome } : c)));
+      notify.success(`Categoria renomeada para "${data?.nome ?? nome}".`);
+      fecharModalCategoria();
+    } catch {
+      notify.error("Erro ao conectar no servidor.");
+      setSalvandoCategoria(false);
+    }
   }
 
   async function cadastrarCategoria() {
@@ -146,12 +202,67 @@ function AdminCategoriaLista() {
     }
   }
 
+  async function chamarExclusao(id, moverProdutos) {
+    const response = await apiFetch(`/categories/${id}${moverProdutos ? "?mover_produtos=true" : ""}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    const data = response.status === 204 ? {} : await response.json().catch(() => ({}));
+    return { response, data };
+  }
+
+  async function excluirCategoria(categoria) {
+    const confirmado = await notify.confirm({
+      title: "Excluir categoria",
+      message: `Excluir a categoria "${categoria.nome}"? Essa ação não pode ser desfeita.`,
+      confirmText: "Excluir",
+      cancelText: "Cancelar",
+      tone: "danger",
+    });
+    if (!confirmado) return;
+
+    setExcluindoId(categoria.id);
+    try {
+      let { response, data } = await chamarExclusao(categoria.id, false);
+
+      // A categoria tem produtos: o servidor diz quantos e só exclui com a segunda confirmação.
+      if (response.status === 409 && data?.produtos) {
+        const mover = await notify.confirm({
+          title: "Categoria com produtos",
+          message: `${data.produtos} produto(s) estão em "${categoria.nome}". Eles continuam à venda, mas ficam "Sem categoria". Deseja excluir mesmo assim?`,
+          confirmText: "Excluir e manter os produtos",
+          cancelText: "Cancelar",
+          tone: "danger",
+        });
+        if (!mover) return;
+        ({ response, data } = await chamarExclusao(categoria.id, true));
+      }
+
+      if (!response.ok) {
+        notify.error(data?.message || "Erro ao excluir categoria.");
+        return;
+      }
+
+      notify.success("Categoria excluída.");
+      // Se era a última da página, volta uma página.
+      if (categorias.length === 1 && currentPage > 1) {
+        setCurrentPage((pagina) => pagina - 1);
+      } else {
+        setRecarregar((n) => n + 1);
+      }
+    } catch {
+      notify.error("Erro ao conectar no servidor.");
+    } finally {
+      setExcluindoId(null);
+    }
+  }
+
   return (
     <div className="admin-products-list">
       {isCategoriaModalOpen && (
         <div className="admin-modal-overlay">
           <div className="admin-modal-content">
-            <h2>Nova Categoria</h2>
+            <h2>{categoriaEditando ? "Editar Categoria" : "Nova Categoria"}</h2>
             <div className="admin-form-group">
               <label className="admin-form-label">Nome da Categoria</label>
               <input
@@ -164,7 +275,7 @@ function AdminCategoriaLista() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    cadastrarCategoria();
+                    salvarCategoria();
                   }
                 }}
               />
@@ -176,7 +287,7 @@ function AdminCategoriaLista() {
               <button
                 data-cy="btn-salvar-categoria"
                 className="admin-form-btn-primary"
-                onClick={cadastrarCategoria}
+                onClick={salvarCategoria}
                 disabled={salvandoCategoria}
               >
                 {salvandoCategoria ? "Salvando..." : "Salvar"}
@@ -237,6 +348,7 @@ function AdminCategoriaLista() {
                 <tr>
                   <th>ID</th>
                   <th>Nome</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -244,6 +356,29 @@ function AdminCategoriaLista() {
                   <tr data-cy="categoria-item" key={categoria.id}>
                     <td>{categoria.id}</td>
                     <td>{categoria.nome}</td>
+                    <td>
+                      <button
+                        type="button"
+                        data-cy={`categoria-editar-${categoria.id}`}
+                        className="admin-products-btn edit"
+                        onClick={() => abrirEdicao(categoria)}
+                        title="Editar categoria"
+                        aria-label={`Editar a categoria ${categoria.nome}`}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        data-cy={`categoria-excluir-${categoria.id}`}
+                        className="admin-products-btn delete"
+                        onClick={() => excluirCategoria(categoria)}
+                        disabled={excluindoId === categoria.id}
+                        title="Excluir categoria"
+                        aria-label={`Excluir a categoria ${categoria.nome}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

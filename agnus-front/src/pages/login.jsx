@@ -9,6 +9,15 @@ import { apiUrl } from "../utils/api";
 import { destinoSeguro } from "../utils/destinoSeguro";
 import { evaluatePasswordStrength } from "../utils/passwordStrength";
 
+const ERRO_GENERICO_GOOGLE = "Não foi possível entrar com o Google. Tente novamente.";
+const MENSAGENS_DE_LOGIN_GOOGLE = new Set([
+  ERRO_GENERICO_GOOGLE,
+  "Parâmetros OAuth inválidos.",
+  "Estado OAuth inválido ou expirado.",
+  "Conta Google sem email verificado.",
+  "Este e-mail já está vinculado a outra conta Google.",
+]);
+
 // O Google só devolve para /login, então o destino fica guardado durante a ida e a volta.
 const CHAVE_DESTINO = "agnus_destino_login";
 // Prova que foi este navegador que começou o login: sem ela, um link com ?token= trocaria a sessão.
@@ -79,8 +88,10 @@ function Login() {
     const tipo = searchParams.get("tipo");
     const errorParam = searchParams.get("error");
 
+    // Qualquer um pode montar um link com ?error=; só mensagens conhecidas aparecem na tela.
     if (errorParam) {
-      setError(decodeURIComponent(errorParam));
+      const mensagem = decodeURIComponent(errorParam);
+      setError(MENSAGENS_DE_LOGIN_GOOGLE.has(mensagem) ? mensagem : ERRO_GENERICO_GOOGLE);
       return;
     }
 

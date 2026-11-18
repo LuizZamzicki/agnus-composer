@@ -257,7 +257,8 @@ function Finalizar() {
             }
 
             avisarSacola();
-            navigate(`/pedido-confirmado/${dados.id_pedido}`, { replace: true });
+            // O pedido nasce aguardando pagamento; o próximo passo é pagar (PIX ou cartão).
+            navigate(`/pagamento/${dados.id_pedido}`, { replace: true });
         } catch {
             setErro("Sem conexão com o servidor. Sua sacola continua guardada, tente de novo.");
         } finally {
@@ -396,7 +397,7 @@ function Finalizar() {
                     </button>
 
                     <p className="fin-aviso">
-                        Você não paga nada agora. Depois de confirmar, é só falar com a gente para combinar o pagamento e o frete.
+                        Depois de confirmar, você paga os produtos com PIX ou cartão (até 12x), sem sair do site. O frete é combinado com a gente depois.
                     </p>
                 </aside>
             </div>

@@ -7,6 +7,10 @@ import CheckoutService, { CheckoutError } from "../services/checkout.service";
 import EventBusService from "@agnus/comum/services/eventBus.service";
 import AvisoPedidoService from "../services/avisoPedido.service";
 import PedidoRegrasService from "../services/pedidoRegras.service";
+import { refDoCookie } from "../services/afiliacao.service";
+import YouDrawService, { PedidosFornecedor } from "../fornecedor/youdraw.service";
+import { extrairCodigoRastreio, RastreioInvalido, urlRastreio } from "../utils/rastreio";
+import type { AuthUserPayload } from "@agnus/comum/types/auth.types";
 import type {
   PedidoBody,
   PedidoQuery,
@@ -56,6 +60,28 @@ class PedidoPayload {
 
   hasValorFreteField() {
     return this.body.valor_frete !== undefined;
+  }
+
+  // undefined = inválido (o motivo fica em erroRastreio).
+  get codigoRastreio(): string | null | undefined {
+    try {
+      return extrairCodigoRastreio(this.body.rastreio);
+    } catch {
+      return undefined;
+    }
+  }
+
+  get erroRastreio() {
+    try {
+      extrairCodigoRastreio(this.body.rastreio);
+      return null;
+    } catch (error) {
+      return error instanceof RastreioInvalido ? error.message : "Número do pedido na YouDraw inválido.";
+    }
+  }
+
+  hasRastreioField() {
+    return this.body.rastreio !== undefined;
   }
 }
 
@@ -123,7 +149,20 @@ class PedidosController {
       return "status inválido.";
     }
 
+    if (payload.hasRastreioField() && payload.erroRastreio) {
+      return payload.erroRastreio;
+    }
+
     return null;
+  }
+
+  // JSON do pedido com a URL de rastreio da YouDraw. A busca usa o e-mail de quem pede só quando
+  // é o dono do pedido; para a equipe, só há URL se o número do pedido na YouDraw foi informado.
+  static comRastreio(pedido: Pedidos, quemPede?: AuthUserPayload | null) {
+    const ehDono = Boolean(quemPede && quemPede.id_usuario === pedido.id_usuario);
+    // O cookie de afiliado é dado interno da atribuição: não sai na API.
+    const { ref_afiliado: _ref, ...dados } = pedido.toJSON() as Record<string, unknown>;
+    return { ...dados, url_rastreio: urlRastreio(pedido, ehDono ? quemPede!.email : null) };
   }
 
   private static buildWhere(query: PedidoQuery) {
@@ -168,6 +207,13 @@ class PedidosController {
       valor_frete: payload.hasValorFreteField()
         ? payload.valorFrete
         : pedido.valor_frete,
+      codigo_rastreio: payload.hasRastreioField()
+        ? payload.codigoRastreio ?? null
+        : pedido.codigo_rastreio,
+      // Conta o prazo de devolução a partir daqui.
+      data_entrega: payload.status === "entregue" && pedido.status !== "entregue"
+        ? new Date()
+        : pedido.data_entrega,
     };
   }
 
@@ -178,13 +224,20 @@ class PedidosController {
       return res.status(400).json({ message: where.message });
     }
 
+    const pedidos = await Pedidos.findAll({
+      where: {
+        ...(where.id_usuario ? { id_usuario: where.id_usuario } : {}),
+        ...(where.status ? { status: where.status } : {}),
+      },
+    });
+
+    // Lista da equipe: junto, a situação de cada pedido na YouDraw.
+    const fornecedor = pedidos.length
+      ? new Map((await PedidosFornecedor.findAll({ where: { id_pedido: pedidos.map((p) => p.id_pedido) } })).map((r) => [r.id_pedido, r]))
+      : new Map();
+
     return res.status(200).send(
-      await Pedidos.findAll({
-        where: {
-          ...(where.id_usuario ? { id_usuario: where.id_usuario } : {}),
-          ...(where.status ? { status: where.status } : {}),
-        },
-      }),
+      pedidos.map((pedido) => ({ ...PedidosController.comRastreio(pedido), fornecedor: YouDrawService.resumo(fornecedor.get(pedido.id_pedido)) })),
     );
   }
 
@@ -196,18 +249,18 @@ class PedidosController {
       return res.status(400).json({ message: where.message });
     }
 
-    return res.status(200).send(
-      await Pedidos.findAll({
-        where: {
-          id_usuario: res.locals.authUser!.id_usuario,
-          ...(where.status ? { status: where.status } : {}),
-        },
-        order: [["data_criacao", "DESC"]],
-      }),
-    );
+    const pedidos = await Pedidos.findAll({
+      where: {
+        id_usuario: res.locals.authUser!.id_usuario,
+        ...(where.status ? { status: where.status } : {}),
+      },
+      order: [["data_criacao", "DESC"]],
+    });
+
+    return res.status(200).send(pedidos.map((pedido) => PedidosController.comRastreio(pedido, res.locals.authUser)));
   }
 
-  static async getById(req: PedidoRequest, res: Response) {
+  static async getById(req: PedidoRequest, res: Response<object, AuthenticatedResponseLocals>) {
     const orderId = PedidosController.parsePositiveId(req.params.id);
 
     if (!orderId) {
@@ -220,7 +273,7 @@ class PedidosController {
       return res.status(404).json({ message: "Pedido não encontrado." });
     }
 
-    return res.status(200).send(pedido);
+    return res.status(200).send(PedidosController.comRastreio(pedido, res.locals.authUser));
   }
 
   // Lancamento manual pela equipe (o cliente compra por /orders/checkout). O pedido nasce sem
@@ -281,7 +334,7 @@ class PedidosController {
     try {
       return res
         .status(201)
-        .send(await CheckoutService.finalizar(res.locals.authUser!.id_usuario, addressId));
+        .send(await CheckoutService.finalizar(res.locals.authUser!.id_usuario, addressId, refDoCookie(req.headers.cookie)));
     } catch (error) {
       if (error instanceof CheckoutError) {
         return res.status(error.status).json({ message: error.message });
@@ -357,7 +410,7 @@ class PedidosController {
       status_anterior: previousStatus,
       status: pedido.status,
     });
-    return res.status(200).send(pedido);
+    return res.status(200).send(PedidosController.comRastreio(pedido));
   }
 
   static async remove(req: PedidoRequest, res: Response) {

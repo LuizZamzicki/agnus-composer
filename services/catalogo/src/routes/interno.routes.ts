@@ -5,6 +5,7 @@ import ProdutoCores from "../models/ProdutoCores";
 import ProdutoFotos from "../models/ProdutoFotos";
 import ProdutoGrades from "../models/ProdutoGrades";
 import Produtos from "../models/Produtos";
+import SkuService from "../services/sku.service";
 
 const router = Router();
 
@@ -39,6 +40,7 @@ const resolverSelecao = async (idCor: number, idGrade: number) => {
         nome: produto.nome,
         descricao: produto.descricao,
         preco_base: produto.preco_base,
+        preco_original: produto.preco_original,
         ativo: produto.ativo,
       },
       cor,
@@ -52,11 +54,16 @@ const resolverSelecao = async (idCor: number, idGrade: number) => {
 router.post("/produtos/selecoes", async (req: Request, res: Response) => {
   const pares = (req.body?.pares ?? []) as { id_produto_cor: number; id_produto_grade: number }[];
 
+  // Mesmo limite do cliente (consultarSelecoes divide em lotes): um lote enorme passaria do timeout.
+  if (!Array.isArray(pares) || pares.length > 100) {
+    return res.status(400).json({ message: "Envie de 0 a 100 seleções por chamada." });
+  }
+
   return res.status(200).json(await Promise.all(pares.map((par) => resolverSelecao(par.id_produto_cor, par.id_produto_grade))));
 });
 
 const DOCUMENTOS_SQL = `
-  SELECT p.id_produto, p.id_categoria, p.nome, COALESCE(p.descricao, '') AS descricao, p.preco_base, p.ativo,
+  SELECT p.id_produto, p.id_categoria, p.nome, COALESCE(p.descricao, '') AS descricao, p.preco_base, p.preco_original, p.ativo,
     c.nome AS categoria_nome, COALESCE(v.quantidade_vendida, 0) AS quantidade_vendida,
     IFNULL(CONCAT('[',(SELECT GROUP_CONCAT(JSON_QUOTE(pf.caminho_url) ORDER BY pf.id_produto_foto ASC SEPARATOR ',')
       FROM produto_fotos pf WHERE pf.id_produto = p.id_produto),']'),'[]') AS imagens_json
@@ -86,6 +93,15 @@ router.get("/produtos/:id/cores", async (req: Request, res: Response) => {
   const cores = await ProdutoCores.findAll({ where: { id_produto: idProduto }, attributes: ["id_produto_cor"] });
 
   return res.status(200).json({ cores: cores.map((cor) => cor.id_produto_cor) });
+});
+
+// SKU do fornecedor de cada par cor + grade de um pedido (serviço de pedidos, ao enviar à YouDraw).
+router.post("/variantes/skus", async (req: Request, res: Response) => {
+  const pares = (req.body?.pares ?? []) as { id_produto_cor: number; id_produto_grade: number }[];
+  if (!Array.isArray(pares) || pares.length > 100) {
+    return res.status(400).json({ message: "Envie de 0 a 100 pares." });
+  }
+  return res.status(200).json(await SkuService.resolverPares(pares));
 });
 
 export default router;

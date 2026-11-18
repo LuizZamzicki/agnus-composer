@@ -9,7 +9,12 @@ export type AgnusEventType =
   | "pedido.atualizado"
   | "pedido.removido"
   | "usuario.removido"
-  | "vendas.atualizadas";
+  | "vendas.atualizadas"
+  | "afiliado.conversao"
+  | "afiliado.pagamento"
+  | "fornecedor.pedido_criado"
+  | "fornecedor.pedido_falhou"
+  | "fornecedor.status";
 
 export type AgnusEventPayload = Record<string, boolean | number | string | number[] | null | undefined>;
 

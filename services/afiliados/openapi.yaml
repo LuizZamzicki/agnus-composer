@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: Agnus Afiliados
+  version: 1.0.0
+  description: |
+    Programa de afiliados da Agnus, no modelo da Shopee Afiliados.
+
+    **Fluxo:** o afiliado se inscreve (`/afiliados/inscricao`), a equipe aprova, ele gera links curtos
+    (`/afiliados/v1/links`) e divulga. Cada acesso a `https://<loja>/l/<slug>` registra um clique e grava um
+    cookie de atribuição por **7 dias** (último clique vence). Se a pessoa comprar nesse prazo, o pedido vira
+    uma **conversão** com a comissão calculada item a item, sobre o valor das peças (sem frete).
+
+    **Status da comissão:** `aguardando_pagamento` (pedido ainda não pago) → `pendente` (pago/enviado; e depois
+    da entrega, durante os 7 dias de arrependimento) → `aprovada` (pode ser paga) → `paga`. Pedido cancelado,
+    ou compra do próprio afiliado → `cancelada`.
+
+    **Taxa de comissão (a mais específica vence):** regra do produto → regra da categoria → taxa combinada com
+    o afiliado → regra padrão da loja (10% se não houver regra cadastrada).
+
+    ## Autenticação da API v1 (igual à Shopee Affiliate Open API)
+    Use **uma** das opções:
+    1. Sessão do site: `Authorization: Bearer <token do login>`.
+    2. Integração (servidor do afiliado): gere AppID e segredo em `POST /afiliados/me/credenciais` e assine cada chamada:
+
+    ```
+    Authorization: SHA256 Credential=<AppId>, Timestamp=<unix em segundos>, Signature=<hex>
+    Signature = SHA256(AppId + Timestamp + Payload + Segredo)
+    Payload   = corpo JSON exatamente como enviado (POST) ou a query string sem "?" (GET; vazio se não houver)
+    ```
+    O timestamp pode ter no máximo 10 minutos de diferença. Limite: 2000 requisições por hora por AppID.
+
+    Exemplo (Node.js):
+    ```js
+    const ts = Math.floor(Date.now() / 1000).toString();
+    const corpo = JSON.stringify({ url: "/produto/12", sub_ids: ["instagram"] });
+    const assinatura = crypto.createHash("sha256").update(APP_ID + ts + corpo + SEGREDO).digest("hex");
+    fetch("https://<loja>/api/afiliados/v1/links", { method: "POST", body: corpo, headers: {
+      "Content-Type": "application/json",
+      Authorization: `SHA256 Credential=${APP_ID}, Timestamp=${ts}, Signature=${assinatura}` } });
+    ```
+servers:
+  - url: /api
+tags:
+  - name: Link curto
+  - name: Conta do afiliado
+  - name: API v1 (afiliado)
+  - name: Administração
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+    assinatura:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "SHA256 Credential=<AppId>, Timestamp=<unix>, Signature=<hex>"
+  parameters:
+    inicio: { name: inicio, in: query, schema: { type: string, format: date }, description: "AAAA-MM-DD (padrão: 30 dias atrás)" }
+    fim: { name: fim, in: query, schema: { type: string, format: date }, description: "AAAA-MM-DD (padrão: hoje). Período máximo de 93 dias." }
+    page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+  schemas:
+    Erro:
+      type: object
+      properties: { message: { type: string } }
+    Afiliado:
+      type: object
+      properties:
+        id_afiliado: { type: integer }
+        codigo: { type: string }
+        nome_publico: { type: string }
+        canal: { type: string, nullable: true, description: "Onde divulga (Instagram, site...)" }
+        chave_pix: { type: string, nullable: true }
+        status: { type: string, enum: [pendente, ativo, suspenso, recusado] }
+        taxa_personalizada: { type: number, nullable: true }
+        app_id: { type: string, nullable: true }
+        tem_credencial_api: { type: boolean }
+    Link:
+      type: object
+      properties:
+        id_link: { type: integer }
+        slug: { type: string, example: "k7m2pq9x" }
+        link_curto: { type: string, example: "https://agnusfit.com/l/k7m2pq9x" }
+        destino: { type: string, example: "/produto/12" }
+        sub_ids: { type: array, items: { type: string } }
+    Oferta:
+      type: object
+      properties:
+        id_produto: { type: integer }
+        nome: { type: string }
+        categoria_nome: { type: string, nullable: true }
+        preco: { type: number }
+        preco_original: { type: number, nullable: true }
+        imagem: { type: string, nullable: true }
+        taxa_comissao: { type: number, example: 10 }
+        origem_taxa: { type: string, enum: [padrao, categoria, produto, afiliado] }
+        comissao_estimada: { type: number, example: 6.99 }
+        link_produto: { type: string }
+        link_afiliado: { type: string, description: "Link curto já rastreado para divulgar" }
+    Conversao:
+      type: object
+      properties:
+        id_conversao: { type: integer }
+        id_pedido: { type: integer }
+        status: { type: string, enum: [aguardando_pagamento, pendente, aprovada, cancelada, paga] }
+        status_pedido: { type: string }
+        valor_pedido: { type: number }
+        valor_comissionavel: { type: number }
+        valor_comissao: { type: number }
+        motivo_cancelamento: { type: string, nullable: true }
+        data_clique: { type: string, format: date-time }
+        data_pedido: { type: string, format: date-time }
+        data_entrega: { type: string, format: date-time, nullable: true }
+        liberada_em: { type: string, format: date-time, nullable: true, description: "Quando a comissão será aprovada" }
+        data_aprovacao: { type: string, format: date-time, nullable: true }
+        id_pagamento: { type: integer, nullable: true }
+        link:
+          type: object
+          nullable: true
+          properties:
+            slug: { type: string }
+            destino: { type: string }
+            sub_ids: { type: array, items: { type: string } }
+        itens:
+          type: array
+          items:
+            type: object
+            properties:
+              id_produto: { type: integer }
+              nome_produto: { type: string }
+              quantidade: { type: integer }
+              valor: { type: number }
+              taxa: { type: number }
+              origem_taxa: { type: string }
+              valor_comissao: { type: number }
+paths:
+  /l/{slug}:
+    servers:
+      - url: /
+    get:
+      tags: [Link curto]
+      summary: Link curto de afiliado (https://<loja>/l/{slug})
+      description: Registra o clique, grava o cookie `agnus_afiliado` (7 dias, HttpOnly) e redireciona (302) para a página da loja.
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        "302": { description: Redireciona para a página da loja }
+
+  /afiliados/inscricao:
+    post:
+      tags: [Conta do afiliado]
+      summary: Inscrição no programa (fica pendente até a equipe aprovar)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nome_publico, aceite_termos]
+              properties:
+                nome_publico: { type: string }
+                canal: { type: string }
+                chave_pix: { type: string }
+                aceite_termos: { type: boolean, enum: [true] }
+      responses:
+        "201": { description: Inscrito, content: { application/json: { schema: { $ref: "#/components/schemas/Afiliado" } } } }
+        "409": { description: Já inscrito, content: { application/json: { schema: { $ref: "#/components/schemas/Erro" } } } }
+
+  /afiliados/me:
+    get:
+      tags: [Conta do afiliado]
+      summary: Dados do afiliado e resumo (cliques 30 dias, comissões por status)
+      security: [{ bearer: [] }, { assinatura: [] }]
+      responses:
+        "200": { description: OK }
+        "404": { description: Não é afiliado }
+    patch:
+      tags: [Conta do afiliado]
+      summary: Atualiza nome público, canal e chave PIX
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome_publico: { type: string }
+                canal: { type: string }
+                chave_pix: { type: string }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Afiliado" } } } }
+
+  /afiliados/me/credenciais:
+    post:
+      tags: [Conta do afiliado]
+      summary: Gera AppID e segredo da API (o segredo só aparece nesta resposta)
+      security: [{ bearer: [] }]
+      responses:
+        "201":
+          description: Credenciais
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  app_id: { type: string }
+                  segredo: { type: string }
+        "403": { description: Cadastro ainda não aprovado }
+
+  /afiliados/me/pagamentos:
+    get:
+      tags: [Conta do afiliado]
+      summary: Pagamentos de comissão recebidos
+      security: [{ bearer: [] }, { assinatura: [] }]
+      responses:
+        "200": { description: OK }
+
+  /afiliados/v1/ofertas:
+    get:
+      tags: [API v1 (afiliado)]
+      summary: Produtos com taxa e comissão estimada (equivalente ao productOfferV2)
+      security: [{ bearer: [] }, { assinatura: [] }]
+      parameters:
+        - { name: busca, in: query, schema: { type: string } }
+        - { name: id_categoria, in: query, schema: { type: integer } }
+        - { name: ordenar, in: query, schema: { type: string, enum: [relevancia, comissao_desc, preco_asc, preco_desc] } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Oferta" } }
+                  pagination: { type: object }
+
+  /afiliados/v1/links:
+    post:
+      tags: [API v1 (afiliado)]
+      summary: Gera link curto rastreado (equivalente ao generateShortLink)
+      description: Mesmo destino com os mesmos sub_ids devolve o link já existente.
+      security: [{ bearer: [] }, { assinatura: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string, example: "/produto/12", description: "Página da loja (caminho ou URL do próprio site)" }
+                sub_ids: { type: array, maxItems: 5, items: { type: string, maxLength: 50 }, example: ["instagram", "story_novembro"] }
+      responses:
+        "201": { description: Link, content: { application/json: { schema: { $ref: "#/components/schemas/Link" } } } }
+        "400": { description: URL fora da loja ou sub_ids inválidos }
+
+  /afiliados/v1/conversoes:
+    get:
+      tags: [API v1 (afiliado)]
+      summary: Relatório de conversões pela data do pedido (equivalente ao conversionReport)
+      security: [{ bearer: [] }, { assinatura: [] }]
+      parameters:
+        - $ref: "#/components/parameters/inicio"
+        - $ref: "#/components/parameters/fim"
+        - { name: status, in: query, schema: { type: string, enum: [aguardando_pagamento, pendente, aprovada, cancelada, paga] } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resumo: { type: object, description: "Quantidade e comissão por status no período" }
+                  data: { type: array, items: { $ref: "#/components/schemas/Conversao" } }
+                  pagination: { type: object }
+
+  /afiliados/v1/conversoes/validadas:
+    get:
+      tags: [API v1 (afiliado)]
+      summary: Comissões validadas (aprovadas ou pagas) no mês (equivalente ao validatedReport)
+      security: [{ bearer: [] }, { assinatura: [] }]
+      parameters:
+        - { name: mes, in: query, schema: { type: string, example: "2026-11" } }
+      responses:
+        "200": { description: OK }
+
+  /afiliados/v1/cliques:
+    get:
+      tags: [API v1 (afiliado)]
+      summary: Cliques e visitantes únicos, por dia, por link ou por sub_id
+      security: [{ bearer: [] }, { assinatura: [] }]
+      parameters:
+        - $ref: "#/components/parameters/inicio"
+        - $ref: "#/components/parameters/fim"
+        - { name: agrupar, in: query, schema: { type: string, enum: [dia, link, sub_id], default: dia } }
+      responses:
+        "200": { description: OK }
+
+  /afiliados/admin/afiliados:
+    get:
+      tags: [Administração]
+      summary: Lista afiliados com saldo a pagar
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pendente, ativo, suspenso, recusado] } }
+      responses:
+        "200": { description: OK }
+  /afiliados/admin/afiliados/{id}:
+    patch:
+      tags: [Administração]
+      summary: Aprova, suspende ou recusa; define taxa personalizada (null remove)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [pendente, ativo, suspenso, recusado] }
+                taxa_personalizada: { type: number, nullable: true, example: 15 }
+      responses:
+        "200": { description: OK }
+  /afiliados/admin/regras:
+    get:
+      tags: [Administração]
+      summary: Regras de comissão e a taxa padrão em uso
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Administração]
+      summary: Cria ou altera uma regra (vale para as próximas conversões)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipo, taxa]
+              properties:
+                tipo: { type: string, enum: [padrao, categoria, produto] }
+                referencia_id: { type: integer, description: "Id da categoria ou do produto (não usado em padrao)" }
+                taxa: { type: number, minimum: 0, maximum: 90, example: 12 }
+      responses:
+        "200": { description: OK }
+  /afiliados/admin/regras/{id}:
+    delete:
+      tags: [Administração]
+      summary: Remove uma regra
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removida }
+  /afiliados/admin/conversoes:
+    get:
+      tags: [Administração]
+      summary: Todas as conversões (filtro por afiliado, status e período)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id_afiliado, in: query, schema: { type: integer } }
+        - $ref: "#/components/parameters/inicio"
+        - $ref: "#/components/parameters/fim"
+        - { name: status, in: query, schema: { type: string } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200": { description: OK }
+  /afiliados/admin/saldos:
+    get:
+      tags: [Administração]
+      summary: Comissões aprovadas a pagar, por afiliado (com chave PIX)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK }
+  /afiliados/admin/afiliados/{id}/pagamentos:
+    post:
+      tags: [Administração]
+      summary: Registra o pagamento de todas as comissões aprovadas do afiliado
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                referencia: { type: string, description: "Ex.: id da transferência PIX" }
+                observacao: { type: string }
+      responses:
+        "201": { description: Pagamento registrado }
+        "409": { description: Nada aprovado a pagar }
+  /afiliados/admin/pagamentos:
+    get:
+      tags: [Administração]
+      summary: Histórico de pagamentos
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK }

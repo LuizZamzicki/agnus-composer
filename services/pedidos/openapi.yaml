@@ -243,6 +243,235 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /orders/{id}/devolucao/opcoes:
+    get:
+      tags: [Devoluções]
+      summary: O que o cliente pode devolver do pedido (peças, quantidades e prazo de cada motivo)
+      description: |
+        Só pedidos entregues. Prazos contados da entrega: arrependimento e tamanho, 7 dias (CDC art. 49);
+        defeito e peça errada, 90 dias (CDC art. 26). Configurável em DEVOLUCAO_PRAZO_*_DIAS.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: OK }
+        "404": { description: Pedido não encontrado (ou de outra pessoa) }
+  /orders/{id}/devolucoes:
+    post:
+      tags: [Devoluções]
+      summary: Cliente pede a devolução de peças do pedido
+      description: O reembolso é o valor das peças; o frete volta junto quando todas as peças são devolvidas. Só uma devolução em andamento por pedido.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo, itens]
+              properties:
+                motivo: { type: string, enum: [arrependimento, tamanho, defeito, produto_errado] }
+                descricao: { type: string, maxLength: 1000, description: "Obrigatória (10+ caracteres) para defeito e produto_errado" }
+                itens:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id_pedido_item: { type: integer }
+                      quantidade: { type: integer, minimum: 1 }
+      responses:
+        "201": { description: Devolução criada (status solicitada) }
+        "400": { description: Peça, quantidade ou descrição inválida }
+        "409": { description: Pedido não entregue, fora do prazo ou já existe devolução em andamento }
+  /devolucoes/me:
+    get:
+      tags: [Devoluções]
+      summary: Devoluções do cliente logado
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /devolucoes/{id}/cancelar:
+    post:
+      tags: [Devoluções]
+      summary: Cliente cancela a devolução (só enquanto está em análise)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Cancelada }
+        "409": { description: Já foi respondida }
+  /devolucoes:
+    get:
+      tags: [Devoluções]
+      summary: Equipe - lista as devoluções (filtro por status)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [solicitada, aprovada, recusada, recebida, reembolsada, cancelada] } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: OK }
+  /devolucoes/{id}/aprovar:
+    post:
+      tags: [Devoluções]
+      summary: Equipe - aprova e envia as instruções (e o código de postagem, se houver)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resposta_loja]
+              properties:
+                resposta_loja: { type: string }
+                codigo_postagem: { type: string }
+      responses:
+        "200": { description: Aprovada }
+  /devolucoes/{id}/recusar:
+    post:
+      tags: [Devoluções]
+      summary: Equipe - recusa com o motivo (o cliente recebe por e-mail)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resposta_loja]
+              properties:
+                resposta_loja: { type: string }
+      responses:
+        "200": { description: Recusada }
+  /devolucoes/{id}/recebida:
+    post:
+      tags: [Devoluções]
+      summary: Equipe - confirma que a peça chegou
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Recebida }
+  /devolucoes/{id}/reembolsar:
+    post:
+      tags: [Devoluções]
+      summary: Equipe - reembolsa (estorno automático no Mercado Pago, ou registro de reembolso manual)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forma: { type: string, enum: [mercado_pago, manual], default: mercado_pago }
+                referencia: { type: string, description: "Obrigatória no manual (ex.: id do PIX)" }
+      responses:
+        "200": { description: Reembolsada }
+        "409": { description: Peça ainda não recebida, ou pedido sem pagamento no Mercado Pago }
+  /devolucao-fotos/{id}:
+    post:
+      tags: [Devoluções]
+      summary: Cliente anexa uma foto à devolução (id = id_devolucao)
+      description: |
+        Uma foto por chamada, até 3 por devolução, só enquanto a devolução está em análise. JPG, PNG ou WEBP
+        de até 5 MB; o tipo é conferido pelos bytes do arquivo. O site reduz a foto para JPEG antes de enviar.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: id_devolucao }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto: { type: string, description: "data:image/jpeg;base64,... ou base64 puro" }
+      responses:
+        "201": { description: Devolução com a lista de fotos (cada uma com a url protegida) }
+        "400": { description: Não é uma imagem JPG, PNG ou WEBP }
+        "404": { description: Devolução não encontrada (ou de outra pessoa) }
+        "409": { description: Já respondida ou já tem 3 fotos }
+        "413": { description: Foto maior que 5 MB }
+    get:
+      tags: [Devoluções]
+      summary: Arquivo da foto (id = id_devolucao_foto); só para o dono da devolução ou a equipe
+      description: Nunca é pública nem fica em cache de proxy. Para qualquer outra pessoa, 404.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: id_devolucao_foto }
+      responses:
+        "200":
+          description: A imagem
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+        "401": { description: Sem login }
+        "404": { description: Foto não encontrada (ou sem acesso) }
+  /orders/{id}/fornecedor:
+    get:
+      summary: Situação do pedido na YouDraw (equipe)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "200":
+          description: "`fornecedor` é null enquanto nada foi enviado. situacao: aguardando, enviado, erro ou manual (integração desligada)."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  integracao_ativa: { type: boolean }
+                  fornecedor:
+                    type: object
+                    nullable: true
+                    properties:
+                      situacao: { type: string, enum: [aguardando, enviado, erro, manual] }
+                      codigo_publico: { type: string, nullable: true, example: YD-ABC23 }
+                      status_externo: { type: string, nullable: true, example: pending_payment }
+                      total: { type: number, nullable: true, description: Custo na YouDraw (R$) }
+                      frete: { type: number, nullable: true }
+                      rastreio_codigo: { type: string, nullable: true }
+                      rastreio_url: { type: string, nullable: true }
+                      erro: { type: string, nullable: true }
+                      erro_codigo: { type: string, nullable: true }
+        "401": { description: Sem login }
+        "403": { description: Sem permissão }
+  /orders/{id}/fornecedor/enviar:
+    post:
+      summary: Cria (ou tenta de novo) o pedido na YouDraw
+      description: |
+        Só para pedidos pagos. Idempotente: pedido já criado não é criado de novo. `nova_chave: true` gera outra
+        Idempotency-Key (use só depois de conferir no painel da YouDraw que o pedido não existe lá).
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { nova_chave: { type: boolean, default: false } } }
+      responses:
+        "200": { description: "Resultado (`fornecedor` com a situação depois do envio)" }
+        "404": { description: Pedido não encontrado }
+        "409": { description: Pedido ainda não pago }
+  /youdraw/webhook:
+    post:
+      summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)
+      description: |
+        Assinatura obrigatória: `X-YouDraw-Signature: v1=<HMAC-SHA256(YOUDRAW_WEBHOOK_SECRET, "<X-YouDraw-Timestamp>.<corpo bruto>")>`,
+        com no máximo 5 minutos de diferença. Entregas repetidas (mesmo `X-YouDraw-Delivery`) são ignoradas.
+        Enviado/entregue na YouDraw muda o pedido da loja e avisa o cliente; cancelado só é registrado.
+      responses:
+        "200": { description: "Processado (ou `processado: false` quando o segredo não está configurado)" }
+        "401": { description: Assinatura inválida ou vencida }
+        "500": { description: Falha ao aplicar; a YouDraw tenta de novo }
 components:
   securitySchemes:
     bearerAuth:

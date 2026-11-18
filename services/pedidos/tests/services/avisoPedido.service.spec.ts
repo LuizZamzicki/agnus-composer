@@ -12,7 +12,7 @@ describe("AvisoPedidoService", () => {
     await AvisoPedidoService.avisarMudancaDeStatus(pedido("enviado"), "pago");
     expect(chamar).toHaveBeenCalledWith("notificacoes", "/status-pedido", {
       method: "POST",
-      body: { id_usuario: 3, id_pedido: 7, status: "enviado" },
+      body: { id_usuario: 3, id_pedido: 7, status: "enviado", valor_total: null },
     });
   });
 

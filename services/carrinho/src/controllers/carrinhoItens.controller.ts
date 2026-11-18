@@ -18,6 +18,8 @@ import {
 
 type CarrinhoItemRequest = Request<CarrinhoItemRouteParams, object, CarrinhoItemBody>;
 
+const MAX_ITENS_POR_CARRINHO = 50;
+
 class CarrinhoItemPayload {
   constructor(private readonly body: CarrinhoItemBody) {}
 
@@ -207,6 +209,13 @@ class CarrinhoItensController {
 
     if (precoUnitario === null) {
       return res.status(404).json({ message: "Produto vinculado ao item não encontrado." });
+    }
+
+    // Sem teto, um carrinho com milhares de linhas transformava cada leitura numa consulta enorme ao catálogo.
+    const linhas = Number(await CarrinhoItens.count({ where: { id_carrinho: payload.cartId! } })) || 0;
+
+    if (linhas >= MAX_ITENS_POR_CARRINHO) {
+      return res.status(400).json({ message: `O carrinho aceita no máximo ${MAX_ITENS_POR_CARRINHO} itens diferentes.` });
     }
 
     return res

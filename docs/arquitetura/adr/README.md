@@ -12,5 +12,8 @@ Cada ADR registra **uma** decisão arquitetural relevante: o contexto, a decisã
 | [0006](0006-nginx-proxy-reverso.md) | Nginx como proxy reverso único com TLS | Aceito |
 | [0007](0007-logs-estruturados.md) | Logs estruturados em JSON com correlação por requestId | Aceito |
 | [0008](0008-microsservicos.md) | Extração para microsserviços com um banco por serviço | Aceito |
+| [0009](0009-shopify-headless.md) | Shopify headless (Storefront API) para vitrine, sacola e checkout | Substituído pelo 0011 (código desativado) |
+| [0010](0010-remocao-do-painel-admin.md) | Remoção do painel administrativo; o site trabalha só com a área do cliente | Substituído pelo 0011 (painel de volta) |
+| [0011](0011-checkout-proprio-mercado-pago.md) | Checkout próprio com pagamento pelo Mercado Pago (PIX e cartão) | Aceito |
 
 Modelo usado: *Michael Nygard* (Contexto → Decisão → Alternativas → Consequências).

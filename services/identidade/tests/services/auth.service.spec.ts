@@ -21,12 +21,14 @@ jest.mock("jsonwebtoken", () => ({
     verify: jest.fn(),
   },
 }));
-jest.mock("crypto", () => ({
-  __esModule: true,
-  default: {
-    randomBytes: jest.fn(() => Buffer.from("1234567890123456")),
-  },
-}));
+jest.mock("crypto", () => {
+  const real = jest.requireActual("crypto");
+  return {
+    ...real,
+    __esModule: true,
+    default: { ...real, randomBytes: jest.fn(() => Buffer.from("1234567890123456")) },
+  };
+});
 jest.mock("../../src/models/Usuarios", () => ({
   __esModule: true,
   default: {
@@ -223,6 +225,17 @@ describe("AuthService", () => {
     jwtMock.sign.mockReturnValueOnce("jwt-email");
     await expect(AuthService.authenticateWithGoogle("code", "state")).resolves.toEqual({ user: { ...buildPublicUser("b@b.com", "cliente", "sub-2"), id_usuario: 2 }, token: "jwt-email" });
     expect(user.update).toHaveBeenCalledWith({ google_id: "sub-2" });
+  });
+
+  it("authenticateWithGoogle recusa religar pelo e-mail uma conta já vinculada a outro Google", async () => {
+    const user = buildModelInstance({ ...buildPublicUser("d@d.com", "cliente", "sub-antigo"), id_usuario: 4, senha: "hash" });
+    jwtMock.verify.mockReturnValueOnce({ provider: "google" } as never);
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "ga" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "sub-novo", name: "D", email: "d@d.com", email_verified: true }), { status: 200 }));
+    usuariosModel.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(user as never as Usuarios);
+    await expect(AuthService.authenticateWithGoogle("code", "state")).rejects.toThrow("Este e-mail já está vinculado a outra conta Google.");
+    expect(user.update).not.toHaveBeenCalled();
   });
 
   it("authenticateWithGoogle cria usuário quando não encontra conta", async () => {

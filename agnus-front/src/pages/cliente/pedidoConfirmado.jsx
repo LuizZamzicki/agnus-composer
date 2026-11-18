@@ -26,21 +26,39 @@ function PedidoConfirmado() {
     }, [id]);
 
     const assunto = encodeURIComponent(`Pedido nº ${id}`);
+    const pago = pedido && ["pago", "enviado", "entregue"].includes(pedido.status);
+    const aguardando = pedido?.status === "aguardando_pagamento";
 
     return (
         <div className="fin-page fin-confirmado">
             <span className="fin-selo"><Check size={32} strokeWidth={1.5} aria-hidden="true" /></span>
 
-            <h1 data-cy="pedido-confirmado">Pedido nº&nbsp;{id} recebido</h1>
+            <h1 data-cy="pedido-confirmado">
+                {pago ? <>Pagamento confirmado: pedido nº&nbsp;{id}</> : <>Pedido nº&nbsp;{id} recebido</>}
+            </h1>
 
             {pedido && <p className="fin-valor">Total das peças: {formatarReal(pedido.valor_total)}</p>}
 
             <div className="fin-proximo">
-                <h2>Falta só combinar o pagamento</h2>
-                <p>
-                    O pagamento pelo site ainda não está disponível. Fale com a gente informando
-                    o número do pedido para combinarmos o pagamento e o frete.
-                </p>
+                {pago ? (
+                    <>
+                        <h2 data-cy="pedido-pago">Obrigado pela compra!</h2>
+                        <p>
+                            Recebemos o seu pagamento. Agora separamos as peças e avisamos aqui no site
+                            quando o pedido for enviado. Dúvidas? Fale com a gente.
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <h2>Falta só o pagamento</h2>
+                        <p>Pague com PIX ou cartão pelo Mercado Pago. Se preferir, fale com a gente informando o número do pedido.</p>
+                        {aguardando && (
+                            <Link to={`/pagamento/${id}`} className="btn-agnus fin-confirmar pag-pagar" data-cy="pagar-agora">
+                                Pagar agora
+                            </Link>
+                        )}
+                    </>
+                )}
 
                 <div className="fin-contatos">
                     <a className="btn-agnus" href="https://www.instagram.com/agnus.fit/" target="_blank" rel="noreferrer">

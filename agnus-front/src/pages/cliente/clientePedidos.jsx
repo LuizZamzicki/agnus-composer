@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
+import RastreioPedido, { urlRastreioSegura } from "../../components/rastreioPedido";
+import DevolucaoPedido from "../../components/devolucaoPedido";
 
 const STATUS_PEDIDO = {
     aguardando_calculo_frete: "Calculando o frete",
@@ -22,6 +24,8 @@ function ClientePedidos() {
     const [openPedido, setOpenPedido] = useState(null);
     const [minhasAvaliacoes, setMinhasAvaliacoes] = useState({});
     const [itemAvaliando, setItemAvaliando] = useState(null);
+    const [rastreioAberto, setRastreioAberto] = useState(null);
+    const [devolucoes, setDevolucoes] = useState([]);
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -43,6 +47,7 @@ function ClientePedidos() {
         if (loading || !pedidoDaNotificacao) return;
 
         setOpenPedido(pedidoDaNotificacao);
+        setRastreioAberto(pedidoDaNotificacao);
         document.getElementById(`pedido-${pedidoDaNotificacao}`)?.scrollIntoView({ block: "start" });
     }, [pedidoDaNotificacao, location.key, loading]);
 
@@ -57,6 +62,17 @@ function ClientePedidos() {
             setMinhasAvaliacoes((atuais) => ({ ...atuais, [idProduto]: minha || null }));
         } catch {
             setMinhasAvaliacoes((atuais) => ({ ...atuais, [idProduto]: null }));
+        }
+    }
+
+    // Devoluções do cliente (todas de uma vez); cada pedido mostra as suas.
+    async function carregarDevolucoes() {
+        try {
+            const res = await fetch(apiUrl("devolucoes/me"), { headers: { Authorization: `Bearer ${token}` } });
+            const lista = res.ok ? await res.json() : [];
+            setDevolucoes(Array.isArray(lista) ? lista : []);
+        } catch {
+            setDevolucoes([]);
         }
     }
 
@@ -117,6 +133,7 @@ function ClientePedidos() {
                 );
 
                 setPedidos(pedidosComItens);
+                await carregarDevolucoes();
 
                 const produtosEntregues = new Set(
                     pedidosComItens
@@ -195,6 +212,24 @@ function ClientePedidos() {
                                 {formatarReal(pedido.valor_total)}
                             </strong>
 
+                            {pedido.status === "aguardando_pagamento" && (
+                                <Link to={`/pagamento/${pedido.id_pedido}`} className="pedido-pagar" data-cy="pagar-pedido">
+                                    Pagar
+                                </Link>
+                            )}
+
+                            {urlRastreioSegura(pedido.url_rastreio) && (
+                                <button
+                                    type="button"
+                                    data-cy="acompanhar-entrega"
+                                    className="pedido-ver-pecas"
+                                    aria-expanded={rastreioAberto === pedido.id_pedido}
+                                    onClick={() => setRastreioAberto(rastreioAberto === pedido.id_pedido ? null : pedido.id_pedido)}
+                                >
+                                    {rastreioAberto === pedido.id_pedido ? "Ocultar entrega" : "Acompanhar entrega"}
+                                </button>
+                            )}
+
                             <button
                                 type="button"
                                 data-cy="ver-pecas"
@@ -205,6 +240,16 @@ function ClientePedidos() {
                                 {openPedido === pedido.id_pedido ? "Ocultar peças" : `Ver peças (${pedido.itens.length})`}
                             </button>
                         </div>
+
+                        {rastreioAberto === pedido.id_pedido && (
+                            <RastreioPedido idPedido={pedido.id_pedido} url={pedido.url_rastreio} />
+                        )}
+
+                        <DevolucaoPedido
+                            pedido={pedido}
+                            devolucoes={devolucoes.filter((d) => d.id_pedido === pedido.id_pedido)}
+                            onAtualizar={carregarDevolucoes}
+                        />
 
                         {openPedido === pedido.id_pedido && (
                             <div data-cy="pedido-itens" className="pedido-itens">

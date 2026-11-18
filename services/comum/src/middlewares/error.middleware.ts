@@ -30,6 +30,16 @@ export const errorHandler = (
     return res.status(400).json({ message: "Corpo da requisição não é um JSON válido." });
   }
 
+  // Demais erros do body-parser (corpo grande demais, gzip, charset): são do cliente, não 500.
+  const erroDoCorpo = error as Error & { type?: string; status?: number; expose?: boolean };
+  if (erroDoCorpo.type && erroDoCorpo.expose && erroDoCorpo.status && erroDoCorpo.status < 500) {
+    const mensagens: Record<number, string> = {
+      413: "Corpo da requisição grande demais.",
+      415: "Formato do corpo da requisição não suportado.",
+    };
+    return res.status(erroDoCorpo.status).json({ message: mensagens[erroDoCorpo.status] ?? "Requisição inválida." });
+  }
+
   if (error.name === "SequelizeUniqueConstraintError") {
     return res.status(409).json({ message: "Este registro já existe no sistema." });
   }

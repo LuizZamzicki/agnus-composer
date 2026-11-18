@@ -20,6 +20,8 @@ export type ProdutoBody = {
   descricao?: string | null;
   preco_custo?: number | string | null;
   preco_base?: number | string | null;
+  preco_original?: number | string | null;
+  tabela_medidas?: unknown;
   ativo?: boolean | null;
   grades?: ProdutoGradeInput[] | null;
   cores?: ProdutoCorInput[] | null;
@@ -65,6 +67,7 @@ export type CatalogQueryRow = {
   id_produto: number;
   nome: string;
   preco_base: number;
+  preco_original?: number | null;
   ativo: boolean;
   id_categoria: number | null;
   categoria_nome?: string | null;
@@ -78,6 +81,7 @@ export type SearchCatalogRow = {
   nome: string;
   descricao?: string | null;
   preco_base: number;
+  preco_original?: number | null;
   ativo: boolean;
   categoria_nome?: string | null;
   quantidade_vendida?: number | null;

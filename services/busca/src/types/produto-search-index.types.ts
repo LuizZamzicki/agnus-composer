@@ -5,6 +5,7 @@ export type ProdutoSearchDocument = {
   nome: string;
   descricao: string;
   preco_base: number;
+  preco_original: number | null;
   ativo: boolean;
   categoria_nome: string | null;
   quantidade_vendida: number;
@@ -30,6 +31,7 @@ export type ProdutoSearchQueryRow = {
   nome: string | null;
   descricao: string | null;
   preco_base: number | string | null;
+  preco_original?: number | string | null;
   ativo: boolean | number | null;
   categoria_nome: string | null;
   quantidade_vendida: number | string | null;

@@ -4,6 +4,12 @@ describe('Login', () => {
         cy.visit('/login');
     });
 
+    it('mostra só mensagens conhecidas vindas de ?error=', () => {
+        cy.visit('/login?error=' + encodeURIComponent('Sua conta foi bloqueada, ligue para 0800'));
+        cy.contains('Não foi possível entrar com o Google. Tente novamente.').should('exist');
+        cy.contains('ligue para 0800').should('not.exist');
+    });
+
     it('não deve enviar login vazio', () => {
 
         cy.visit('/login');

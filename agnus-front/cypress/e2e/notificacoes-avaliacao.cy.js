@@ -59,6 +59,8 @@ describe('Notificações, avaliação no pedido e sacola', () => {
         cy.location('search').should('eq', '?pedido=12');
         cy.get('[data-cy="item-produto"]').should('contain', 'Camiseta Ecce Agnus');
         cy.get('[data-cy="notificacoes-contador"]').should('not.exist');
+        // A tela rola até o pedido aberto; volta ao topo para o sino não ficar coberto.
+        cy.scrollTo('top');
         cy.get('[data-cy="abrir-notificacoes"]').click();
         cy.get('[data-cy="notificacao"]').should('not.exist');
         cy.get('[data-cy="painel-notificacoes"]').should('contain', 'Nenhuma notificação no momento');

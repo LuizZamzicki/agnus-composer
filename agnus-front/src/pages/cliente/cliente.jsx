@@ -1,7 +1,7 @@
 // import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 // import { useState } from "react";
-import { FiUser, FiPackage, FiMapPin, FiPhone, FiLock, FiLogOut } from "react-icons/fi";
+import { FiUser, FiPackage, FiMapPin, FiPhone, FiLock, FiLogOut, FiShare2 } from "react-icons/fi";
 
 import "../../css/cliente.css";
 
@@ -79,6 +79,16 @@ function Cliente() {
                     >
                         <FiPhone className="menu-icon" />
                         Contatos
+                    </button>
+
+                    <button
+                        type="button"
+                        data-cy="menu-afiliados"
+                        onClick={() => navigate("/cliente/afiliados")}
+                        className={`menu-item ${isActive("/cliente/afiliados") ? "active" : ""}`}
+                    >
+                        <FiShare2 className="menu-icon" />
+                        Seja afiliado
                     </button>
 
                     {!isGoogleUser && (

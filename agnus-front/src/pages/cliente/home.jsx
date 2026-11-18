@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
+import PrecoProduto from "../../components/precoProduto";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -148,8 +149,6 @@ function Home() {
         );
     }
 
-    const formatarPreco = (valor) =>
-        `R$ ${Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
     function renderCard(prod, dataCy, indice = null) {
         const imgPadrao = prod.imagens[0] || hero;
@@ -185,7 +184,7 @@ function Home() {
                 <div className="product-info">
                     <h3>{prod.nome}</h3>
                     {renderStars(avaliacoes[prod.id_produto])}
-                    <span className="product-price">{formatarPreco(prod.preco_base)}</span>
+                    <PrecoProduto className="product-price" preco={prod.preco_base} precoOriginal={prod.preco_original} />
                 </div>
             </Link>
         );

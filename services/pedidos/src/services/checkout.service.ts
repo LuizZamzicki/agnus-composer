@@ -6,6 +6,7 @@ import logger from "@agnus/comum/utils/logger";
 import { calculateSubtotal, consultarSelecoes, normalizeItemQuantity } from "@agnus/comum/utils/itemDetails";
 import PedidoItens from "../models/PedidoItens";
 import Pedidos from "../models/Pedidos";
+import AfiliacaoService from "./afiliacao.service";
 
 export class CheckoutError extends Error {
   constructor(readonly status: number, message: string) {
@@ -83,7 +84,8 @@ class CheckoutService {
     }
   }
 
-  static async finalizar(userId: number, addressId: number) {
+  // refAfiliado: cookie do último clique em link de afiliado (validado depois pelo serviço afiliados).
+  static async finalizar(userId: number, addressId: number, refAfiliado: string | null = null) {
     await CheckoutService.ensureOwnAddress(userId, addressId);
 
     const { data: itens } = await chamarServico<ItemDaSacola[]>("carrinho", `/usuarios/${userId}/itens`);
@@ -101,6 +103,7 @@ class CheckoutService {
           status: "aguardando_pagamento",
           valor_total: roundMoney(itensPedido.reduce((total, item) => total + item.subtotal, 0)),
           valor_frete: 0,
+          ref_afiliado: refAfiliado,
         },
         { transaction },
       );
@@ -120,6 +123,7 @@ class CheckoutService {
       status: pedido.status,
       valor_total: pedido.valor_total,
     });
+    await AfiliacaoService.avisarCompra(pedido);
 
     return pedido;
   }

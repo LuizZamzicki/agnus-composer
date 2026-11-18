@@ -312,6 +312,43 @@ paths:
       responses:
         "200": { description: Grades }
 
+  /products/{id}/skus:
+    get:
+      summary: SKUs da YouDraw por cor e tamanho do produto (equipe)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "200": { description: "Combinações cor × tamanho com o SKU (ou null), `faltando` e `integracao_ativa`" }
+    put:
+      summary: Salva os SKUs (combinação precisa existir; SKU sem espaço e sem repetir)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skus:
+                  type: array
+                  items: { type: object, properties: { cor: { type: string }, tamanho: { type: string }, sku: { type: string, nullable: true } } }
+      responses:
+        "200": { description: SKUs salvos }
+        "400": { description: Combinação inexistente, SKU inválido ou repetido }
+  /products/{id}/skus/importar:
+    post:
+      summary: Busca o produto na YouDraw e liga as variantes por cor e tamanho
+      description: Acha pelo nome; se houver mais de um candidato devolve `precisa_escolher` e `candidatos` (reenvie com `id_produto_fornecedor`).
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { id_produto_fornecedor: { type: string } } }
+      responses:
+        "200": { description: "`associados`, `sem_par` ou `precisa_escolher` + `candidatos`" }
+        "409": { description: Integração desligada (sem YOUDRAW_API_KEY) }
 components:
   securitySchemes:
     bearerAuth:
@@ -444,7 +481,8 @@ components:
         nome: { type: string, example: Camiseta Dry Fit Agnus Dei }
         descricao: { type: string, nullable: true }
         preco_custo: { type: number, nullable: true }
-        preco_base: { type: number, example: 89.9 }
+        preco_base: { type: number, example: 89.9, description: Preço cobrado ("por") }
+        preco_original: { type: number, nullable: true, example: 129.9, description: Preço "De" da promoção; null = sem promoção }
         margem_lucro: { type: number, nullable: true }
         ativo: { type: boolean }
     ProdutoPage:
@@ -461,6 +499,33 @@ components:
         descricao: { type: string }
         preco_custo: { type: number }
         preco_base: { type: number }
+        preco_original: { type: number, nullable: true, description: Preço "De" da promoção (maior que preco_base) ou null }
+        tabela_medidas:
+          type: object
+          nullable: true
+          description: |
+            Guia "Ver medidas" da página do produto (medidas da peça esticada, em cm). null remove.
+            modelo define o desenho: camiseta, babylook, oversized, regata ou short.
+          properties:
+            modelo: { type: string, enum: [camiseta, babylook, oversized, regata, short] }
+            colunas:
+              type: array
+              maxItems: 6
+              items:
+                type: object
+                properties:
+                  chave: { type: string, example: largura }
+                  rotulo: { type: string, example: Largura }
+                  descricao: { type: string, example: "De uma axila à outra, com a peça esticada." }
+            linhas:
+              type: array
+              maxItems: 12
+              items:
+                type: object
+                properties:
+                  tamanho: { type: string, example: M }
+                  valores: { type: object, additionalProperties: { type: number }, example: { largura: 53, comprimento: 72, manga: 21 } }
+            observacao: { type: string, nullable: true }
         ativo: { type: boolean }
         grades:
           type: array

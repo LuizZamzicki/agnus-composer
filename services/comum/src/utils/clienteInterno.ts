@@ -2,7 +2,7 @@ import { HttpError } from "../types/http_error";
 import logger, { getCurrentRequestId } from "./logger";
 import { incrementMetric } from "./metrics";
 
-export type NomeServico = "identidade" | "catalogo" | "busca" | "avaliacoes" | "carrinho" | "pedidos" | "notificacoes";
+export type NomeServico = "identidade" | "catalogo" | "busca" | "avaliacoes" | "carrinho" | "pedidos" | "notificacoes" | "loja" | "afiliados";
 
 type OpcoesChamada = {
   method?: "GET" | "POST";
@@ -35,6 +35,16 @@ const urlBase = (servico: NomeServico) =>
 const indisponivel = (servico: NomeServico) =>
   new HttpError(503, `O serviço de ${servico} está indisponível no momento. Tente novamente em instantes.`);
 
+// Erro do serviço chamado que não diz nada sobre a saúde dele (ex.: 500 causado pelo dado que um
+// cliente mandou). Não conta para o circuito: senão um único usuário derrubaria a rota para todos.
+class FalhaDaRequisicao extends Error {}
+
+// Só estes status indicam serviço fora do ar ou sobrecarregado.
+const STATUS_DE_INDISPONIBILIDADE = new Set([502, 503, 504]);
+
+const ehTimeout = (error: unknown) =>
+  error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+
 const registrarFalha = (servico: NomeServico, caminho: string, motivo: string) => {
   const estado = estadoDo(servico);
 
@@ -63,7 +73,9 @@ const tentar = async <T>(servico: NomeServico, caminho: string, opcoes: OpcoesCh
   });
 
   if (resposta.status >= 500) {
-    throw new Error(`status ${resposta.status}`);
+    throw STATUS_DE_INDISPONIBILIDADE.has(resposta.status)
+      ? new Error(`status ${resposta.status}`)
+      : new FalhaDaRequisicao(`status ${resposta.status}`);
   }
 
   const texto = await resposta.text();
@@ -96,9 +108,19 @@ export const chamarServico = async <T>(
     } catch (error) {
       ultimoErro = error instanceof Error ? error.message : String(error);
 
-      if (tentativa < tentativas) {
-        await new Promise((resolve) => setTimeout(resolve, ESPERA_RETRY_MS));
+      if (error instanceof FalhaDaRequisicao) {
+        logger.warn("interno.erro_da_requisicao", { servico, caminho, motivo: ultimoErro });
+        incrementMetric("internal_call_failures_total");
+        throw indisponivel(servico);
       }
+
+      // Repetir depois de um timeout dobraria o trabalho caro que causou o timeout.
+      if (tentativa < tentativas && !ehTimeout(error)) {
+        await new Promise((resolve) => setTimeout(resolve, ESPERA_RETRY_MS));
+        continue;
+      }
+
+      break;
     }
   }
 

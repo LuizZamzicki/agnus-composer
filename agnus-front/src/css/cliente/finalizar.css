@@ -236,3 +236,66 @@
 @media (max-width: 480px) {
     .fin-form { grid-template-columns: 1fr; }
 }
+
+/* Pagamento (Mercado Pago) */
+.pag-page { max-width: 640px; }
+.pag-page > h1 { margin-bottom: 4px; }
+.pag-page > .fin-valor { margin-bottom: 24px; }
+.pag-page #pagamento-mercado-pago { min-height: 320px; }
+
+.pag-pix {
+    padding: 28px;
+    text-align: center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.pag-pix h2 { margin: 0 0 10px; font: 400 26px/1.2 var(--f-display); }
+.pag-pix > p { margin: 0 0 20px; color: var(--ink-2); }
+
+.pag-qr {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 20px;
+    background: #fff;
+    border-radius: var(--radius);
+}
+
+.pag-copia {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.pag-copia span { color: var(--muted); font-size: 15px; }
+
+.pag-copia textarea {
+    width: 100%;
+    padding: 12px;
+    font: 14px/1.4 ui-monospace, monospace;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    resize: none;
+    word-break: break-all;
+}
+
+.pag-seguro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.pag-pagar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    text-decoration: none;
+}

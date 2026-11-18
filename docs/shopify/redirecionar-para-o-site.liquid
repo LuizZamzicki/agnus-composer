@@ -1,0 +1,22 @@
+{% comment %}
+  Loja headless da Agnus: quem chega à loja online do Shopify (o botão "Voltar à loja" do checkout,
+  links antigos, busca do Google) é levado para o site da Agnus, na página equivalente.
+
+  Onde colar: admin do Shopify > Loja virtual > Temas > (tema publicado) > ⋯ > Editar código >
+  layout/theme.liquid, logo depois da tag <head>.
+
+  O checkout não usa este arquivo, então o pagamento continua no Shopify normalmente.
+  No editor de temas (design_mode) o redirecionamento fica desligado, para o tema continuar editável.
+
+  Troque SITE_AGNUS pelo endereço público quando o site sair do localhost (ex.: o domínio do ngrok).
+{% endcomment %}
+{%- unless request.design_mode -%}
+  <script>
+    (function () {
+      var SITE_AGNUS = "https://localhost";
+      // "/pt/products/regata" -> "/products/regata": o site não usa o prefixo de idioma do Shopify.
+      var caminho = window.location.pathname.replace(/^\/[a-z]{2}(-[a-z]{2})?(?=\/|$)/i, "") || "/";
+      window.location.replace(SITE_AGNUS + caminho + window.location.search);
+    })();
+  </script>
+{%- endunless -%}

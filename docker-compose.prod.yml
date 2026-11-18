@@ -1,23 +1,48 @@
 # Producao: usa as imagens versionadas do GHCR, sem build local.
 # Uso: AGNUS_VERSION=v3.5.0 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# O CD sobe cada imagem pelo digest exato que o build produziu (REF_<IMAGEM>=@sha256:...,
+# gravado em /opt/agnus/.release). Sem o REF, vale a tag da versao.
+
+# Desliga em todos os servicos os atalhos de desenvolvimento (ex.: retorno do login Google para
+# Expo e localhost). Vale mesmo que o services/.env do servidor ainda diga development.
+x-producao: &producao
+  environment:
+    NODE_ENV: production
+
 services:
   identidade:
-    image: ghcr.io/luizzamzicki/agnus-identidade:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-identidade${REF_IDENTIDADE:-:${AGNUS_VERSION}}
   catalogo:
-    image: ghcr.io/luizzamzicki/agnus-catalogo:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-catalogo${REF_CATALOGO:-:${AGNUS_VERSION}}
   busca:
-    image: ghcr.io/luizzamzicki/agnus-busca:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-busca${REF_BUSCA:-:${AGNUS_VERSION}}
   avaliacoes:
-    image: ghcr.io/luizzamzicki/agnus-avaliacoes:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-avaliacoes${REF_AVALIACOES:-:${AGNUS_VERSION}}
   carrinho:
-    image: ghcr.io/luizzamzicki/agnus-carrinho:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-carrinho${REF_CARRINHO:-:${AGNUS_VERSION}}
   pedidos:
-    image: ghcr.io/luizzamzicki/agnus-pedidos:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-pedidos${REF_PEDIDOS:-:${AGNUS_VERSION}}
   notificacoes:
-    image: ghcr.io/luizzamzicki/agnus-notificacoes:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-notificacoes${REF_NOTIFICACOES:-:${AGNUS_VERSION}}
+  afiliados:
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-afiliados${REF_AFILIADOS:-:${AGNUS_VERSION}}
+  # Shopify headless DESATIVADO (ver services/loja/README.md).
+  # loja:
+  #   <<: *producao
+  #   image: ghcr.io/luizzamzicki/agnus-loja${REF_LOJA:-:${AGNUS_VERSION}}
   admin:
-    image: ghcr.io/luizzamzicki/agnus-admin:${AGNUS_VERSION}
+    <<: *producao
+    image: ghcr.io/luizzamzicki/agnus-admin${REF_ADMIN:-:${AGNUS_VERSION}}
   frontend:
-    image: ghcr.io/luizzamzicki/agnus-frontend:${AGNUS_VERSION}
+    image: ghcr.io/luizzamzicki/agnus-frontend${REF_FRONTEND:-:${AGNUS_VERSION}}
   admin-front:
-    image: ghcr.io/luizzamzicki/agnus-admin-frontend:${AGNUS_VERSION}
+    image: ghcr.io/luizzamzicki/agnus-admin-frontend${REF_ADMIN_FRONTEND:-:${AGNUS_VERSION}}

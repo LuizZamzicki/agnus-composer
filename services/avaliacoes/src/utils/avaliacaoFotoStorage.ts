@@ -40,7 +40,12 @@ const getUploadExtension = (upload: AvaliacaoFotoUpload) => {
   return getOriginalExtension(upload.nome_original) ?? getMimeExtension(upload.tipo_arquivo);
 };
 
-const getBase64Content = (base64Value: string) => {
+const getBase64Content = (base64Value: unknown) => {
+  // O corpo JSON não tem esquema: um valor que não é texto vira foto inválida, não exceção.
+  if (typeof base64Value !== "string") {
+    return { mimeType: null, content: "" };
+  }
+
   const match = base64Value.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
 
   return match
@@ -54,7 +59,7 @@ const buildImageBuffer = (content: string) => {
 };
 
 const parseUploadImage = (upload: AvaliacaoFotoUpload): ParsedBinaryImage | null => {
-  if (upload.tamanho_bytes > MAX_FILE_SIZE_BYTES) {
+  if (!upload || typeof upload !== "object" || upload.tamanho_bytes > MAX_FILE_SIZE_BYTES) {
     return null;
   }
 
@@ -106,17 +111,20 @@ const persistImage = async (parsedImage: ParsedBinaryImage): Promise<string | nu
   return `avaliacao_fotos/${fileName}`;
 };
 
-// So apaga arquivo gerado pelo proprio upload: caminho_url tambem aceita texto livre.
+// Só caminhos no formato que o próprio upload gera: nunca URL externa nem texto livre.
+const CAMINHO_GERADO = /^avaliacao_fotos\/([\w-]+\.(?:jpg|png|webp|gif|bmp))$/;
+
 export const deleteAvaliacaoFotoFile = async (photoPath: string) => {
-  const match = /^avaliacao_fotos\/([\w-]+\.[a-z]+)$/.exec(photoPath);
+  const match = CAMINHO_GERADO.exec(photoPath);
 
   if (match) {
     await fs.rm(path.join(PHOTO_DIR, match[1]), { force: true });
   }
 };
 
-export const normalizeFotoPath = (value: string | undefined) => {
-  return value?.trim() || "";
+export const normalizeFotoPath = (value: unknown) => {
+  const caminho = typeof value === "string" ? value.trim() : "";
+  return CAMINHO_GERADO.test(caminho) ? caminho : "";
 };
 
 export const saveAvaliacaoFotoUpload = async (upload: AvaliacaoFotoUpload): Promise<string | null> => {
