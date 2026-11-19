@@ -177,53 +177,6 @@
     font-style: italic;
 }
 
-/* Feita sob encomenda: fecho da página, na cor do tempo. */
-.sob-encomenda {
-    margin-top: clamp(72px, 9vw, 120px);
-    background: var(--lit);
-    color: var(--on-lit);
-}
-
-.sob-encomenda-inner {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: clamp(64px, 8vw, 104px) clamp(16px, 4vw, 48px);
-    text-align: center;
-}
-
-.sob-encomenda h2 {
-    margin: 0 0 20px;
-    font: 400 clamp(36px, 4.5vw, 56px)/1.05 var(--f-display);
-    letter-spacing: 0.04em;
-}
-
-.sob-encomenda p {
-    margin: 0 auto 12px;
-    font-size: 20px;
-    max-width: 52ch;
-}
-
-.sob-encomenda-latin {
-    font: 15px var(--f-caps) !important;
-    letter-spacing: var(--track-caps);
-    opacity: 0.85;
-    margin-bottom: 32px !important;
-}
-
-.sob-encomenda-latin em { font-style: normal; }
-
-.sob-encomenda .btn-agnus {
-    background: var(--paper);
-    color: var(--ink);
-    border-color: var(--paper);
-}
-
-.sob-encomenda .btn-agnus:hover {
-    background: transparent;
-    color: var(--on-lit);
-    border-color: var(--on-lit);
-}
-
 @media (max-width: 860px) {
     .hero { grid-template-columns: 1fr; }
     .hero-arch { max-width: 420px; order: -1; }

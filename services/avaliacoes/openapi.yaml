@@ -61,6 +61,12 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "409": { $ref: "#/components/responses/Conflict" }
+  /product-reviews/destaques:
+    get:
+      summary: Depoimentos da página inicial
+      description: Até 8 avaliações com nota 4 ou 5 e comentário, de produtos ativos. Só quem recebeu a peça avalia; mostra apenas o primeiro nome. Cache de 5 minutos.
+      responses:
+        "200": { description: "`data`: id_avaliacao_produto, id_produto, produto, nome, nota, titulo, comentario, foto" }
   /product-reviews/{id_produto}:
     get:
       operationId: getProductReviewsPorIdProduto

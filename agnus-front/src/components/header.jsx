@@ -8,6 +8,7 @@ import escrita from "../img/marca/escrita.png";
 import escritaClara from "../img/marca/escrita-clara.png";
 import simbolo from "../img/marca/simbolo.png";
 import Notificacoes from "./notificacoes";
+import AvisosLoja from "./avisosLoja";
 import { tempoLiturgico } from "../utils/liturgia";
 import { alternarTema, temaAtual } from "../utils/tema";
 import { EVENTO_SACOLA, avisarSacola, contarPecas, sessaoDeAdmin } from "../utils/sacola";
@@ -175,6 +176,7 @@ function Header() {
             <div className="season-strip" data-tempo={tempo.chave}>
                 <span className="season-dot" aria-hidden="true" />
                 <span>{tempo.nome}</span>
+                <AvisosLoja />
             </div>
         </header>
     );

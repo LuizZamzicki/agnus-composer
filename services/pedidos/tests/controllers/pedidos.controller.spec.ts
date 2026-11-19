@@ -14,6 +14,7 @@ import {
 import CheckoutService, { CheckoutError } from "../../src/services/checkout.service";
 import AvisoPedidoService from "../../src/services/avisoPedido.service";
 import { buildModelInstance, mockRequest, mockResponse } from "../helpers/http";
+import { HttpError } from "@agnus/comum/types/http_error";
 
 jest.mock("../../src/services/checkout.service", () => {
   class CheckoutError extends Error {
@@ -37,6 +38,10 @@ jest.mock("../../src/models/Pedidos", () => ({
   default: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
 }));
 jest.mock("@agnus/comum/utils/referencias", () => ({ __esModule: true, usuarioExiste: jest.fn() }));
+jest.mock("../../src/notaFiscal/notaFiscal.service", () => ({
+  __esModule: true,
+  default: { resumos: jest.fn(async () => new Map([[1, { chave: "4".repeat(44), numero: "123" }]])) },
+}));
 jest.mock("@agnus/comum/utils/clienteInterno", () => ({ __esModule: true, consultarOuNull: jest.fn() }));
 jest.mock("@agnus/comum/utils/itemDetails", () => ({
   consultarSelecao: jest.fn(),
@@ -112,7 +117,11 @@ describe("PedidosController", () => {
     expect(response.status).toHaveBeenCalledWith(200);
     // Sem número da YouDraw, o rastreio busca pelo e-mail do dono do pedido.
     expect(response.send).toHaveBeenCalledWith([
-      expect.objectContaining({ id_pedido: 1, url_rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=c%40a.com" }),
+      expect.objectContaining({
+        id_pedido: 1,
+        url_rastreio: "https://app.youdraw.com.br/rastrear/0f1e2d3c-4b5a-4697-8877-665544332211?pedido=c%40a.com",
+        nota_fiscal: { chave: "4".repeat(44), numero: "123" },
+      }),
     ]);
     delete process.env.YOUDRAW_LOJA_TOKEN;
   });
@@ -348,7 +357,7 @@ describe("PedidosController", () => {
     expect(pedido.update).not.toHaveBeenCalled();
   });
 
-  it("update ignora valor_total do corpo e recalcula com o novo frete", async () => {
+  it("update ignora valor_total do corpo; o total são as peças e o frete fica à parte", async () => {
     const response = mockResponse(), pedido = buildModelInstance({ id_pedido: 1, id_usuario: 1, id_usuario_endereco: 1, status: "aguardando_calculo_frete", valor_total: 30, valor_frete: 0 });
     pedidosModel.findByPk.mockResolvedValueOnce(pedido);
     enderecosModel.findByPk.mockResolvedValueOnce(buildModelInstance({ id_usuario_endereco: 1, id_usuario: 1 }));
@@ -357,7 +366,7 @@ describe("PedidosController", () => {
       mockRequest({ params: { id: "1" }, body: { status: "aguardando_pagamento", valor_frete: 12.3, valor_total: 1 } }),
       response,
     );
-    expect(pedido.update).toHaveBeenLastCalledWith({ valor_total: 42.8 });
+    expect(pedido.update).toHaveBeenLastCalledWith({ valor_total: 30.5 });
     expect(response.status).toHaveBeenCalledWith(200);
   });
 
@@ -631,8 +640,20 @@ describe("PedidosController.checkout", () => {
       res as never,
     );
 
-    expect(finalizar).toHaveBeenCalledWith(1, 3, null);
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, null);
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it("repassa o cupom digitado e devolve o erro do cupom", async () => {
+    finalizar.mockRejectedValue(new HttpError(409, "Este cupom já foi usado."));
+    const res = mockResponse();
+    res.locals = authLocals;
+
+    await PedidosController.checkout(mockRequest({ body: { id_usuario_endereco: 3, cupom: " agnus10-abc " } }) as never, res as never);
+
+    expect(finalizar).toHaveBeenCalledWith(1, 3, null, " agnus10-abc ");
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ message: "Este cupom já foi usado." });
   });
 
   it("exige um endereço", async () => {

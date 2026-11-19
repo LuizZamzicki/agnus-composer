@@ -37,7 +37,7 @@ function PedidoConfirmado() {
                 {pago ? <>Pagamento confirmado: pedido nº&nbsp;{id}</> : <>Pedido nº&nbsp;{id} recebido</>}
             </h1>
 
-            {pedido && <p className="fin-valor">Total das peças: {formatarReal(pedido.valor_total)}</p>}
+            {pedido && <p className="fin-valor">Total: {formatarReal(Number(pedido.valor_total || 0) + Number(pedido.valor_frete || 0))}</p>}
 
             <div className="fin-proximo">
                 {pago ? (

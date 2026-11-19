@@ -27,7 +27,7 @@ export default function TermosAfiliados() {
 
                 <h2>3. Comissão</h2>
                 <ul>
-                    <li>A comissão é um percentual sobre o valor das peças, <strong>sem o frete</strong>, e aparece no painel antes de você divulgar.</li>
+                    <li>A comissão é um percentual sobre o valor das peças e aparece no painel antes de você divulgar.</li>
                     <li>A taxa pode variar por produto ou categoria, e a Agnus pode alterá-la; a mudança vale para compras feitas depois dela.</li>
                     <li>
                         A comissão fica <strong>pendente</strong> até o pedido ser entregue e passar o prazo de arrependimento de 7 dias

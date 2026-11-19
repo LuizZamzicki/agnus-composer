@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import "../../css/cliente/carrinho.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
+import { useTituloPagina } from "../../utils/tituloPagina";
+import CompleteOLook from "../../components/completeOLook";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -32,6 +34,7 @@ function formatarItem(item) {
 }
 
 function Carrinho() {
+    useTituloPagina("Sacola");
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
@@ -47,8 +50,9 @@ function Carrinho() {
         toastTimeout = setTimeout(() => setToast(null), 3000);
     }
 
-    const carregarCarrinho = useCallback(async () => {
-        setLoading(true);
+    // silencioso: recarrega sem trocar a tela pelo esqueleto (peça adicionada pelo "Complete o look").
+    const carregarCarrinho = useCallback(async ({ silencioso = false } = {}) => {
+        if (!silencioso) setLoading(true);
 
         try {
             if (isAdmin) {
@@ -290,10 +294,6 @@ function Carrinho() {
                         <span>Peças</span>
                         <span>{formatarReal(total)}</span>
                     </div>
-                    <div>
-                        <span>Frete</span>
-                        <span className="cart-frete">combinado depois</span>
-                    </div>
                     <hr />
                     <div>
                         <strong>Total</strong>
@@ -305,8 +305,11 @@ function Carrinho() {
                     {!idUsuario && (
                         <p className="cart-hint">Na próxima etapa, você entra na sua conta ou cria uma. Sua sacola fica guardada.</p>
                     )}
+                    <p className="cart-hint">Tem cupom de primeira compra? Use na próxima etapa.</p>
                 </div>
             </div>
+
+            <CompleteOLook idsNaSacola={cart.map((item) => item.id_produto).filter(Boolean)} />
         </div>
     );
 }

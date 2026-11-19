@@ -15,6 +15,10 @@ servers:
   - url: http://localhost:3000
     description: Backend direto (desenvolvimento)
 tags:
+  - name: Ofertas
+    description: Ofertas por e-mail e cupom de primeira compra
+  - name: Nota fiscal
+    description: NF-e do pedido (DANFE em PDF, XML e chave de acesso)
   - name: Observabilidade
   - name: Pedidos
   - name: Itens de pedido
@@ -92,13 +96,19 @@ paths:
               properties:
                 id_usuario_endereco:
                   type: integer
+                cupom:
+                  type: string
+                  description: Cupom de primeira compra (AGNUS10-XXXXXX). Validado no servidor; da 10% nas pecas.
       responses:
         "201":
-          description: Pedido criado
+          description: >-
+            Pedido criado. valor_total sao as pecas (ja com desconto do cupom); a loja nao cobra frete. Com cupom,
+            grava cupom_codigo e valor_desconto.
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
-          description: Uma peca da sacola nao esta mais disponivel
+          description: >-
+            Uma peca da sacola nao esta mais disponivel, ou o cupom ja foi usado / nao e mais primeira compra
   /orders/me:
     get:
       operationId: getOrdersMe
@@ -147,7 +157,7 @@ paths:
       description: |
         Transicoes permitidas: `aguardando_calculo_frete -> aguardando_pagamento -> pago -> enviado -> entregue`;
         `cancelado` a partir de qualquer status anterior a `enviado`. Qualquer outra transicao retorna 409.
-        Alterar `valor_frete` recalcula `valor_total`; um `valor_total` enviado e ignorado.
+        `valor_total` (pecas - desconto) e recalculado no servidor; um `valor_total` enviado e ignorado.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -461,6 +471,178 @@ paths:
         "200": { description: "Resultado (`fornecedor` com a situação depois do envio)" }
         "404": { description: Pedido não encontrado }
         "409": { description: Pedido ainda não pago }
+  /ofertas/regras:
+    get:
+      operationId: getOfertasRegras
+      tags:
+        - Ofertas
+      summary: Regra comercial mostrada no site (desconto da primeira compra)
+      responses:
+        "200":
+          description: Regras
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  desconto_primeira_compra: { type: number, example: 10 }
+  /ofertas:
+    post:
+      operationId: postOfertas
+      tags:
+        - Ofertas
+      summary: Inscreve um e-mail nas ofertas e devolve o cupom de 10% na primeira compra
+      description: >-
+        Publico, limitado no gateway (6 por minuto por IP). O mesmo e-mail devolve o mesmo cupom sem
+        reenviar o e-mail. O e-mail de boas-vindas (com o link para cancelar) sai pelo servico de notificacoes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "201":
+          description: Inscricao nova
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cupom: { type: string, example: AGNUS10-K7M2QX }
+                  percentual: { type: number, example: 10 }
+                  ja_inscrito: { type: boolean }
+        "200":
+          description: E-mail ja inscrito (mesmo cupom)
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429":
+          description: Muitas inscricoes seguidas do mesmo IP
+  /ofertas/cancelar:
+    post:
+      operationId: postOfertasCancelar
+      tags:
+        - Ofertas
+      summary: Cancela a inscricao pelo link do e-mail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cancelada (devolve o e-mail mascarado)
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /cupons/{codigo}:
+    get:
+      operationId: getCupom
+      tags:
+        - Ofertas
+      summary: Confere se o cupom vale para o usuario autenticado
+      description: Vale uma vez, so na primeira compra da conta e sem outro cupom em pedido nao cancelado.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cupom valido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codigo: { type: string }
+                  percentual: { type: number }
+        "401": { description: Sem login }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Cupom ja usado ou nao e mais a primeira compra
+  /orders/{id}/nota-fiscal:
+    get:
+      operationId: getNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Dados da NF-e do pedido (dono do pedido ou equipe)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Nota anexada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotaFiscal" }
+        "401": { description: Sem login }
+        "404": { description: Pedido de outra pessoa ou nota ainda nao emitida }
+  /orders/{id}/nota-fiscal/{tipo}:
+    get:
+      operationId: getArquivoNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Arquivo da NF-e (pdf abre no navegador; xml vem como download)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+        - { in: path, name: tipo, required: true, schema: { type: string, enum: [ pdf, xml ] } }
+      responses:
+        "200":
+          description: Arquivo
+          content:
+            application/pdf: { schema: { type: string, format: binary } }
+            application/xml: { schema: { type: string, format: binary } }
+        "404": { description: Sem arquivo desse tipo }
+  /notas-fiscais/{id}:
+    put:
+      operationId: putNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Anexa ou troca a NF-e do pedido (permissao PEDIDO_ATUALIZAR; avisa o cliente na primeira vez)
+      description: >-
+        Arquivos em base64 (ate 5 MB cada). Com o XML, chave, numero, serie, emissao e valor vem dele; sem XML,
+        a chave e obrigatoria (44 digitos com digito verificador). So para pedido pago, enviado ou entregue.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chave: { type: string, example: "4124 1100 0000 0000 0000 5500 1000 0001 2310 0000 0000" }
+                numero: { type: string }
+                serie: { type: string }
+                pdf: { type: string, description: DANFE em base64 }
+                xml: { type: string, description: XML autorizado em base64 }
+      responses:
+        "200":
+          description: Nota salva
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotaFiscal" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Pedido ainda nao pago ou cancelado }
+        "413": { description: Arquivo maior que 5 MB }
+    delete:
+      operationId: deleteNotaFiscal
+      tags: [ Nota fiscal ]
+      summary: Remove a NF-e do pedido (permissao PEDIDO_ATUALIZAR)
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removida }
+        "404": { $ref: "#/components/responses/NotFound" }
   /youdraw/webhook:
     post:
       summary: Webhook da YouDraw (order.status_changed, order.tracking_updated)
@@ -519,6 +701,17 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
   schemas:
+    NotaFiscal:
+      type: object
+      properties:
+        chave: { type: string, example: "41241100000000000000550010000001231000000000" }
+        chave_formatada: { type: string }
+        numero: { type: string, nullable: true }
+        serie: { type: string, nullable: true }
+        data_emissao: { type: string, format: date-time, nullable: true }
+        valor: { type: number, nullable: true }
+        tem_pdf: { type: boolean }
+        tem_xml: { type: boolean }
     Error:
       type: object
       properties:
@@ -676,4 +869,4 @@ components:
         id_usuario: { type: integer }
         id_usuario_endereco: { type: integer }
         status: { $ref: "#/components/schemas/PedidoStatus" }
-        valor_frete: { type: number, description: "Ao mudar, o valor_total e recalculado (itens + frete)" }
+        valor_frete: { type: number, description: "Legado (pedidos lancados a mao); a loja nao cobra frete" }

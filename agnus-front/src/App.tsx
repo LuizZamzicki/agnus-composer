@@ -22,8 +22,12 @@ import ClienteSenha from "./pages/cliente/clienteSenha";
 import ClienteContatos from "./pages/cliente/clienteContatos";
 import ClienteAfiliados from "./pages/cliente/clienteAfiliados";
 import TermosAfiliados from "./pages/termosAfiliados";
+import Duvidas from "./pages/duvidas";
+import { Entrega, Privacidade, Sobre, TrocasDevolucoes } from "./pages/institucional";
 
 import Login from "./pages/login";
+import CancelarOfertas from "./pages/cancelarOfertas";
+import WhatsAppFlutuante from "./components/whatsappFlutuante";
 import NotFound from "./pages/notFound";
 
 // O navegador só volta ao topo ao carregar a página; voltar no histórico mantém a posição.
@@ -77,6 +81,12 @@ function App() {
         </Route>
 
         <Route path="/afiliados/termos" element={<TermosAfiliados />} />
+        <Route path="/duvidas" element={<Duvidas />} />
+        <Route path="/trocas-e-devolucoes" element={<TrocasDevolucoes />} />
+        <Route path="/entrega" element={<Entrega />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="/ofertas/cancelar" element={<CancelarOfertas />} />
 
         <Route path="/login" element={<Login />} />
 
@@ -85,6 +95,7 @@ function App() {
       </div>
 
       {!hideLayout && <Footer />}
+      {!hideLayout && <WhatsAppFlutuante />}
     </div>
   );
 }

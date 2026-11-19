@@ -1,6 +1,7 @@
 import "../css/cliente/app.css"
 import "../css/cliente/footer.css"
-import { Instagram, Mail } from "lucide-react";
+import { Instagram, Mail, MessageCircle } from "lucide-react";
+import { EMAIL, INSTAGRAM, WHATSAPP, linkWhatsApp } from "../conteudo/loja";
 import { Link } from "react-router-dom";
 import logoCompleto from "../img/marca/logo-completo.png";
 import logoCompletoEscuro from "../img/marca/logo-completo-escuro.png";
@@ -29,13 +30,28 @@ function Footer() {
                         <Link to="/cliente/afiliados">Seja afiliado</Link>
                     </nav>
 
+                    <nav className="footer-links" aria-label="Ajuda" data-cy="footer-ajuda">
+                        <h4>Ajuda</h4>
+                        <Link to="/duvidas">Perguntas frequentes</Link>
+                        <Link to="/trocas-e-devolucoes">Trocas e devoluções</Link>
+                        <Link to="/entrega">Entrega e prazos</Link>
+                        <Link to="/cliente/pedidos">Rastrear pedido</Link>
+                        <Link to="/sobre">Sobre a Agnus</Link>
+                        <Link to="/privacidade">Privacidade</Link>
+                    </nav>
+
                     <div className="footer-contato">
                         <h4>Contato</h4>
-                        <a href="https://www.instagram.com/agnus.fit/" target="_blank" rel="noreferrer">
-                            <Instagram size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> @agnus.fit
+                        {WHATSAPP.map((w) => (
+                            <a key={w.numero} href={linkWhatsApp(w.numero)} target="_blank" rel="noreferrer">
+                                <MessageCircle size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> {w.rotulo}
+                            </a>
+                        ))}
+                        <a href={INSTAGRAM.url} target="_blank" rel="noreferrer">
+                            <Instagram size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> {INSTAGRAM.usuario}
                         </a>
-                        <a href="mailto:contato@agnus.fit">
-                            <Mail size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> contato@agnus.fit
+                        <a href={`mailto:${EMAIL}`}>
+                            <Mail size={18} strokeWidth={1.5} className="ico" aria-hidden="true" /> {EMAIL}
                         </a>
                     </div>
                 </div>

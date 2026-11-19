@@ -439,3 +439,29 @@
   height: 40px;
   width: auto;
 }
+
+/* Lista de pedidos: cupom e NF-e embaixo do total */
+.pedido-etiqueta {
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ok-soft, #e1ece4);
+  color: var(--ok, #2f6a46);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Modal da nota fiscal (NF-e) */
+.nota-fiscal-atual {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ok-soft, #e1ece4);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.nota-fiscal-erro { margin: 8px 0 0; color: var(--danger, #a3392f); font-size: 14px; }

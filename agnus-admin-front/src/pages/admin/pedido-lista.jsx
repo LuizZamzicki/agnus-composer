@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { History, Package, Pencil } from "lucide-react";
+import { FileText, History, Package, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, formatarMoeda, formatarStatus, getAuthHeaders } from "./admin-api";
+import NotaFiscalModal from "./nota-fiscal-modal";
 
 function normalizarListaResposta(payload) {
   if (Array.isArray(payload)) return payload;
@@ -31,6 +32,9 @@ function normalizarPedido(item, index = 0) {
     urlRastreio: item?.url_rastreio ?? null,
     fornecedor: item?.fornecedor ?? null,
     codigoRastreio: item?.codigo_rastreio ?? "",
+    desconto: Number(item?.valor_desconto ?? 0),
+    cupom: item?.cupom_codigo ?? null,
+    notaFiscal: item?.nota_fiscal ?? null,
   };
 }
 
@@ -57,6 +61,7 @@ function AdminPedidoLista() {
   const [pedidoEditando, setPedidoEditando] = useState(null);
   const [novoStatus, setNovoStatus] = useState("");
   const [novoRastreio, setNovoRastreio] = useState("");
+  const [pedidoNota, setPedidoNota] = useState(null);
 
   useEffect(() => {
     let ativo = true;
@@ -246,7 +251,6 @@ function AdminPedidoLista() {
             onChange={(e) => setPedidosStatusFiltro(e.target.value)}
           >
             <option value="todos">Todos os status</option>
-            <option value="aguardando_calculo_frete">Aguardando cálculo do frete</option>
             <option value="aguardando_pagamento">Aguardando pagamento</option>
             <option value="pago">Pago</option>
             <option value="enviado">Enviado</option>
@@ -309,9 +313,6 @@ function AdminPedidoLista() {
                     <td>
                       {pedidoEditando === pedido.id ? (
                         <select data-cy="novo-status-pedido" value={novoStatus} onChange={(e) => setNovoStatus(e.target.value)}>
-                          <option value="aguardando_calculo_frete">
-                            Aguardando frete
-                          </option>
                           <option value="aguardando_pagamento">
                             Aguardando pagamento
                           </option>
@@ -333,7 +334,19 @@ function AdminPedidoLista() {
                       )}
                     </td>
 
-                    <td>{formatarMoeda(pedido.total)}</td>
+                    <td>
+                      {formatarMoeda(pedido.total)}
+                      {pedido.desconto > 0 && (
+                        <small className="pedido-etiqueta" title={pedido.cupom || undefined}>
+                          Cupom −{formatarMoeda(pedido.desconto)}
+                        </small>
+                      )}
+                      {pedido.notaFiscal && (
+                        <small className="pedido-etiqueta" data-cy="pedido-nf" title={pedido.notaFiscal.chave}>
+                          NF-e {pedido.notaFiscal.numero ? `nº ${pedido.notaFiscal.numero}` : "anexada"}
+                        </small>
+                      )}
+                    </td>
                     <td>{formatarDataPedido(pedido.dataCriacao)}</td>
                     <td>{celulaYouDraw(pedido)}</td>
 
@@ -380,6 +393,17 @@ function AdminPedidoLista() {
                         >
                           <History size={16} />
                         </button>
+                        {["pago", "enviado", "entregue"].includes(pedido.status) && (
+                          <button
+                            data-cy="nota-fiscal-pedido"
+                            className="admin-btn-novo-pedido"
+                            title={pedido.notaFiscal ? "Ver ou trocar a nota fiscal" : "Anexar nota fiscal (NF-e)"}
+                            aria-label={`Nota fiscal do pedido ${pedido.id}`}
+                            onClick={() => setPedidoNota(pedido)}
+                          >
+                            <FileText size={16} />
+                          </button>
+                        )}
                         <button
                           data-cy="editar-pedido"
                           className="admin-btn-novo-pedido"
@@ -401,6 +425,17 @@ function AdminPedidoLista() {
               </tbody>
             </table>
           </div>
+
+          {pedidoNota && (
+            <NotaFiscalModal
+              pedido={pedidoNota}
+              onFechar={() => setPedidoNota(null)}
+              onSalvo={(nota) => {
+                setPedidos((prev) => prev.map((p) => (p.id === pedidoNota.id ? { ...p, notaFiscal: nota } : p)));
+                setPedidoNota(null);
+              }}
+            />
+          )}
 
           <div className="admin-products-header">
             <div className="admin-list-filters admin-list-filters--single">

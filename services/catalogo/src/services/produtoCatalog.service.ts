@@ -451,7 +451,7 @@ class ProdutoCatalogService {
 
   static buildCatalogSql(whereSql: string, orderBySql: string) {
     return `
-      SELECT p.id_produto, p.nome, p.preco_base, p.preco_original, p.ativo, p.id_categoria, c.nome AS categoria_nome,
+      SELECT p.id_produto, p.nome, p.preco_base, p.preco_original, p.ativo, p.id_categoria, p.data_criacao, c.nome AS categoria_nome,
       IFNULL(CONCAT('[',(SELECT GROUP_CONCAT(JSON_QUOTE(pf.caminho_url) ORDER BY pf.id_produto_foto ASC SEPARATOR ',') FROM produto_fotos pf WHERE pf.id_produto = p.id_produto),']'),'[]') AS imagens_json
       FROM produtos p LEFT JOIN categorias c ON c.id_categoria = p.id_categoria ${whereSql}
       ORDER BY ${orderBySql} LIMIT :limit OFFSET :offset
@@ -467,7 +467,7 @@ class ProdutoCatalogService {
 
   static buildBestSellerSql(whereSql: string) {
     return `
-      SELECT p.id_produto, p.nome, p.preco_base, p.preco_original, p.ativo, p.id_categoria, c.nome AS categoria_nome, vendas.quantidade_vendida,
+      SELECT p.id_produto, p.nome, p.preco_base, p.preco_original, p.ativo, p.id_categoria, p.data_criacao, c.nome AS categoria_nome, vendas.quantidade_vendida,
       IFNULL(CONCAT('[',(SELECT GROUP_CONCAT(JSON_QUOTE(pf.caminho_url) ORDER BY pf.id_produto_foto ASC SEPARATOR ',') FROM produto_fotos pf WHERE pf.id_produto = p.id_produto),']'),'[]') AS imagens_json
       FROM produtos p INNER JOIN produto_vendas vendas ON vendas.id_produto = p.id_produto AND vendas.quantidade_vendida > 0
       LEFT JOIN categorias c ON c.id_categoria = p.id_categoria

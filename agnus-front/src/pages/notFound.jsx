@@ -2,8 +2,10 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import emblema from "../img/marca/emblema.png";
 import "../css/notFound.css";
+import { useTituloPagina } from "../utils/tituloPagina";
 
 function NotFound() {
+    useTituloPagina("Página não encontrada");
     const location = useLocation();
 
     return (

@@ -4,6 +4,7 @@ import type Pedidos from "../models/Pedidos";
 import AfiliacaoService from "./afiliacao.service";
 import YouDrawService from "../fornecedor/youdraw.service";
 import type { PedidoStatus } from "../types/pedido.types";
+import { totalPago } from "./pedidoRegras.service";
 
 class AvisoPedidoService {
   // Chamada direta, e nao evento, porque o Pub/Sub perde a mensagem se o consumidor estiver fora do ar.
@@ -20,7 +21,7 @@ class AvisoPedidoService {
           id_usuario: pedido.id_usuario,
           id_pedido: pedido.id_pedido,
           status: pedido.status,
-          valor_total: pedido.valor_total == null ? null : Number(pedido.valor_total),
+          valor_total: totalPago(pedido),
         },
       });
     } catch (error) {

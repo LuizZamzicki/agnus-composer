@@ -1,21 +1,32 @@
 import "../../css/cliente/vitrine.css";
 import "../../css/cliente/home.css";
 import hero from "../../img/hero.png";
-import { Brush, ChevronLeft, ChevronRight, Truck, Shield, Star } from "lucide-react";
+import { Brush, ChevronLeft, ChevronRight, CreditCard, RotateCcw, Star } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import DuvidasLista from "../../components/duvidasLista";
+import { DUVIDAS_DA_HOME, PARCELAS_SEM_JUROS } from "../../conteudo/loja";
+import BannerCampanha from "../../components/bannerCampanha";
+import ComprePorCategoria from "../../components/comprePorCategoria";
+import Depoimentos from "../../components/depoimentos";
+import OfertasEmail from "../../components/ofertasEmail";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import { Autoplay } from "swiper/modules";
+import { useTituloPagina } from "../../utils/tituloPagina";
+import EtiquetasProduto from "../../components/etiquetasProduto";
+import { useMaisPedidos } from "../../utils/vitrineDados";
 
 function Home() {
+    const maisPedidos = useMaisPedidos();
+    useTituloPagina(null);
     const [produtos, setProdutos] = useState([]);
     const [bestSellers, setBestSellers] = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -155,14 +166,15 @@ function Home() {
         const imgHover = prod.imagens[1] || imgPadrao;
 
         return (
+            <div className="cartao-produto" key={prod.id_produto}>
             <Link
                 data-cy={dataCy}
                 className={`product-card${indice === null ? "" : " cartao-entra"}`}
                 style={indice === null ? undefined : { "--i": Math.min(indice, 8) }}
-                key={prod.id_produto}
                 to={`/produto/${prod.id_produto}`}
             >
                 <div className="product-image">
+                    <EtiquetasProduto produto={prod} maisPedidos={maisPedidos} />
                     <img
                         src={imgPadrao}
                         alt={prod.nome}
@@ -185,8 +197,10 @@ function Home() {
                     <h3>{prod.nome}</h3>
                     {renderStars(avaliacoes[prod.id_produto])}
                     <PrecoProduto className="product-price" preco={prod.preco_base} precoOriginal={prod.preco_original} />
+                    <ParcelaProduto preco={prod.preco_base} />
                 </div>
             </Link>
+            </div>
         );
     }
 
@@ -205,9 +219,6 @@ function Home() {
                         <Link data-cy="ver-colecao" to="/catalogo" className="btn-agnus">
                             Ver a coleção
                         </Link>
-                        <a href="#sob-encomenda" className="btn-agnus-ghost">
-                            Como fazemos
-                        </a>
                     </div>
                 </div>
 
@@ -217,9 +228,9 @@ function Home() {
             </section>
 
             <ul className="benefits" aria-label="Vantagens">
-                <li className="benefit"><Truck size={18} strokeWidth={1.5} aria-hidden="true" />Frete grátis acima de R$ 250</li>
-                <li className="benefit"><Brush size={18} strokeWidth={1.5} aria-hidden="true" />Estampa exclusiva, feita sob encomenda</li>
-                <li className="benefit"><Shield size={18} strokeWidth={1.5} aria-hidden="true" />Pagamento seguro</li>
+                <li className="benefit"><CreditCard size={18} strokeWidth={1.5} aria-hidden="true" />{PARCELAS_SEM_JUROS}x sem juros no cartão</li>
+                <li className="benefit"><RotateCcw size={18} strokeWidth={1.5} aria-hidden="true" />Devolução em 7 dias</li>
+                <li className="benefit"><Brush size={18} strokeWidth={1.5} aria-hidden="true" />Feita sob encomenda</li>
             </ul>
 
             {bestSellers.length > 0 && (
@@ -244,6 +255,10 @@ function Home() {
                     </div>
                 </section>
             )}
+
+            <BannerCampanha />
+
+            <ComprePorCategoria />
 
             <section className="catalog">
                 <h2 className="section-title">A coleção</h2>
@@ -311,17 +326,16 @@ function Home() {
                 )}
             </section>
 
-            <section className="sob-encomenda" id="sob-encomenda">
-                <div className="sob-encomenda-inner">
-                    <h2>Feita sob encomenda</h2>
-                    <p>
-                        Nenhuma peça espera na prateleira. A sua começa a ser feita quando você
-                        a escolhe: sem estoque parado, sem desperdício, com o cuidado de quem
-                        trabalha para a glória de Deus.
-                    </p>
-                    <p className="sob-encomenda-latin"><em>Ora et labora.</em> Reza e trabalha.</p>
-                    <Link className="btn-agnus" to="/catalogo">Escolher a minha peça</Link>
-                </div>
+            <Depoimentos />
+
+            <OfertasEmail />
+
+            <section className="duvidas-home" data-cy="duvidas-home" aria-labelledby="duvidas-home-titulo">
+                <h2 id="duvidas-home-titulo" className="section-title">Perguntas frequentes</h2>
+                <DuvidasLista perguntas={DUVIDAS_DA_HOME} prefixo="duvida-home" />
+                <p className="duvidas-home-mais">
+                    <Link className="btn-agnus-ghost" to="/duvidas" data-cy="ver-todas-duvidas">Ver todas as dúvidas</Link>
+                </p>
             </section>
         </main>
     );

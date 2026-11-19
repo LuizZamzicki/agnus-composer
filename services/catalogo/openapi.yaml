@@ -349,6 +349,81 @@ paths:
       responses:
         "200": { description: "`associados`, `sem_par` ou `precisa_escolher` + `candidatos`" }
         "409": { description: Integração desligada (sem YOUDRAW_API_KEY) }
+  /vitrine/banners:
+    get:
+      summary: Banners de campanha no ar (página inicial)
+      description: Ativos e dentro do período (inicio/fim), na ordem definida pela equipe; no máximo 6. Cada banner traz `fim` (ou null), que a loja usa para a contagem regressiva quando faltam até 14 dias.
+      responses:
+        "200": { description: "`data`: lista de banners (titulo, subtitulo, sobretitulo, texto_botao, link, imagem_url, imagem_mobile_url, alinhamento, foco)" }
+    post:
+      summary: Cria um banner (equipe)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [titulo, imagem]
+              properties:
+                imagem: { type: string, format: binary }
+                imagem_mobile: { type: string, format: binary }
+                titulo: { type: string, maxLength: 80 }
+                subtitulo: { type: string, maxLength: 180 }
+                sobretitulo: { type: string, maxLength: 40 }
+                texto_botao: { type: string, maxLength: 40 }
+                link: { type: string, description: 'Página da loja, começando com "/" (link externo é recusado)' }
+                alinhamento: { type: string, enum: [esquerda, centro, direita] }
+                foco: { type: string, enum: [topo, centro, base] }
+                ordem: { type: integer, minimum: 0, maximum: 999 }
+                ativo: { type: boolean }
+                inicio: { type: string, format: date-time }
+                fim: { type: string, format: date-time }
+      responses:
+        "201": { description: Criado }
+        "400": { description: Título/foto ausentes, link externo, fim antes do início ou arquivo que não é imagem }
+  /vitrine/banners/todos:
+    get:
+      summary: Todos os banners, com a situação (equipe)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: "`data` com ordem, ativo, inicio, fim e no_ar" }
+  /vitrine/banners/{id}:
+    put:
+      summary: Edita um banner (foto nova é opcional; remover_imagem_mobile=true tira a do celular)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "200": { description: Atualizado }
+        "404": { description: Banner não encontrado }
+    delete:
+      summary: Exclui o banner e apaga as fotos
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        "204": { description: Excluído }
+  /vitrine/categorias:
+    get:
+      summary: Categorias com peça à venda e a foto do bloco "Compre por categoria"
+      description: Foto escolhida pela equipe ou, sem ela, a da peça mais vendida (pulando imagens muito pequenas).
+      responses:
+        "200": { description: "`data`: id_categoria, nome, total, imagem_url, foto_escolhida" }
+  /vitrine/categorias/{id}/foto:
+    put:
+      summary: Troca a foto do bloco da categoria (ou volta para a automática com remover=true)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagem: { type: string, format: binary }
+                remover: { type: boolean }
+      responses:
+        "200": { description: "`imagem_url` nova (null quando volta para a automática)" }
+        "404": { description: Categoria não encontrada }
 components:
   securitySchemes:
     bearerAuth:

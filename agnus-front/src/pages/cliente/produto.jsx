@@ -1,17 +1,29 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Ruler, X } from "lucide-react";
+import CompartilharProduto from "../../components/compartilharProduto";
+import { apiUrl as urlDaApi, assetUrl } from "../../utils/api";
 import "../../css/cliente/produto.css";
 import AvaliacaoForm, { Estrelas } from "../../components/avaliacaoForm";
 import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 import { EsqueletoProduto } from "../../components/esqueleto";
 import VerMedidas from "../../components/guiaMedidas";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import ConfiancaCompra from "../../components/confiancaCompra";
+import { useTituloPagina } from "../../utils/tituloPagina";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
 function textoResumoAvaliacoes({ media, total }) {
     return `${media.toFixed(1).replace(".", ",")} de 5 · ${total} ${total === 1 ? "avaliação" : "avaliações"}`;
+}
+
+// Sugestões: primeiro peças da mesma categoria, depois completa com o resto da coleção (até 4).
+export function escolherRelacionados(lista, produto, limite = 4) {
+    const outros = lista.filter((p) => p.id_produto !== produto.id_produto);
+    const mesmaCategoria = outros.filter((p) => p.id_categoria === produto.id_categoria);
+    const resto = outros.filter((p) => p.id_categoria !== produto.id_categoria);
+    return [...mesmaCategoria, ...resto].slice(0, limite);
 }
 
 function Produto() {
@@ -42,6 +54,19 @@ function Produto() {
     const [tamanhoSelecionado, setTamanhoSelecionado] = useState(null);
     const [corSelecionada, setCorSelecionada] = useState(null);
     const [loading, setLoading] = useState(true);
+    useTituloPagina(produto?.nome);
+    const location = useLocation();
+    // Link do e-mail "Como ficaram as suas peças?": já abre o formulário de avaliação.
+    const pedirAvaliacao = new URLSearchParams(location.search).get("avaliar") === "1";
+    const [zoom, setZoom] = useState(null);
+
+    const moverZoom = (evento) => {
+        if (!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches) return;
+        const caixa = evento.currentTarget.getBoundingClientRect();
+        const x = ((evento.clientX - caixa.left) / caixa.width) * 100;
+        const y = ((evento.clientY - caixa.top) / caixa.height) * 100;
+        setZoom({ x: `${Math.min(100, Math.max(0, x))}%`, y: `${Math.min(100, Math.max(0, y))}%` });
+    };
     const [alerta, setAlerta] = useState(null);
     const [faltaEscolher, setFaltaEscolher] = useState(null);
     const [erroCompra, setErroCompra] = useState("");
@@ -254,6 +279,12 @@ function Produto() {
         if (id_produto) carregarAvaliacoes();
     }, [id_produto, versaoAvaliacoes]);
 
+    useEffect(() => {
+        if (!pedirAvaliacao || loading) return;
+        if (podeAvaliar || minhaAvaliacao) setMostrarForm(true);
+        document.getElementById("avaliacoes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [pedirAvaliacao, loading, podeAvaliar, minhaAvaliacao]);
+
     const adicionarCarrinho = async () => {
         setErroCompra("");
 
@@ -309,45 +340,10 @@ function Produto() {
     useEffect(() => {
         async function carregarRelacionados() {
             try {
-                const res = await fetch(`${BASE_URL}products/catalog`);
+                const res = await fetch(urlDaApi("products/catalog?page=1&limit=24"));
                 const data = await res.json();
-
-                const lista = data?.data || data || [];
-                const nomeBase = produto?.nome?.toLowerCase() || "";
-
-                const filtrados = lista
-                    .filter(p =>
-                        p.id_produto !== Number(id_produto) &&
-                        nomeBase &&
-                        p.nome?.toLowerCase().includes(nomeBase.split(" ")[0])
-                    )
-                    .slice(0, 3);
-
-                const comImagem = await Promise.all(
-                    filtrados.map(async (p) => {
-                        try {
-                            const resFoto = await fetch(`${BASE_URL}product-photos/${p.id_produto}`);
-                            const dataFotos = await resFoto.json();
-
-                            const fotos = Array.isArray(dataFotos)
-                                ? dataFotos
-                                : dataFotos?.data || [];
-
-                            return {
-                                ...p,
-                                img: fotos.length > 0
-                                    ? `${BASE_URL}${fotos[0].caminho_url}`
-                                    : null
-                            };
-
-                        } catch {
-                            return { ...p, img: null };
-                        }
-                    })
-                );
-
-                setRelacionados(comImagem);
-
+                const lista = Array.isArray(data?.data) ? data.data : [];
+                setRelacionados(escolherRelacionados(lista, produto).map((p) => ({ ...p, img: p.imagens?.[0] ? assetUrl(p.imagens[0]) : null })));
             } catch (err) {
                 console.error(err);
             }
@@ -401,11 +397,59 @@ function Produto() {
         carregarProduto();
     }, [id_produto]);
 
+    // Nome da categoria para o caminho "Início / Coleção / Categoria / Peça".
+    const [categoriaNome, setCategoriaNome] = useState("");
+    useEffect(() => {
+        const idCategoria = produto?.id_categoria;
+        setCategoriaNome("");
+        if (!idCategoria) return undefined;
+        let ativo = true;
+        fetch(urlDaApi(`categories/${idCategoria}`))
+            .then((r) => (r.ok ? r.json() : null))
+            .then((c) => ativo && setCategoriaNome(c?.nome ?? c?.data?.nome ?? ""))
+            .catch(() => undefined);
+        return () => {
+            ativo = false;
+        };
+    }, [produto?.id_categoria]);
+
+    // Barra de compra fixa no celular: aparece quando o botão principal sai da tela.
+    const botaoComprar = useRef(null);
+    const [barraFixa, setBarraFixa] = useState(false);
+    useEffect(() => {
+        if (loading) return undefined;
+        let quadro = 0;
+        const conferir = () => {
+            quadro = 0;
+            const alvo = botaoComprar.current;
+            setBarraFixa(Boolean(alvo) && alvo.getBoundingClientRect().bottom < 0);
+        };
+        const aoRolar = () => {
+            if (!quadro) quadro = window.requestAnimationFrame(conferir);
+        };
+        window.addEventListener("scroll", aoRolar, { passive: true });
+        conferir();
+        return () => {
+            window.removeEventListener("scroll", aoRolar);
+            if (quadro) window.cancelAnimationFrame(quadro);
+        };
+    }, [produto, loading]);
+
     if (loading) return <EsqueletoProduto />;
     if (!produto) return <p>Produto não encontrado.</p>;
 
     return (
         <div className="produto-page">
+            <nav className="trilha" aria-label="Você está em" data-cy="trilha">
+                <ol>
+                    <li><Link to="/">Início</Link></li>
+                    <li><Link to="/catalogo">Coleção</Link></li>
+                    {categoriaNome && produto.id_categoria && (
+                        <li><Link to={`/catalogo?categoria=${produto.id_categoria}`}>{categoriaNome}</Link></li>
+                    )}
+                    <li aria-current="page">{produto.nome}</li>
+                </ol>
+            </nav>
 
             {alerta && (
                 <div data-cy="produto-alerta" className={`alerta ${alerta.tipo}`}>
@@ -428,7 +472,13 @@ function Produto() {
                         ))}
                     </div>
 
-                    <div className="img-main">
+                    <div
+                        className={`img-main${zoom ? " is-zoom" : ""}`}
+                        data-cy="foto-principal"
+                        onMouseMove={moverZoom}
+                        onMouseLeave={() => setZoom(null)}
+                        style={zoom ? { "--zx": zoom.x, "--zy": zoom.y } : undefined}
+                    >
                         {imgPadrao && (
                             <img
                                 src={imgPadrao}
@@ -464,6 +514,7 @@ function Produto() {
                         <h2>
                             <PrecoProduto destaque preco={precoFinal} precoOriginal={precoOriginalFinal} />
                         </h2>
+                        <ParcelaProduto preco={precoFinal} />
                     </div>
 
                     <p>{produto.descricao}</p>
@@ -542,6 +593,7 @@ function Produto() {
                     </div>
 
                     <button
+                        ref={botaoComprar}
                         data-cy="adicionar-carrinho"
                         className="btn-comprar"
                         onClick={adicionarCarrinho}
@@ -555,6 +607,10 @@ function Produto() {
                     </button>
 
                     {erroCompra && <p data-cy="erro-compra" className="opcao-aviso" role="alert">{erroCompra}</p>}
+
+                    <ConfiancaCompra />
+
+                    <CompartilharProduto nome={produto.nome} />
 
                 </div>
             </div>
@@ -622,7 +678,7 @@ function Produto() {
                 </section>
             )}
 
-            <div className="avaliacoes-section">
+            <div className="avaliacoes-section" id="avaliacoes">
 
                 <div className="avaliacoes-header">
 
@@ -638,6 +694,16 @@ function Produto() {
                             </>
                         )}
                     </div>
+
+                    {pedirAvaliacao && !id_usuario && (
+                        <Link
+                            data-cy="entrar-para-avaliar"
+                            className="btn-agnus-ghost"
+                            to={`/login?redirect=${encodeURIComponent(`/produto/${id_produto}?avaliar=1`)}`}
+                        >
+                            Entre para avaliar
+                        </Link>
+                    )}
 
                     {(podeAvaliar || minhaAvaliacao) && (
                         <button data-cy="escrever-avaliacao" onClick={() => setMostrarForm(!mostrarForm)}>
@@ -699,7 +765,8 @@ function Produto() {
 
             </div>
 
-            <div className="relacionados">
+            {relacionados.length > 0 && (
+            <div className="relacionados" data-cy="relacionados">
                 <h2>Também da coleção</h2>
 
                 <div className="relacionados-grid">
@@ -714,10 +781,12 @@ function Produto() {
                             <h3>{p.nome}</h3>
 
                             <PrecoProduto preco={p.preco_base ?? p.preco} precoOriginal={p.preco_original} />
+                            <ParcelaProduto preco={p.preco_base ?? p.preco} />
                         </Link>
                     ))}
                 </div>
             </div>
+            )}
 
             {lightboxOpen && (
                 <div
@@ -770,7 +839,28 @@ function Produto() {
                 </div>
             )}
 
-        </div >
+            {barraFixa && cores.length > 0 && tamanhos.length > 0 && (
+                <div className="barra-compra" data-cy="barra-compra">
+                    <div className="barra-compra-info">
+                        <strong>{produto.nome}</strong>
+                        <span>{formatarReal(precoFinal)}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn-comprar"
+                        disabled={adicionando}
+                        onClick={() => {
+                            if (!tamanhoSelecionado || !corSelecionada) {
+                                botaoComprar.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }
+                            adicionarCarrinho();
+                        }}
+                    >
+                        {adicionando ? "Adicionando…" : !tamanhoSelecionado ? "Escolher tamanho" : !corSelecionada ? "Escolher cor" : "Adicionar"}
+                    </button>
+                </div>
+            )}
+        </div>
 
     );
 }

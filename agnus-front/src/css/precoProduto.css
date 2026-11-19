@@ -10,12 +10,31 @@
 
 .preco-produto__selo {
     align-self: flex-start;
-    margin-bottom: 4px;
-    padding: 2px 8px;
-    background: var(--ink);
-    color: var(--stone);
-    font: 11px/1.6 var(--f-caps);
-    letter-spacing: 0.14em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 3px 12px 3px 3px;
+    border: 1px solid color-mix(in oklab, var(--brass) 55%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brass) 8%, transparent);
+    color: var(--brass-ink);
+    font: 11px/1 var(--f-caps);
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+}
+
+.preco-produto__selo-desconto {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: var(--on-danger);
+    font: 600 11px/1 var(--f-ui);
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.preco-produto__selo-campanha {
     text-transform: uppercase;
 }
 
@@ -35,4 +54,18 @@
 
 .preco-produto--destaque .preco-produto__selo {
     font-size: 12px;
+    padding-right: 14px;
+}
+
+.preco-produto--destaque .preco-produto__selo-desconto {
+    padding: 5px 10px;
+    font-size: 13px;
+}
+
+.preco-produto__parcela {
+    display: block;
+    margin-top: 4px;
+    font-size: 15px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
 }

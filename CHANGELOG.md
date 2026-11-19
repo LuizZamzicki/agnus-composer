@@ -18,7 +18,24 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Guia de medidas ("Ver medidas") na página do produto, com desenho da peça, tabela por tamanho com as medidas da YouDraw, como medir e sugestão de tamanho; tabela editável por produto no admin (AGNUS-234).
 - Registro permanente de eventos (`registro_eventos`): pedidos, vendas, e-mails enviados ou que falharam, avisos no site, devoluções e afiliação, com tela no admin e histórico por pedido (AGNUS-235).
 - Pedidos criados sozinhos na YouDraw pela API oficial quando a venda é paga: SKUs por cor e tamanho no cadastro do produto (com "Buscar na YouDraw"), coluna YouDraw na lista de pedidos com reenvio, chave de idempotência, nova tentativa automática para falhas passageiras, webhook assinado e conferência a cada 10 minutos que trazem status e rastreio (enviado e entregue avisam o cliente) e tudo no registro de eventos. Sem `YOUDRAW_API_KEY` o pedido fica marcado como "manual" (AGNUS-236).
+- Vitrine na página inicial, inspirada em Hace, Montclair e Eden: banner de campanha com foto grande (carrossel com mais de um, agendamento de início e fim), "Compre por categoria" com fotos, depoimentos de compras verificadas e faixa com 4 vantagens; tela "Vitrine da loja" no admin para subir os banners e escolher a foto de cada categoria (AGNUS-238).
+- Página do produto com caminho (Início / Coleção / Categoria), compartilhar no WhatsApp ou copiar link e barra de compra fixa no celular; o catálogo aceita `?categoria=` na URL (AGNUS-238).
+- Cada página tem o próprio título na aba e ao compartilhar o link (ex.: "Tank Top Machão Suedine · Agnus") (AGNUS-238).
+- Mais vendas na loja (AGNUS-239): "Complete o look" na sacola; contagem regressiva da campanha no banner e na faixa do topo quando o fim está a até 14 dias; etiquetas "Mais pedida" e "Novidade" nos cards; zoom na foto da peça; botão flutuante do WhatsApp (na peça, leva o link dela).
+- Ofertas por e-mail na página inicial com cupom de 10% na primeira compra (`AGNUS10-XXXXXX`): o cupom aparece na hora, vai por e-mail com link para cancelar (`/ofertas/cancelar`) e já vem preenchido no "Finalizar pedido"; vale uma vez, só na primeira compra da conta. Reembolso de devolução e comissão de afiliado consideram o desconto. Inscrição limitada a 6 por minuto por IP no gateway (AGNUS-239).
+- E-mail "Como ficaram as suas peças?" e aviso no site alguns dias depois da entrega (`DIAS_PARA_PEDIR_AVALIACAO`, padrão 3), com um link por peça que já abre o formulário de avaliação (AGNUS-239).
+
+- Nota fiscal (NF-e) do pedido (AGNUS-241): a equipe anexa no admin o XML e/ou o DANFE em PDF (com o XML, chave, número, série, emissão e valor vêm dele; sem ele, a chave de 44 números é conferida pelo dígito verificador). O cliente vê em "Meus pedidos": abre o PDF, baixa o XML, copia a chave e consulta na Receita; recebe aviso no site e por e-mail. Arquivos no volume `notas_fiscais`, só com login do dono ou da equipe. Rotas `GET /orders/:id/nota-fiscal`, `GET /orders/:id/nota-fiscal/{pdf|xml}`, `PUT` e `DELETE /notas-fiscais/:id` (migração 0009).
+
+### Corrigido
+- Banner de campanha: com a contagem regressiva, o título ("Vista a fé no treino") encostava no topo da foto em telas de notebook; agora o banner cresce com o texto e mantém respiro em cima (AGNUS-241).
+- `valor_total` do pedido somava o frete quando o admin mexia nos itens, e o pagamento somava o frete de novo: agora `valor_total` são só as peças (com desconto) (AGNUS-240).
+- "Também da coleção" no produto aparecia vazio: agora sugere até 4 peças, primeiro da mesma categoria, e some quando não há outras; no celular fica em 2 colunas e a parcela não sai mais em caixa alta (AGNUS-238).
+- A barra de compra fixa do celular não cobre mais o fim do rodapé, e o catálogo não mostra "1 / 1" quando só há uma página (AGNUS-238).
+
 ### Removido
+- A loja não cobra frete (AGNUS-241): saíram o cálculo pelo CEP (Melhor Envio/tabela, AGNUS-240), a regra e a barra de frete grátis acima de R$ 250, o frete nos resumos da sacola e do checkout e os avisos de frete na vitrine. O pedido grava só as peças.
+- "Escolher tamanho" direto no card da vitrine e do "Complete o look": o tamanho é escolhido na página da peça (AGNUS-241).
 - Integração Shopify headless (ADR 0009) desativada: o serviço `loja` sai do `docker-compose`, do gateway e do CD, mas o código fica guardado (`services/loja/`, `agnus-front/shopify-desativado/`) com instruções para religar. Vitrine, sacola e pedidos voltam a usar `catalogo`, `carrinho` e `pedidos`.
 
 ### Alterado

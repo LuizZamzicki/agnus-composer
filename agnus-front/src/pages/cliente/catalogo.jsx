@@ -5,12 +5,23 @@ import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { apiUrl, assetUrl } from "../../utils/api";
 import { EsqueletoCartoes } from "../../components/esqueleto";
-import PrecoProduto from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import { useTituloPagina } from "../../utils/tituloPagina";
+import EtiquetasProduto from "../../components/etiquetasProduto";
+import { useMaisPedidos } from "../../utils/vitrineDados";
 
 const ESPERA_DA_BUSCA_MS = 250;
+
+// "/catalogo?categoria=3" (blocos "Compre por categoria" da home) já abre filtrado.
+const categoriaDaUrl = (busca) => {
+    const id = Number(new URLSearchParams(busca).get("categoria"));
+    return Number.isInteger(id) && id > 0 ? id : "Todos";
+};
 const MAX_ATRASO_CARTAO = 8;
 
 function Catalogo() {
+    const maisPedidos = useMaisPedidos();
+    useTituloPagina("A coleção");
 
     const [produtos, setProdutos] = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -25,7 +36,11 @@ function Catalogo() {
     useEffect(() => {
         if (location.state?.focarBusca) campoBusca.current?.focus();
     }, [location.key, location.state]);
-    const [categoria, setCategoria] = useState("Todos");
+    const [categoria, setCategoria] = useState(() => categoriaDaUrl(location.search));
+    useEffect(() => {
+        setCategoria(categoriaDaUrl(location.search));
+        setPagina(1);
+    }, [location.search]);
     const [ordem, setOrdem] = useState("relevancia");
 
     const [pagina, setPagina] = useState(1);
@@ -238,14 +253,15 @@ function Catalogo() {
                             const imgHover = prod.imagens?.[1] || imgPadrao;
 
                             return (
+                                <div className="cartao-produto" key={prod.id_produto}>
                                 <Link
                                     data-cy={`produto-card-${prod.id_produto}`}
                                     className="product-card cartao-entra"
                                     style={{ "--i": Math.min(indice, MAX_ATRASO_CARTAO) }}
-                                    key={prod.id_produto}
                                     to={`/produto/${prod.id_produto}`}
                                 >
                                     <div className="product-image">
+                                        <EtiquetasProduto produto={prod} maisPedidos={maisPedidos} />
                                         {imgPadrao && (
                                             <img src={imgPadrao} alt={prod.nome} className="img-default" loading="lazy" />
                                         )}
@@ -258,8 +274,10 @@ function Catalogo() {
                                         <h3>{prod.nome}</h3>
                                         {renderStars(avaliacoes[prod.id_produto])}
                                         <PrecoProduto className="product-price" preco={prod.preco_base} precoOriginal={prod.preco_original} />
+                                        <ParcelaProduto preco={prod.preco_base} />
                                     </div>
                                 </Link>
+                                </div>
                             );
                         })}
 
@@ -270,6 +288,7 @@ function Catalogo() {
                         )}
                     </div>
 
+                    {totalPaginas > 1 && (
                     <nav className="pagination" aria-label="Paginação">
                         <button
                             disabled={pagina === 1}
@@ -289,6 +308,7 @@ function Catalogo() {
                             <ChevronRight size={18} strokeWidth={1.5} />
                         </button>
                     </nav>
+                    )}
                 </section>
             </div>
         </div>

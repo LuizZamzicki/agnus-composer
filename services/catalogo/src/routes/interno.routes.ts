@@ -86,13 +86,14 @@ router.get("/produtos/documentos", async (req: Request, res: Response) => {
 router.get("/produtos/:id/cores", async (req: Request, res: Response) => {
   const idProduto = Number(req.params.id);
 
-  if (!(await Produtos.findByPk(idProduto))) {
+  const produto = await Produtos.findByPk(idProduto);
+  if (!produto) {
     return res.status(404).json({ message: "Produto não encontrado." });
   }
 
   const cores = await ProdutoCores.findAll({ where: { id_produto: idProduto }, attributes: ["id_produto_cor"] });
 
-  return res.status(200).json({ cores: cores.map((cor) => cor.id_produto_cor) });
+  return res.status(200).json({ nome: produto.nome, ativo: produto.ativo, cores: cores.map((cor) => cor.id_produto_cor) });
 });
 
 // SKU do fornecedor de cada par cor + grade de um pedido (serviço de pedidos, ao enviar à YouDraw).

@@ -12,6 +12,7 @@ import Pagamentos from "../models/Pagamentos";
 import PedidoItens from "../models/PedidoItens";
 import Pedidos from "../models/Pedidos";
 import { criarReembolso } from "../pagamentos/mercadoPago";
+import { fatorPago } from "./pedidoRegras.service";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 const STATUS_EM_ANDAMENTO: StatusDevolucao[] = ["solicitada", "aprovada", "recebida"];
@@ -196,12 +197,14 @@ class DevolucaoService {
     const itensDoPedido = await PedidoItens.findAll({ where: { id_pedido: idPedido } });
     const detalhes = await detalharItens(itensDoPedido);
     const jaDevolvidas = await quantidadesJaDevolvidas(idPedido);
+    const fator = fatorPago(pedido, itensDoPedido);
     const itens = itensDoPedido.map((item) => {
       const comprada = Number(item.quantidade ?? 1);
       return {
         id_pedido_item: item.id_pedido_item,
         ...(detalhes.get(item.id_pedido_item) ?? resumoDoItem(null)),
-        preco_unitario: Number(item.preco_unitario),
+        // Valor pago por unidade (com cupom, já sem a parte do desconto): é o que volta no reembolso.
+        preco_unitario: dinheiro(Number(item.preco_unitario) * fator),
         quantidade_comprada: comprada,
         quantidade_devolvivel: Math.max(0, comprada - (jaDevolvidas.get(item.id_pedido_item) ?? 0)),
       };
@@ -272,10 +275,12 @@ class DevolucaoService {
         if (escolhidos.get(id)! > disponivel) throw new HttpError(400, `Você pode devolver no máximo ${Math.max(0, disponivel)} unidade(s) dessa peça.`);
       }
 
+      // Com cupom, cada peça devolve o que foi pago por ela (preço menos a parte do desconto).
+      const fator = fatorPago(pedido, [...itensDoPedido.values()]);
       const linhas = [...escolhidos].map(([id, quantidade]) => ({
         id_pedido_item: id,
         quantidade,
-        valor: dinheiro(Number(itensDoPedido.get(id)!.preco_unitario) * quantidade),
+        valor: dinheiro(Number(itensDoPedido.get(id)!.preco_unitario) * quantidade * fator),
       }));
 
       // Se com esta devolução todas as peças voltam, o frete também é devolvido.

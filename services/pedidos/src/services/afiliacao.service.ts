@@ -3,6 +3,7 @@ import logger from "@agnus/comum/utils/logger";
 import { consultarSelecoes } from "@agnus/comum/utils/itemDetails";
 import PedidoItens from "../models/PedidoItens";
 import type Pedidos from "../models/Pedidos";
+import { fatorPago } from "./pedidoRegras.service";
 
 export const COOKIE_AFILIADO = "agnus_afiliado";
 
@@ -26,6 +27,8 @@ export const refDoCookie = (cabecalho: string | undefined) => {
 export const dadosParaAfiliacao = async (pedido: Pedidos) => {
   const itens = await PedidoItens.findAll({ where: { id_pedido: pedido.id_pedido } });
   const selecoes = await consultarSelecoes(itens);
+  // Comissão sobre o que o cliente pagou: com cupom, o subtotal de cada item cai na mesma proporção.
+  const fator = fatorPago(pedido, itens);
 
   return {
     id_pedido: pedido.id_pedido,
@@ -38,7 +41,7 @@ export const dadosParaAfiliacao = async (pedido: Pedidos) => {
       .map((item, indice) => ({
         id_produto: selecoes[indice]?.contexto?.produto.id_produto ?? null,
         quantidade: Number(item.quantidade ?? 1),
-        subtotal: Number(item.subtotal ?? 0),
+        subtotal: Math.round(Number(item.subtotal ?? 0) * fator * 100) / 100,
       }))
       .filter((item): item is { id_produto: number; quantidade: number; subtotal: number } => item.id_produto !== null),
   };

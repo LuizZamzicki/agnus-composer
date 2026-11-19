@@ -263,9 +263,10 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    # Fotos que o cliente anexa à devolução (servidas só com login, nunca como estático).
+    # Fotos que o cliente anexa à devolução e NF-e dos pedidos (servidas só com login, nunca como estático).
     volumes:
       - devolucao_fotos:/app/pedidos/devolucao_fotos
+      - notas_fiscais:/app/pedidos/notas_fiscais
 
   notificacoes:
     <<: *servico
@@ -424,6 +425,7 @@ volumes:
   produto_fotos:
   avaliacao_fotos:
   devolucao_fotos:
+  notas_fiscais:
   frontend_build:
   admin_build:
 

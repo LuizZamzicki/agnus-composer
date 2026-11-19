@@ -40,6 +40,10 @@ type Conteudo = {
   // Etapa atual na linha do tempo do pedido (sem ela, a linha não aparece).
   etapa?: Etapa;
   valorTotal?: number | null;
+  // Bloco pronto (já escapado) entre os parágrafos e o botão, com a versão em texto puro.
+  bloco?: { html: string; texto: string[] };
+  // Rodapé próprio (ex.: ofertas, com link para cancelar a inscrição).
+  rodape?: { html: string; texto: string };
 };
 
 const ETAPAS: { chave: Etapa; rotulo: string }[] = [
@@ -86,9 +90,9 @@ const montar = (para: string, saudacao: string, conteudo: Conteudo): Email => {
 <h1 style="margin:0 0 16px;font-size:24px;font-weight:normal;color:${COR.tinta}">${escapar(conteudo.titulo)}</h1>
 ${conteudo.etapa ? linhaDoTempo(conteudo.etapa) : ""}
 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${COR.tinta}">${escapar(saudacao)}</p>
-${paragrafosHtml}${valorHtml}${botaoHtml}
+${paragrafosHtml}${valorHtml}${conteudo.bloco?.html ?? ""}${botaoHtml}
 </td></tr>
-<tr><td style="padding:16px 32px;border-top:1px solid ${COR.linha};font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${COR.suave}">Você recebeu este e-mail por causa de um pedido na Agnus. Dúvidas? É só responder esta mensagem.</td></tr>
+<tr><td style="padding:16px 32px;border-top:1px solid ${COR.linha};font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${COR.suave}">${conteudo.rodape?.html ?? "Você recebeu este e-mail por causa de um pedido na Agnus. Dúvidas? É só responder esta mensagem."}</td></tr>
 </table></td></tr></table></body></html>`;
 
   const texto = [
@@ -98,7 +102,9 @@ ${paragrafosHtml}${valorHtml}${botaoHtml}
     "",
     ...conteudo.paragrafos.flatMap((p) => [p, ""]),
     ...(conteudo.valorTotal != null && !Number.isNaN(conteudo.valorTotal) ? [`Total do pedido: ${reais(conteudo.valorTotal)}`, ""] : []),
+    ...(conteudo.bloco ? [...conteudo.bloco.texto, ""] : []),
     ...(conteudo.botao ? [`${conteudo.botao.texto}: ${conteudo.botao.url}`] : []),
+    ...(conteudo.rodape ? ["", "--", conteudo.rodape.texto] : []),
   ].join("\n");
 
   return { para, assunto: conteudo.assunto, html, texto };
@@ -309,3 +315,68 @@ export const emailPagamentoParaEquipe = (para: string, pedido: number): Email =>
     paragrafos: [`O pagamento do pedido #${pedido} foi confirmado. Pode iniciar a produção.`],
     botao: { texto: "Abrir painel", url: `${urlDoSite()}/admin` },
   });
+
+// Boas-vindas das ofertas por e-mail, com o cupom de primeira compra e o link para cancelar.
+export const emailBoasVindasOfertas = (para: string, cupom: string, token: string, percentual: number): Email => {
+  const cancelar = `${urlDoSite()}/ofertas/cancelar?token=${encodeURIComponent(token)}`;
+  const cupomHtml = `<p style="margin:8px 0 24px;padding:18px;text-align:center;border:1px dashed ${COR.destaque};font-family:'Courier New',monospace;font-size:22px;letter-spacing:.12em;color:${COR.destaque}">${escapar(cupom)}</p>`;
+
+  return montar(para, "Olá!", {
+    assunto: `Seu cupom de ${percentual}% na primeira compra`,
+    titulo: `${percentual}% na sua primeira compra`,
+    paragrafos: [
+      "Que bom ter você por perto. A partir de agora você recebe primeiro as campanhas, os lançamentos e as ofertas da Agnus.",
+      `Para começar, use o cupom abaixo ao finalizar a sua primeira compra e ganhe ${percentual}% de desconto nas peças.`,
+    ],
+    bloco: { html: cupomHtml, texto: [`Seu cupom: ${cupom}`] },
+    botao: { texto: "Ver a coleção", url: `${urlDoSite()}/catalogo` },
+    rodape: {
+      html: `Você recebeu este e-mail porque se inscreveu para receber ofertas da Agnus. <a href="${escapar(cancelar)}" style="color:${COR.suave}">Não quero mais receber</a>.`,
+      texto: `Você se inscreveu para receber ofertas da Agnus. Para cancelar: ${cancelar}`,
+    },
+  });
+};
+
+export type ProdutoParaAvaliar = { id_produto: number; nome: string; foto?: string | null };
+
+// Pedido de avaliação alguns dias depois da entrega: um link para cada peça, já abrindo o formulário.
+export const emailPedirAvaliacao = (destinatario: Destinatario, idPedido: number, produtos: ProdutoParaAvaliar[]): Email | null => {
+  if (!produtos.length) return null;
+
+  const nome = primeiroNome(destinatario.nome);
+  const link = (p: ProdutoParaAvaliar) => `${urlDoSite()}/produto/${p.id_produto}?avaliar=1#avaliacoes`;
+  const linhas = produtos
+    .map(
+      (p) =>
+        `<tr><td style="padding:12px 0;border-top:1px solid ${COR.linha};font-size:15px;color:${COR.tinta}">${escapar(p.nome)}</td>` +
+        `<td align="right" style="padding:12px 0;border-top:1px solid ${COR.linha}"><a href="${escapar(link(p))}" style="color:${COR.destaque};font-size:14px">Avaliar &#9733;</a></td></tr>`,
+    )
+    .join("");
+
+  return montar(destinatario.email, nome ? `Olá, ${nome}!` : "Olá!", {
+    assunto: "Como ficaram as suas peças?",
+    titulo: "Conte como ficou",
+    paragrafos: [
+      `O seu pedido #${idPedido} chegou há alguns dias. Queremos saber: o caimento, o tecido, o tamanho, tudo ficou como você esperava?`,
+      "Sua avaliação leva um minuto e ajuda quem está escolhendo a peça certa.",
+    ],
+    bloco: {
+      html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px">${linhas}</table>`,
+      texto: produtos.map((p) => `${p.nome}: ${link(p)}`),
+    },
+  });
+};
+
+// A loja anexou a NF-e: o cliente vê e baixa em "Meus pedidos".
+export const emailNotaFiscal = (destinatario: Destinatario, idPedido: number): Email => {
+  const nome = primeiroNome(destinatario.nome);
+  return montar(destinatario.email, nome ? `Olá, ${nome}!` : "Olá!", {
+    assunto: `Nota fiscal do pedido #${idPedido}`,
+    titulo: "Sua nota fiscal está disponível",
+    paragrafos: [
+      `A nota fiscal eletrônica (NF-e) do seu pedido #${idPedido} já foi emitida.`,
+      "Em Meus pedidos você abre o DANFE em PDF, baixa o XML e vê a chave de acesso para consultar na Receita.",
+    ],
+    botao: { texto: "Ver nota fiscal", url: `${urlDoSite()}/cliente/pedidos` },
+  });
+};

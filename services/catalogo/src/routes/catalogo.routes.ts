@@ -9,6 +9,7 @@ import authenticateToken, { identifyOptionalUser } from '@agnus/comum/middleware
 import { checarPermissao } from '@agnus/comum/middlewares/permission.middleware';
 import { uploadAny } from '@agnus/comum/middlewares/upload.middleware';
 import SkuService from '../services/sku.service';
+import vitrineRouter from './vitrine.routes';
 import { HttpError } from '@agnus/comum/types/http_error';
 
 // Bounded context Catalogo: leitura publica (com cache) e escrita so para a equipe.
@@ -27,6 +28,8 @@ router.post('/products', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_
 router.get('/products/:id', identifyOptionalUser, ProdutosController.getById);
 router.put('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EDITAR), ProdutosController.update);
 router.delete('/products/:id', authenticateToken, checarPermissao(PERMISSIONS.PRODUTO_EXCLUIR), ProdutosController.remove);
+
+router.use(vitrineRouter);
 
 // SKUs do fornecedor (YouDraw) por cor + tamanho: só a equipe vê e edita.
 const idProduto = (valor: unknown) => {

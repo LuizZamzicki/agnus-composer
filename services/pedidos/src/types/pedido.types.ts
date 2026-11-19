@@ -14,6 +14,8 @@ export type PedidoBody = {
   valor_frete?: number | string | null;
   // Link de acompanhamento da YouDraw ou só o código; vazio/null remove.
   rastreio?: string | null;
+  // Cupom de primeira compra informado no checkout (validado no servidor).
+  cupom?: unknown;
 };
 
 export type PedidoRouteParams = {
