@@ -6,6 +6,8 @@ import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import { useTituloPagina } from "../../utils/tituloPagina";
 import CompleteOLook from "../../components/completeOLook";
+import { valorNoPix } from "../../components/precoProduto";
+import { DESCONTO_PIX } from "../../conteudo/loja";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -299,6 +301,7 @@ function Carrinho() {
                         <strong>Total</strong>
                         <strong data-cy="carrinho-total">{formatarReal(total)}</strong>
                     </div>
+                    <p className="cart-pix" data-cy="carrinho-total-pix">ou <strong>{formatarReal(valorNoPix(total))}</strong> no Pix ({DESCONTO_PIX}% off)</p>
                     <Link data-cy="finalizar-compra" className="finish-btn" to={linkFinalizar}>
                         Finalizar pedido
                     </Link>

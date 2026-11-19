@@ -2,6 +2,8 @@ import { randomInt } from "crypto";
 
 // Regras comerciais da loja (as mesmas do site em agnus-front/src/conteudo/loja.js).
 export const DESCONTO_PRIMEIRA_COMPRA = 10;
+// % a menos para quem paga no Pix (a taxa do Pix é bem menor que a do cartão). Soma com o cupom.
+export const DESCONTO_PIX = 5;
 
 export const STATUS_DE_COMPRA = ["pago", "enviado", "entregue"];
 export const EMAIL_VALIDO = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/;
@@ -22,3 +24,6 @@ export const resumoDaCompra = (subtotal: number, percentualDesconto = 0) => {
   const pecas = dinheiro(subtotal - desconto);
   return { subtotal: dinheiro(subtotal), desconto, total: pecas };
 };
+
+// Quanto custa pagar no Pix: o total já com o cupom, menos o desconto do Pix.
+export const valorNoPix = (total: number) => dinheiro(total - dinheiro((total * DESCONTO_PIX) / 100));

@@ -16,6 +16,7 @@ class Pedidos extends Model {
   declare valor_frete: number | null;
   declare cupom_codigo: string | null;
   declare valor_desconto: number | string;
+  declare valor_desconto_pix: number | string;
   declare avaliacao_pedida_em: Date | null;
   declare codigo_rastreio: string | null;
   declare ref_afiliado: string | null;
@@ -67,6 +68,11 @@ Pedidos.init(
       defaultValue: null,
     },
     valor_desconto: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    valor_desconto_pix: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,

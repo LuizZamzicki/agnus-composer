@@ -3,6 +3,7 @@
 
 export const PARCELAS_SEM_JUROS = 2; // de 3x em diante o cartão cobra juros (Mercado Pago)
 export const PARCELAS_MAX = 12;
+export const DESCONTO_PIX = 5; // % a menos no Pix (o mesmo de services/pedidos/src/services/ofertas.regras.ts)
 export const DESCONTO_PRIMEIRA_COMPRA = 10; // % do cupom de quem se inscreve nas ofertas (vale na 1ª compra)
 export const DIAS_NOVIDADE = 30; // peça cadastrada há menos que isso ganha a etiqueta "Novidade"
 export const EMAIL = "contato@agnusfit.com";
@@ -19,7 +20,7 @@ export const linkWhatsApp = (numero, texto = "Olá! Vim pelo site da Agnus e ten
 // Faixa fina no topo (ao lado do tempo litúrgico). Alterna sozinha a cada poucos segundos.
 export const AVISOS = [
     "Black Friday: peças com até 30% off",
-    `${PARCELAS_SEM_JUROS}x sem juros no cartão · Pix na hora`,
+    `${DESCONTO_PIX}% off no Pix · ${PARCELAS_SEM_JUROS}x sem juros no cartão`,
     `${DESCONTO_PRIMEIRA_COMPRA}% na primeira compra: cadastre seu e-mail`,
     "Feita sob encomenda, peça por peça",
 ];
@@ -76,7 +77,7 @@ export const DUVIDAS = [
             {
                 home: true,
                 pergunta: "Quais são as formas de pagamento?",
-                resposta: `Pix (aprovação na hora) ou cartão de crédito em até ${PARCELAS_MAX}x, pelo Mercado Pago. Em até ${PARCELAS_SEM_JUROS}x não há juros; de 3x em diante entram os juros do cartão, mostrados antes de você confirmar.`,
+                resposta: `Pix (aprovação na hora e ${DESCONTO_PIX}% de desconto) ou cartão de crédito em até ${PARCELAS_MAX}x, pelo Mercado Pago. Em até ${PARCELAS_SEM_JUROS}x não há juros; de 3x em diante entram os juros do cartão, mostrados antes de você confirmar. O desconto do Pix soma com o cupom de primeira compra.`,
             },
             {
                 pergunta: "É seguro comprar na Agnus?",

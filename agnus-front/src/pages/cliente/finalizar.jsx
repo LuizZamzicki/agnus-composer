@@ -5,6 +5,9 @@ import "../../css/cliente/finalizar.css";
 import { apiUrl, assetUrl, authHeaders } from "../../utils/api";
 import { EsqueletoLinhas } from "../../components/esqueleto";
 import { esquecerCupomGuardado, lerCupomGuardado } from "../../utils/cupomGuardado";
+import { valorNoPix } from "../../components/precoProduto";
+import { DESCONTO_PIX } from "../../conteudo/loja";
+import { iniciouCompra, itemParaRastreio } from "../../utils/rastreamento";
 import {
     SessaoExpirada,
     avisarSacola,
@@ -145,6 +148,10 @@ function Finalizar() {
                 const padrao = salvos.find((e) => e.principal) || salvos[0];
 
                 setItens(lista);
+                iniciouCompra(
+                    lista.map(itemParaRastreio),
+                    lista.reduce((acc, item) => acc + Number(item.preco_unitario || 0) * Number(item.quantidade || 0), 0),
+                );
                 setEnderecos(salvos);
                 setEnderecoId(padrao?.id_usuario_endereco ?? null);
                 setMostrarForm(salvos.length === 0);
@@ -456,6 +463,7 @@ function Finalizar() {
                         <div className="fin-linha fin-desconto" data-cy="finalizar-desconto"><span>Desconto ({cupom.percentual}%)</span><span>− {formatarReal(desconto)}</span></div>
                     )}
                     <div className="fin-linha fin-total"><strong>Total</strong><strong data-cy="finalizar-total">{formatarReal(total)}</strong></div>
+                    <div className="fin-linha fin-pix" data-cy="finalizar-total-pix"><span>No Pix ({DESCONTO_PIX}% off)</span><span>{formatarReal(valorNoPix(total))}</span></div>
 
                     {erro && <p data-cy="finalizar-erro" className="fin-erro" role="alert">{erro}</p>}
 

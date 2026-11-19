@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation, useNavigationType } from "react-router-dom";
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 import "./css/movimento.css";
 
@@ -27,7 +27,10 @@ import { Entrega, Privacidade, Sobre, TrocasDevolucoes } from "./pages/instituci
 
 import Login from "./pages/login";
 import CancelarOfertas from "./pages/cancelarOfertas";
+import CancelarLembretesSacola from "./pages/cancelarLembretesSacola";
 import WhatsAppFlutuante from "./components/whatsappFlutuante";
+import AvisoCookies from "./components/avisoCookies";
+import { iniciarRastreamento, paginaVista } from "./utils/rastreamento";
 import NotFound from "./pages/notFound";
 
 // O navegador só volta ao topo ao carregar a página; voltar no histórico mantém a posição.
@@ -44,6 +47,23 @@ function VoltarAoTopo() {
   return null;
 }
 
+// Cada troca de página conta como visita para o Pixel e o Analytics (só com cookies aceitos).
+function RegistrarVisitas() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    iniciarRastreamento();
+  }, []);
+
+  useEffect(() => {
+    // Espera o título da página nova.
+    const timer = setTimeout(() => paginaVista(pathname), 0);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   const location = useLocation();
 
@@ -56,6 +76,7 @@ function App() {
   return (
     <div className={`app ${hideLayout ? "app--full" : "app--with-header"}`}>
       <VoltarAoTopo />
+      <RegistrarVisitas />
       {!hideLayout && <Header />}
 
       <div key={secao} className={animarEntrada ? "pagina-entrada" : undefined}>
@@ -87,6 +108,7 @@ function App() {
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/ofertas/cancelar" element={<CancelarOfertas />} />
+        <Route path="/sacola/lembretes/cancelar" element={<CancelarLembretesSacola />} />
 
         <Route path="/login" element={<Login />} />
 
@@ -96,6 +118,7 @@ function App() {
 
       {!hideLayout && <Footer />}
       {!hideLayout && <WhatsAppFlutuante />}
+      <AvisoCookies />
     </div>
   );
 }

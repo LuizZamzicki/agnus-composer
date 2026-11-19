@@ -380,3 +380,65 @@ export const emailNotaFiscal = (destinatario: Destinatario, idPedido: number): E
     botao: { texto: "Ver nota fiscal", url: `${urlDoSite()}/cliente/pedidos` },
   });
 };
+
+export type PecaDaSacola = { id_produto: number; nome: string; cor?: string | null; tamanho?: string | null; foto?: string | null; preco: number };
+
+const fotoAbsoluta = (foto?: string | null) =>
+  foto && /^produto_fotos\/[\w.-]+$/.test(foto) ? `${urlDoSite()}/api/${foto}` : null;
+
+// Sacola esquecida (serviço carrinho): uma hora depois e, se ainda não comprou, no dia seguinte.
+export const emailSacolaEsquecida = (
+  destinatario: Destinatario,
+  etapa: 1 | 2,
+  pecas: PecaDaSacola[],
+  token: string,
+  descontoPix: number,
+): Email | null => {
+  if (!pecas.length) return null;
+
+  const nome = primeiroNome(destinatario.nome);
+  const cancelar = `${urlDoSite()}/sacola/lembretes/cancelar?token=${encodeURIComponent(token)}`;
+  const linhas = pecas
+    .map((p) => {
+      const foto = fotoAbsoluta(p.foto);
+      const detalhe = [p.cor, p.tamanho].filter(Boolean).join(" · ");
+      return (
+        `<tr>` +
+        `<td width="72" style="padding:12px 12px 12px 0;border-top:1px solid ${COR.linha}">${
+          foto ? `<img src="${escapar(foto)}" width="64" height="80" alt="" style="display:block;width:64px;height:80px;object-fit:cover;border:1px solid ${COR.linha}">` : ""
+        }</td>` +
+        `<td style="padding:12px 0;border-top:1px solid ${COR.linha};font-size:15px;color:${COR.tinta}">${escapar(p.nome)}${
+          detalhe ? `<br><span style="font-size:13px;color:${COR.suave}">${escapar(detalhe)}</span>` : ""
+        }</td>` +
+        `<td align="right" style="padding:12px 0;border-top:1px solid ${COR.linha};font-size:15px;color:${COR.tinta};white-space:nowrap">${escapar(reais(p.preco))}</td>` +
+        `</tr>`
+      );
+    })
+    .join("");
+
+  const pix = descontoPix > 0 ? ` E no Pix você ainda ganha ${descontoPix}% de desconto.` : "";
+
+  return montar(destinatario.email, nome ? `Olá, ${nome}!` : "Olá!", {
+    assunto: etapa === 1 ? "Você deixou peças na sacola" : "Suas peças ainda estão na sacola",
+    titulo: etapa === 1 ? "Esqueceu alguma coisa?" : "Ainda dá tempo",
+    paragrafos:
+      etapa === 1
+        ? [
+            "Vimos que você separou algumas peças e não chegou a finalizar o pedido. Guardamos tudo na sua sacola.",
+            `Cada peça é feita sob encomenda para você, e a produção começa assim que o pagamento é confirmado.${pix}`,
+          ]
+        : [
+            "As peças que você escolheu continuam esperando na sua sacola.",
+            `Se ficou alguma dúvida sobre tamanho, entrega ou pagamento, é só responder este e-mail.${pix}`,
+          ],
+    bloco: {
+      html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px">${linhas}</table>`,
+      texto: pecas.map((p) => `${p.nome}${p.tamanho ? ` (${p.tamanho})` : ""}: ${reais(p.preco)}`),
+    },
+    botao: { texto: "Voltar para a sacola", url: `${urlDoSite()}/carrinho` },
+    rodape: {
+      html: `Você recebeu este e-mail porque deixou peças na sacola da sua conta na Agnus. <a href="${escapar(cancelar)}" style="color:${COR.suave}">Não quero receber lembretes da sacola</a>.`,
+      texto: `Você deixou peças na sacola da sua conta na Agnus. Para não receber mais estes lembretes: ${cancelar}`,
+    },
+  });
+};
