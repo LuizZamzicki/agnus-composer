@@ -20,10 +20,11 @@ async function pedirJson(caminho, opcoes = {}) {
     return { ok: res.ok, status: res.status, dados };
 }
 
-function Pix({ pix, onCopiar, copiado }) {
+function Pix({ pix, valor, onCopiar, copiado }) {
     return (
         <div className="pag-pix" data-cy="pix">
             <h2>Pague com PIX</h2>
+            {valor > 0 && <p className="pag-pix-valor" data-cy="pix-valor">Valor: <strong>{formatarReal(valor)}</strong></p>}
             <p>Abra o app do seu banco, escolha pagar com PIX e leia o QR Code ou cole o código abaixo.</p>
 
             {pix.qr_code_base64 && (
@@ -62,7 +63,9 @@ function Pagamento() {
     const [carregando, setCarregando] = useState(true);
     const [config, setConfig] = useState(null);
     const [total, setTotal] = useState(null);
+    const [totalPix, setTotalPix] = useState(null);
     const [pix, setPix] = useState(null);
+    const [valorPix, setValorPix] = useState(null);
     const [emAnalise, setEmAnalise] = useState(false);
     const [erro, setErro] = useState("");
     const [erroFatal, setErroFatal] = useState("");
@@ -111,10 +114,12 @@ function Pagamento() {
                 }
 
                 setTotal(situacao.total);
+                setTotalPix(situacao.total_pix ?? null);
                 setConfig(configuracao.dados);
 
                 if (situacao.pagamento?.pix && situacao.pagamento.status === "pending") {
                     setPix(situacao.pagamento.pix);
+                    setValorPix(situacao.pagamento.valor);
                 } else if (["in_process", "pending"].includes(situacao.pagamento?.status)) {
                     setEmAnalise(true);
                 }
@@ -163,6 +168,7 @@ function Pagamento() {
 
         if (dados.pagamento?.pix) {
             setPix(dados.pagamento.pix);
+            setValorPix(dados.pagamento.valor);
             return;
         }
 
@@ -259,10 +265,15 @@ function Pagamento() {
         <div className="fin-page pag-page">
             <h1 data-cy="pagamento-titulo">Pagamento do pedido nº&nbsp;{id}</h1>
             <p className="fin-valor" data-cy="pagamento-total">Total: {formatarReal(total)}</p>
+            {!pix && totalPix > 0 && totalPix < total && (
+                <p className="fin-aviso" data-cy="pagamento-total-pix">
+                    No Pix sai por <strong>{formatarReal(totalPix)}</strong> ({config?.desconto_pix ?? 5}% off).
+                </p>
+            )}
 
             {erro && <p className="fin-erro" role="alert" data-cy="pagamento-erro-msg">{erro}</p>}
 
-            {pix && <Pix pix={pix} onCopiar={copiarPix} copiado={copiado} />}
+            {pix && <Pix pix={pix} valor={valorPix} onCopiar={copiarPix} copiado={copiado} />}
 
             {emAnalise && !pix && (
                 <div className="fin-proximo" data-cy="pagamento-em-analise">

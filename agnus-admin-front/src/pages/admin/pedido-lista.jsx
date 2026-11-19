@@ -33,6 +33,7 @@ function normalizarPedido(item, index = 0) {
     fornecedor: item?.fornecedor ?? null,
     codigoRastreio: item?.codigo_rastreio ?? "",
     desconto: Number(item?.valor_desconto ?? 0),
+    descontoPix: Number(item?.valor_desconto_pix ?? 0),
     cupom: item?.cupom_codigo ?? null,
     notaFiscal: item?.nota_fiscal ?? null,
   };
@@ -339,6 +340,11 @@ function AdminPedidoLista() {
                       {pedido.desconto > 0 && (
                         <small className="pedido-etiqueta" title={pedido.cupom || undefined}>
                           Cupom −{formatarMoeda(pedido.desconto)}
+                        </small>
+                      )}
+                      {pedido.descontoPix > 0 && (
+                        <small className="pedido-etiqueta" data-cy="pedido-desconto-pix">
+                          Pix −{formatarMoeda(pedido.descontoPix)}
                         </small>
                       )}
                       {pedido.notaFiscal && (

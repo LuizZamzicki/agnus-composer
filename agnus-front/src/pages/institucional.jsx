@@ -3,6 +3,7 @@ import FaleConosco from "../components/faleConosco";
 import { EMAIL, PARCELAS_MAX, PARCELAS_SEM_JUROS } from "../conteudo/loja";
 import "../css/cliente/institucional.css";
 import { useTituloPagina } from "../utils/tituloPagina";
+import { definirConsentimento } from "../utils/rastreamento";
 
 // Páginas do rodapé. Os textos seguem as regras que o sistema aplica hoje (prazos de devolução,
 // parcelas, dados usados no pedido). Política de privacidade: revisar com o jurídico antes de publicar.
@@ -86,17 +87,27 @@ export function Privacidade() {
                 <li><strong>Pedido:</strong> endereço de entrega, peças compradas e situação do pagamento.</li>
                 <li><strong>Pagamento:</strong> feito no formulário do Mercado Pago. Os dados do cartão não passam pelo nosso servidor.</li>
                 <li><strong>Afiliados:</strong> quando você chega por um link de afiliado, guardamos um cookie por 7 dias para saber de quem foi a indicação.</li>
+                <li><strong>Medição e anúncios (só se você aceitar):</strong> o Pixel da Meta (Instagram e Facebook), o Google Analytics e o Pixel do TikTok registram as páginas visitadas, as peças vistas, a sacola e as compras, para medirmos as visitas e mostrarmos anúncios da Agnus a quem já conhece a loja.</li>
             </ul>
 
             <h2>Para que usamos</h2>
             <ul>
                 <li>Produzir, enviar e entregar o seu pedido, e avisar você de cada etapa por e-mail e no site.</li>
                 <li>Atender devoluções e dúvidas.</li>
+                <li>Lembrar você, por e-mail, das peças que ficaram na sacola da sua conta (até dois lembretes; o próprio e-mail tem o link para não receber mais).</li>
                 <li>Cumprir obrigações legais e fiscais e evitar fraudes.</li>
             </ul>
 
             <h2>Com quem compartilhamos</h2>
             <p>Só com quem precisa para o pedido acontecer: o Mercado Pago (pagamento), o nosso parceiro de produção (que confecciona e envia a peça) e a transportadora (entrega). Não vendemos os seus dados.</p>
+
+            <h2>Cookies</h2>
+            <p>Na primeira visita perguntamos se você aceita os cookies de medição e anúncios. Recusar não muda nada na compra.</p>
+            <p>
+                <button type="button" className="btn-agnus-ghost" onClick={() => definirConsentimento(null)} data-cy="rever-cookies">
+                    Rever minha escolha de cookies
+                </button>
+            </p>
 
             <h2>Seus direitos</h2>
             <p>Você pode pedir para ver, corrigir ou apagar os seus dados, e saber com quem foram compartilhados. É só escrever para <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Parte dos dados de pedidos precisa ser guardada pelo prazo que a lei exige.</p>

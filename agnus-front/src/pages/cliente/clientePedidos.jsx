@@ -212,6 +212,9 @@ function ClientePedidos() {
 
                             <strong className="pedido-valor">
                                 {formatarReal(Number(pedido.valor_total || 0) + Number(pedido.valor_frete || 0))}
+                                {Number(pedido.valor_desconto_pix) > 0 && (
+                                    <small className="pedido-extras" data-cy="pedido-desconto-pix">Pix −{formatarReal(pedido.valor_desconto_pix)}</small>
+                                )}
                                 {Number(pedido.valor_desconto) > 0 && (
                                     <small className="pedido-extras">cupom −{formatarReal(pedido.valor_desconto)}</small>
                                 )}
