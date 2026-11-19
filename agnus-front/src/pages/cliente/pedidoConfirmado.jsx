@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import "../../css/cliente/finalizar.css";
 import { apiUrl, authHeaders } from "../../utils/api";
 import { formatarReal } from "../../utils/sacola";
+import { comprou, itemParaRastreio } from "../../utils/rastreamento";
 
 function PedidoConfirmado() {
     const { id } = useParams();
@@ -15,7 +16,16 @@ function PedidoConfirmado() {
                 const res = await fetch(apiUrl(`orders/${id}`), { headers: authHeaders() });
 
                 if (res.ok) {
-                    setPedido(await res.json());
+                    const dados = await res.json();
+                    setPedido(dados);
+
+                    // Compra paga: conversão para os anúncios (uma vez por pedido).
+                    if (["pago", "enviado", "entregue"].includes(dados.status)) {
+                        const resItens = await fetch(apiUrl(`order-items/${id}`), { headers: authHeaders() });
+                        const brutos = resItens.ok ? await resItens.json() : [];
+                        const itens = (Array.isArray(brutos) ? brutos : brutos?.data || []).map(itemParaRastreio);
+                        comprou({ id_pedido: dados.id_pedido ?? id, total: Number(dados.valor_total || 0) + Number(dados.valor_frete || 0), itens });
+                    }
                 }
             } catch {
                 // O número do pedido vem da URL; a página segue útil sem o total.

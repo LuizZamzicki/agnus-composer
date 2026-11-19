@@ -299,3 +299,7 @@
     margin-bottom: 16px;
     text-decoration: none;
 }
+
+.fin-pix { color: var(--muted); font-size: 0.95em; }
+
+.pag-pix-valor { margin: 0 0 12px; font-variant-numeric: tabular-nums; }

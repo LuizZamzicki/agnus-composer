@@ -311,3 +311,13 @@
     .cart-item img { width: 72px; }
     .cart-price { grid-column: 2; flex-direction: row; justify-content: space-between; align-items: center; }
 }
+
+.cart-pix {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cart-pix strong { color: var(--ink); font-weight: 600; }

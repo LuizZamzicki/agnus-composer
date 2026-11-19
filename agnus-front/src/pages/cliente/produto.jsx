@@ -9,9 +9,11 @@ import { authHeaders } from "../../utils/api";
 import { SessaoExpirada, adicionarItem, adicionarVisitante, avisarSacola, formatarReal, usuarioDaSessao } from "../../utils/sacola";
 import { EsqueletoProduto } from "../../components/esqueleto";
 import VerMedidas from "../../components/guiaMedidas";
-import PrecoProduto, { ParcelaProduto } from "../../components/precoProduto";
+import PrecoProduto, { ParcelaProduto, PrecoPix } from "../../components/precoProduto";
 import ConfiancaCompra from "../../components/confiancaCompra";
 import { useTituloPagina } from "../../utils/tituloPagina";
+import { adicionouNaSacola, verPeca } from "../../utils/rastreamento";
+import { useDadosDaPeca } from "../../utils/seo";
 
 // "4,5 de 5 · 1 avaliação": vírgula decimal e singular quando há uma só.
 function textoResumoAvaliacoes({ media, total }) {
@@ -323,6 +325,7 @@ function Produto() {
             }
 
             setAdicionado(true);
+            adicionouNaSacola({ ...item, nome: produto.nome, preco: precoFinal });
         } catch (err) {
             // Sessão vencida não pode custar a venda: a peça fica guardada até o cliente entrar.
             if (err instanceof SessaoExpirada) {
@@ -396,6 +399,15 @@ function Produto() {
 
         carregarProduto();
     }, [id_produto]);
+
+    // Visita à peça (Pixel e Analytics) e dados para o Google (descrição, link canônico e Product).
+    useEffect(() => {
+        if (produto?.id_produto) {
+            verPeca({ id_produto: produto.id_produto, nome: produto.nome, preco: produto.preco_base });
+        }
+        // Uma vez por peça aberta (o produto muda de objeto a cada carga, o id não).
+    }, [produto?.id_produto]); // eslint-disable-line
+    useDadosDaPeca(produto, imagens);
 
     // Nome da categoria para o caminho "Início / Coleção / Categoria / Peça".
     const [categoriaNome, setCategoriaNome] = useState("");
@@ -514,6 +526,7 @@ function Produto() {
                         <h2>
                             <PrecoProduto destaque preco={precoFinal} precoOriginal={precoOriginalFinal} />
                         </h2>
+                        <PrecoPix preco={precoFinal} />
                         <ParcelaProduto preco={precoFinal} />
                     </div>
 

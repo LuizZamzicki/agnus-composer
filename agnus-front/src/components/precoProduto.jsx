@@ -1,5 +1,5 @@
 import "../css/precoProduto.css";
-import { PARCELAS_SEM_JUROS } from "../conteudo/loja";
+import { DESCONTO_PIX, PARCELAS_SEM_JUROS } from "../conteudo/loja";
 
 const formatar = (valor) =>
     Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -10,6 +10,24 @@ export function descontoPercentual(precoOriginal, preco) {
     const por = Number(preco || 0);
 
     return de > por && por > 0 ? Math.round((1 - por / de) * 100) : 0;
+}
+
+// Preço no Pix (a mesma conta do servidor: o desconto arredondado em centavos).
+export function valorNoPix(valor) {
+    const total = Number(valor || 0);
+    const desconto = Math.round(total * DESCONTO_PIX) / 100;
+    return Math.round((total - desconto) * 100) / 100;
+}
+
+// "R$ X no Pix (5% off)".
+export function PrecoPix({ preco, className = "" }) {
+    const valor = Number(preco || 0);
+    if (!(valor > 0) || !(DESCONTO_PIX > 0)) return null;
+    return (
+        <span className={`preco-produto__pix ${className}`} data-cy="preco-pix">
+            <strong>{formatar(valorNoPix(valor))}</strong> no Pix ({DESCONTO_PIX}% off)
+        </span>
+    );
 }
 
 // "ou 2x de R$ X sem juros" (de 3x em diante o cartão cobra juros).
