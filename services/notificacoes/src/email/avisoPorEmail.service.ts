@@ -10,6 +10,8 @@ import {
   emailBoasVindasOfertas,
   emailNotaFiscal,
   emailPedirAvaliacao,
+  emailSacolaEsquecida,
+  type PecaDaSacola,
   type ProdutoParaAvaliar,
   type AvisoDevolucao,
   type PedidoStatus,
@@ -103,6 +105,15 @@ export const notaFiscalPorEmail = async (pedido: { id_usuario: number; id_pedido
     id_usuario: pedido.id_usuario,
     destinatario: "cliente",
   });
+};
+
+// O mesmo desconto de services/pedidos/src/services/ofertas.regras.ts (DESCONTO_PIX).
+const DESCONTO_PIX = 5;
+
+export const sacolaEsquecidaPorEmail = async (aviso: { id_usuario: number; etapa: 1 | 2; token: string; pecas: PecaDaSacola[] }) => {
+  const usuario = await buscarUsuario(aviso.id_usuario);
+  const email = usuario && emailSacolaEsquecida({ nome: usuario.nome, email: usuario.email! }, aviso.etapa, aviso.pecas, aviso.token, DESCONTO_PIX);
+  if (email) await EmailService.enviar(email, { id_usuario: aviso.id_usuario, destinatario: "cliente" });
 };
 
 export const dispararSemEsperar = (tarefa: Promise<unknown>, contexto: Record<string, unknown>) => {

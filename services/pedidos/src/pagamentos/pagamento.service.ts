@@ -5,6 +5,7 @@ import logger from "@agnus/comum/utils/logger";
 import Pagamentos from "../models/Pagamentos";
 import Pedidos from "../models/Pedidos";
 import AvisoPedidoService from "../services/avisoPedido.service";
+import { DESCONTO_PIX, valorNoPix } from "../services/ofertas.regras";
 import type { PedidoStatus } from "../types/pedido.types";
 import {
   buscarPagamento,
@@ -39,6 +40,13 @@ const centavos = (valor: unknown) => Math.round(Number(valor) * 100);
 const texto = (valor: unknown) => (typeof valor === "string" ? valor.trim() : "");
 
 const totalDoPedido = (pedido: Pedidos) => (centavos(pedido.valor_total) + centavos(pedido.valor_frete ?? 0)) / 100;
+
+const pixJaDescontado = (pedido: Pedidos) => centavos(pedido.valor_desconto_pix ?? 0) > 0;
+
+// O que se cobra por meio de pagamento: no Pix, o total com o desconto do Pix (uma vez só: depois
+// de aprovado, o desconto já está no valor_total do pedido).
+export const valorACobrar = (pedido: Pedidos, metodo: string) =>
+  metodo === "pix" && !pixJaDescontado(pedido) ? valorNoPix(totalDoPedido(pedido)) : totalDoPedido(pedido);
 
 const pedidoDoComprador = async (idPedido: number, comprador: Comprador) => {
   const pedido = await Pedidos.findByPk(idPedido);
@@ -124,7 +132,7 @@ const pixValido = (pagamento: Pagamentos) =>
 class PagamentoService {
   static configuracaoPublica() {
     const config = configuracaoMercadoPago();
-    return { ativo: Boolean(config), publicKey: config?.publicKey ?? null };
+    return { ativo: Boolean(config), publicKey: config?.publicKey ?? null, desconto_pix: DESCONTO_PIX };
   }
 
   /**
@@ -155,14 +163,19 @@ class PagamentoService {
     const pagamento = existente ? await existente.update(valores) : await Pagamentos.create(valores);
 
     const novoStatus = statusDoPedido(mp.status);
-    const valorConfere = centavos(mp.transaction_amount) === centavos(totalDoPedido(pedido)) && mp.currency_id === "BRL";
+    const esperado = valorACobrar(pedido, mp.payment_method_id);
+    // Um Pix gerado antes do desconto existir (valor cheio) também vale: só não ganha o desconto.
+    const valorConfere =
+      mp.currency_id === "BRL" &&
+      (centavos(mp.transaction_amount) === centavos(esperado) ||
+        (mp.payment_method_id === "pix" && centavos(mp.transaction_amount) === centavos(totalDoPedido(pedido))));
 
     if (novoStatus === "pago" && !valorConfere) {
       logger.error("pagamento.valor_diferente", {
         pedido: pedido.id_pedido,
         pagamento: mp.id,
         cobrado: mp.transaction_amount,
-        esperado: totalDoPedido(pedido),
+        esperado,
       });
       return pagamento;
     }
@@ -173,7 +186,18 @@ class PagamentoService {
 
     if (novoStatus && podeMudar) {
       const anterior: PedidoStatus = pedido.status;
-      await pedido.update({ status: novoStatus, data_alteracao: new Date() });
+      // Pago no Pix: o desconto passa a fazer parte do pedido (total, comissão e devolução seguem o que foi pago).
+      const descontoPix =
+        novoStatus === "pago" && mp.payment_method_id === "pix" && !pixJaDescontado(pedido)
+          ? (centavos(totalDoPedido(pedido)) - centavos(mp.transaction_amount)) / 100
+          : 0;
+      await pedido.update({
+        status: novoStatus,
+        data_alteracao: new Date(),
+        ...(descontoPix > 0
+          ? { valor_desconto_pix: descontoPix, valor_total: (centavos(pedido.valor_total) - centavos(descontoPix)) / 100 }
+          : {}),
+      });
       await AvisoPedidoService.avisarMudancaDeStatus(pedido, anterior);
       await EventBusService.publish("pedido.atualizado", {
         id_pedido: pedido.id_pedido,
@@ -200,13 +224,12 @@ class PagamentoService {
       throw new HttpError(409, pedido.status === "pago" ? "Este pedido já está pago." : "Este pedido não está aguardando pagamento.");
     }
 
-    const total = totalDoPedido(pedido);
+    const meio = montarMeio(dados);
+    const total = valorACobrar(pedido, meio.payment_method_id);
 
     if (!(total > 0)) {
       throw new HttpError(409, "O pedido não tem valor a pagar.");
     }
-
-    const meio = montarMeio(dados);
 
     // Um PIX ainda válido do mesmo pedido é reaproveitado, em vez de gerar outra cobrança.
     if (meio.payment_method_id === "pix") {
@@ -215,7 +238,8 @@ class PagamentoService {
         order: [["id_pagamento", "DESC"]],
       });
 
-      if (pixAberto && pixValido(pixAberto)) {
+      // Só reaproveita se o valor ainda é o de agora (ex.: não é um Pix de antes do desconto).
+      if (pixAberto && pixValido(pixAberto) && centavos(pixAberto.valor) === centavos(total)) {
         return { id_pedido: pedido.id_pedido, status_pedido: pedido.status, pagamento: resumo(pixAberto) };
       }
     }
@@ -257,7 +281,13 @@ class PagamentoService {
       }
     }
 
-    return { id_pedido: pedido.id_pedido, status_pedido: pedido.status, total: totalDoPedido(pedido), pagamento: resumo(pagamento) };
+    return {
+      id_pedido: pedido.id_pedido,
+      status_pedido: pedido.status,
+      total: totalDoPedido(pedido),
+      total_pix: valorACobrar(pedido, "pix"),
+      pagamento: resumo(pagamento),
+    };
   }
 
   /** Notificação do Mercado Pago: o corpo só diz o id; a verdade vem sempre da API deles. */

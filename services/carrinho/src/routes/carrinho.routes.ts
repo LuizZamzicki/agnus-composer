@@ -4,9 +4,16 @@ import CarrinhosController from '../controllers/carrinhos.controller';
 import authenticateToken from '@agnus/comum/middlewares/auth.middleware';
 import { authorizeOwnerByBody, authorizeOwnerByParam, authorizeOwnerByQuery } from '@agnus/comum/middlewares/ownership.middleware';
 import { OWNERS } from '../middlewares/donos';
+import LembreteSacolaService from '../services/lembreteSacola.service';
 
 // Bounded context Carrinho: a sacola pertence ao usuario do token.
 const router = Router();
+
+// Link "não quero mais receber lembretes da sacola" do e-mail: público, vale pelo código do link.
+router.post('/carts/lembretes/cancelar', async (req, res) => {
+  await LembreteSacolaService.cancelar(req.body?.token);
+  res.status(204).end();
+});
 
 router.get('/carts', authenticateToken, authorizeOwnerByQuery('id_usuario'), CarrinhosController.findAll);
 router.post('/carts', authenticateToken, authorizeOwnerByBody('id_usuario'), CarrinhosController.create);

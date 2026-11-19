@@ -1,7 +1,13 @@
 import { Request, Response, Router } from "express";
 import NotificacaoService from "../services/notificacao.service";
 import Notificacoes from "../models/Notificacoes";
-import { dispararSemEsperar, enviarBoasVindasOfertas, notaFiscalPorEmail, pedirAvaliacaoPorEmail } from "../email/avisoPorEmail.service";
+import {
+  dispararSemEsperar,
+  enviarBoasVindasOfertas,
+  notaFiscalPorEmail,
+  pedirAvaliacaoPorEmail,
+  sacolaEsquecidaPorEmail,
+} from "../email/avisoPorEmail.service";
 
 const router = Router();
 
@@ -76,6 +82,27 @@ router.post("/nota-fiscal", async (req: Request, res: Response) => {
   });
   dispararSemEsperar(notaFiscalPorEmail({ id_usuario: corpo.id_usuario, id_pedido: corpo.id_pedido }), { pedido: corpo.id_pedido });
   return res.status(204).send();
+});
+
+// Sacola esquecida (carrinho): só e-mail, com as peças e o link para não receber mais.
+router.post("/sacola-esquecida", (req: Request, res: Response) => {
+  const corpo = req.body ?? {};
+  const pecas = Array.isArray(corpo.pecas)
+    ? corpo.pecas
+        .filter((p: { id_produto?: unknown; nome?: unknown; preco?: unknown }) =>
+          Number.isInteger(p?.id_produto) && typeof p?.nome === "string" && Number.isFinite(Number(p?.preco)))
+        .slice(0, 6)
+    : [];
+
+  if (!Number.isInteger(corpo.id_usuario) || ![1, 2].includes(corpo.etapa) || typeof corpo.token !== "string" || !pecas.length) {
+    return res.status(400).json({ message: "Lembrete de sacola incompleto." });
+  }
+
+  dispararSemEsperar(sacolaEsquecidaPorEmail({ id_usuario: corpo.id_usuario, etapa: corpo.etapa, token: corpo.token, pecas }), {
+    aviso: "sacola.esquecida",
+    id_usuario: corpo.id_usuario,
+  });
+  return res.status(202).send();
 });
 
 export default router;

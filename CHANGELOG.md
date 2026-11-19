@@ -27,6 +27,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 - Nota fiscal (NF-e) do pedido (AGNUS-241): a equipe anexa no admin o XML e/ou o DANFE em PDF (com o XML, chave, número, série, emissão e valor vêm dele; sem ele, a chave de 44 números é conferida pelo dígito verificador). O cliente vê em "Meus pedidos": abre o PDF, baixa o XML, copia a chave e consulta na Receita; recebe aviso no site e por e-mail. Arquivos no volume `notas_fiscais`, só com login do dono ou da equipe. Rotas `GET /orders/:id/nota-fiscal`, `GET /orders/:id/nota-fiscal/{pdf|xml}`, `PUT` e `DELETE /notas-fiscais/:id` (migração 0009).
 
+- Marketing e conversão (AGNUS-242):
+  - **Desconto no Pix** de 5% (soma com o cupom): o preço no Pix aparece na peça, na sacola, no checkout e no pagamento; o Mercado Pago cobra o valor com desconto e, quando o Pix é aprovado, o desconto entra no pedido (`valor_desconto_pix`, migração 0010 de pedidos), e o reembolso e a comissão de afiliado seguem o que foi pago. Pix gerado antes do desconto (valor cheio) continua valendo.
+  - **E-mail de sacola esquecida**: quem tem conta e deixou peças na sacola recebe um e-mail 1 hora depois e outro 24 horas depois (com as fotos e os preços); mexer na sacola recomeça a contagem, sacola parada há mais de 7 dias fica de fora e o e-mail tem o link "Não quero receber lembretes da sacola" (`/sacola/lembretes/cancelar`). Migração 0002 de carrinho.
+  - **Pixel da Meta, Google Analytics 4 e Pixel do TikTok** (`META_PIXEL_ID`, `GA4_ID`, `TIKTOK_PIXEL_ID`), carregados só depois que o visitante aceita os cookies (aviso no rodapé; dá para rever a escolha em Privacidade). Eventos: visita de página, peça vista, sacola, início do checkout e compra paga (uma vez por pedido).
+  - **Catálogo para Google Shopping e Instagram/Facebook** em `/api/vitrine/feed.xml`: um item por cor e tamanho, com fotos da cor, preço "De/Por", frete grátis e o mesmo id que o Pixel recebe.
+  - **SEO**: `/sitemap.xml` (com as fotos das peças) e `/robots.txt` montados com o domínio de `FRONTEND_URL`; a página da peça tem descrição, link canônico e dados estruturados de produto (schema.org); link compartilhado no WhatsApp, Instagram e Facebook mostra a foto, o nome e o preço da peça (o gateway entrega a prévia aos robôs dessas redes).
+
 ### Corrigido
 - Banner de campanha: com a contagem regressiva, o título ("Vista a fé no treino") encostava no topo da foto em telas de notebook; agora o banner cresce com o texto e mantém respiro em cima (AGNUS-241).
 - `valor_total` do pedido somava o frete quando o admin mexia nos itens, e o pagamento somava o frete de novo: agora `valor_total` são só as peças (com desconto) (AGNUS-240).
