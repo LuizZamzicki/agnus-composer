@@ -129,13 +129,34 @@ describe("PagamentoService.iniciar", () => {
   it("reaproveita um PIX ainda válido do mesmo pedido em vez de gerar outra cobrança", async () => {
     comPedido();
     mocks.pagamentoFindOne.mockResolvedValueOnce({
-      metodo: "pix", status: "pending", pix_copia_e_cola: "000201...", pix_qr_code_base64: "iV", pix_expira_em: new Date(Date.now() + 3600_000), valor: "149.90",
+      metodo: "pix", status: "pending", pix_copia_e_cola: "000201...", pix_qr_code_base64: "iV", pix_expira_em: new Date(Date.now() + 3600_000), valor: "142.40",
     });
 
     const resultado = await PagamentoService.iniciar(42, comprador, { payment_method_id: "pix" });
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(resultado.pagamento?.pix?.copia_e_cola).toBe("000201...");
+  });
+
+  it("PIX cobra 5% a menos que o total do pedido; o cartão cobra o total", async () => {
+    comPedido();
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(respostaMP({ status: "pending", payment_method_id: "pix", transaction_amount: 142.4 })), { status: 201 }));
+
+    await PagamentoService.iniciar(42, comprador, { payment_method_id: "pix" });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).transaction_amount).toBe(142.4);
+  });
+
+  it("não reaproveita um PIX de valor cheio (gerado antes do desconto): gera outro com o desconto", async () => {
+    comPedido();
+    mocks.pagamentoFindOne.mockResolvedValueOnce({
+      metodo: "pix", status: "pending", pix_copia_e_cola: "antigo", pix_expira_em: new Date(Date.now() + 3600_000), valor: "149.90",
+    });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(respostaMP({ status: "pending", payment_method_id: "pix", transaction_amount: 142.4 })), { status: 201 }));
+
+    await PagamentoService.iniciar(42, comprador, { payment_method_id: "pix" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("pedido de outra pessoa responde 404, sem chamar o Mercado Pago", async () => {
@@ -186,6 +207,31 @@ describe("PagamentoService.aplicar", () => {
   it("não marca como pago quando o valor cobrado é diferente do pedido", async () => {
     const p = comPedido();
     await PagamentoService.aplicar(p as never, respostaMP({ transaction_amount: 1 }) as never);
+    expect(p.update).not.toHaveBeenCalled();
+  });
+
+  it("PIX aprovado com desconto grava o desconto e baixa o total do pedido", async () => {
+    const p = comPedido();
+    await PagamentoService.aplicar(p as never, respostaMP({ payment_method_id: "pix", transaction_amount: 142.4 }) as never);
+    expect(p.update).toHaveBeenCalledWith(expect.objectContaining({ status: "pago", valor_desconto_pix: 7.5, valor_total: 142.4 }));
+  });
+
+  it("PIX de valor cheio (antigo) também confirma o pedido, sem desconto", async () => {
+    const p = comPedido();
+    await PagamentoService.aplicar(p as never, respostaMP({ payment_method_id: "pix", transaction_amount: 149.9 }) as never);
+    expect(p.update).toHaveBeenCalledWith(expect.objectContaining({ status: "pago" }));
+    expect(p.update.mock.calls[0][0]).not.toHaveProperty("valor_desconto_pix");
+  });
+
+  it("cartão com o valor do PIX não confirma o pedido", async () => {
+    const p = comPedido();
+    await PagamentoService.aplicar(p as never, respostaMP({ transaction_amount: 142.4 }) as never);
+    expect(p.update).not.toHaveBeenCalled();
+  });
+
+  it("depois do desconto aplicado, a mesma notificação do PIX não desconta de novo", async () => {
+    const p = comPedido({ status: "pago", valor_total: "142.40", valor_desconto_pix: "7.50" });
+    await PagamentoService.aplicar(p as never, respostaMP({ payment_method_id: "pix", transaction_amount: 142.4 }) as never);
     expect(p.update).not.toHaveBeenCalled();
   });
 

@@ -2,6 +2,7 @@ import { chamarServico } from "@agnus/comum/utils/clienteInterno";
 import Pedidos from "../../src/models/Pedidos";
 import OfertasService, { OfertasInscricoes, gerarCupom, normalizarCupom, resumoDaCompra } from "../../src/services/ofertas.service";
 import { fatorPago } from "../../src/services/pedidoRegras.service";
+import { DESCONTO_PIX, valorNoPix } from "../../src/services/ofertas.regras";
 
 jest.mock("@agnus/comum/utils/clienteInterno", () => ({ __esModule: true, chamarServico: jest.fn() }));
 jest.mock("../../src/models/Pedidos", () => ({ __esModule: true, default: { count: jest.fn() } }));
@@ -92,5 +93,17 @@ describe("Ofertas e cupom de primeira compra", () => {
       await expect(OfertasService.validarCupom(5, "NADA")).rejects.toMatchObject({ status: 404 });
       await expect(OfertasService.validarCupom(5, "  ")).rejects.toMatchObject({ status: 400 });
     });
+  });
+});
+
+describe("Desconto no Pix", () => {
+  it("5% a menos sobre o total, arredondado em centavos", () => {
+    expect(DESCONTO_PIX).toBe(5);
+    expect(valorNoPix(100)).toBe(95);
+    expect(valorNoPix(149.9)).toBe(142.4);
+  });
+
+  it("entra na parte paga de cada peça junto com o cupom", () => {
+    expect(fatorPago({ valor_desconto: "10.00", valor_desconto_pix: "4.50" }, [{ subtotal: 100 }])).toBeCloseTo(0.855);
   });
 });
